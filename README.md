@@ -1,8 +1,8 @@
 
 # pyguidos
 
-
 *Python module to access GuidosToolbox Workbench (GWB)*
+
 
 Overview
 ========
@@ -10,6 +10,11 @@ Overview
 ``pyguidos`` is a Python module that provides convenient wrappers for GuidosToolbox Workbench (GWB). It simplifies the execution of GWB executables by encapsulating their required input parameters and handling output. This module is designed for researchers and practitioners working with spatial data, particularly GeoTIFF files for tasks such as restoration status summary, morphological spatial pattern analysis, fragmentation analysis, and more.
 
 This module acts as a bridge, allowing Python users to integrate powerful GWB functionalities into their workflows seamlessly, without directly interacting with the command-line interfaces of the original GWB tools.
+
+### Repository Contents
+* **`/examples`**: source data to use as usage examples.
+* **`/notebooks`**: Jupyter notebooks to use the modules and visualise results
+* **`/pyguidos`**: script repository
 
 
 Features
@@ -56,7 +61,7 @@ Installation
 `pyguidos` can be installed directly from its GitLab repository:
 
 ```bash
-    pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 ```
 
 Usage Examples
@@ -88,20 +93,3 @@ print("GWB_MSPA processing complete (check output_results_dir for results).")
 # You can similarly call other functions like gwb_rss, gwb_acc, etc.
 # Refer to the function signatures in the source code or the GWB documentation for parameters.
 ```
-
-Advanced Usage & Demos
-======================
-For more detailed examples, including how to prepare input data, interpret outputs, and use various parameters for each GWB function, please refer to:
-
-- ``/examples`` directory: contains Python scripts demonstrating specific use cases with sample data.
-- ``/notebooks`` directory: contains Jupyter notebooks for interactive exploration, data preparation, and workflow demonstrations.
-
-
-License
-=======
-
-
-
-
-
-
