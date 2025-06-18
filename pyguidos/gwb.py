@@ -130,7 +130,7 @@ def gwb_mspa(
     input_dir: Union[str, Path],
     output_dir: Union[str, Path],
     conn_8: bool = True,
-    wdge_width: int = 1,
+    edge_width: int = 1,
     transition: bool = True,
     int_ext: bool = True,
     save_ram: bool = False,
@@ -152,7 +152,7 @@ def gwb_mspa(
                                  Note: the module requires this directory to be empty.
         conn_8 (bool, optional): Foreground connectivity.
                                  True = 8-connectivity (default), False = 4-connectivity.
-        wdge_width (int, optional): 1 (default) or larger integer values
+        edge_width (int, optional): 1 (default) or larger integer values
         transition (bool): show transition pixels.
                            True = enable (default), False = disable
         int_ext (bool): distinguish between internal and external features
@@ -183,7 +183,7 @@ def gwb_mspa(
     # List of parameters in order for the TXT
     param_file_content = [
         conn_val,
-        str(wdge_width),
+        str(edge_width),
         transition_val,
         int_ext_val,
         save_ram_val,
