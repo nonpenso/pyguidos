@@ -77,7 +77,7 @@ gwb_mspa(
     input_dir=input_data_dir,
     output_dir=output_results_dir,
     conn_8=True,       # 8-connectivity
-    wdge_width=1,      # Default edge width
+    edge_width=1,      # Default edge width
     transition=True,   # Show transition pixels
     int_ext=True,      # Distinguish internal/external features
     save_ram=False,    # Do not save RAM (faster processing)
