@@ -1,0 +1,54 @@
+# pyproject.toml
+
+# [build-system]
+[build-system]
+requires = ["setuptools>=61.0"]  # Minimum version of setuptools required
+build-backend = "setuptools.build_meta" # The entry point for setuptools build backend
+
+# [project]
+[project]
+name = "pyguidos" 
+version = "0.1.0" 
+authors = [
+  { name="Giovanni Caudullo", email="your.email@example.com" },
+]
+description = "pyguidos"
+readme = "README.md" 
+requires-python = ">=3.8" 
+keywords = ["utility", "functions", "example", "pyguidos"] 
+
+# `classifiers` help categorize your project on PyPI.
+# You can find a comprehensive list at: https://pypi.org/classifiers/
+classifiers = [
+    "Development Status :: 3 - Alpha", # Indicate the development stage (e.g., Alpha, Beta, Production/Stable)
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License", # Choose an appropriate open-source license
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# `dependencies` lists the required third-party packages your module needs to run.
+# These will be automatically installed when someone installs your package.
+dependencies = [
+]
+
+# [project.urls]
+# Optional: Provides links that will be displayed on your PyPI project page.
+[project.urls]
+Homepage = "https://github.com/" 
+
+# [tool.setuptools.packages.find]
+# This is a setuptools-specific configuration (since setuptools is our build-backend).
+# It tells setuptools how to find your package's Python source code.
+# The `where = ["."] ` means look in the current directory for package directories.
+# The `include = ["guidosx*"]` means only include directories that start with "guidosx".
+# This setup assumes your package structure is `pyguidosx/guidosx/`
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyguidos*"] 
