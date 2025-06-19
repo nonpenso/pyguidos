@@ -12,7 +12,7 @@ Overview
 This module acts as a bridge, allowing Python users to integrate powerful GWB functionalities into their workflows seamlessly, without directly interacting with the command-line interfaces of the original GWB tools.
 
 ### Repository Contents
-* **`/examples`**: source data to use in the notebook examples.
+* **`/data`**: source data to use in the notebook examples.
 * **`/notebooks`**: Jupyter notebooks to use the modules and visualise results.
 * **`/pyguidos`**: script repository.
 
@@ -58,23 +58,40 @@ Before using `pyguidos`, you *must* have the GWB installed and accessible in you
 Installation
 ============
 
-`pyguidos` can be installed directly from its GitLab repository:
+`pyguidos` can be installed directly from its GitLab repository without `/data` and `/notebooks`:
 
 ```bash
 pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 ```
 
+To run the examples in the Jupyter notebooks in `/notebooks` (which rely on the files on in the `/data` directory), you must clone the entire repository and then install the module in "editable" mode. This is the recommended approach for development and testing.
+1. Clone the repository:
+```bash
+git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+cd pyguidos
+```
+2. Create and activate a virtual environment (highly recommended):
+```bash
+python3 -m venv myvenv
+source myvenv/bin/activate
+```
+3. Install the module in editable mode:
+```bash
+pip install -e .
+```
+This links module's source code directly to your Python environment, so any changes you make are immediately reflected without reinstallation.
+
+
 Usage Examples
 ==============
 To use the functions, you first need to import them. For instance, to use ``gwb_mspa``:
 ```python
+from pyguidos import gwb_mspa
+from pathlib import Path
+
 # Define input and output directories
 input_data_dir = Path("/path/to/your/input_geotiffs") # <<< REPLACE with your actual input data directory
-output_results_dir = Path("/path/to/your/output_folder") # <<< REPLACE with your desired output directory
-
-# Ensure the output directory exists and is empty (as required by GWB modules)
-output_results_dir.mkdir(parents=True, exist_ok=True)
-# You might want to add logic here to check if it's empty or clear it carefully
+output_results_dir = Path("/path/to/your/output_folder") # <<< REPLACE with your desired output directory (must be empty)
 
 # Example: Run GWB_MSPA with default settings
 print("Running GWB_MSPA...")

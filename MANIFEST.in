@@ -1,0 +1,14 @@
+# MANIFEST.in
+
+# Include README and pyproject.toml at the root level
+include README.md
+include pyproject.toml
+
+# Recursively include all files in the 'data/' directory
+recursive-include data *
+
+# Recursively include all files in the 'examples/' directory
+recursive-include examples *
+
+# Recursively include all files in the 'notebooks/' directory
+recursive-include notebooks *
