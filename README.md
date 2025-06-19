@@ -12,9 +12,9 @@ Overview
 This module acts as a bridge, allowing Python users to integrate powerful GWB functionalities into their workflows seamlessly, without directly interacting with the command-line interfaces of the original GWB tools.
 
 ### Repository Contents
-* **`/examples`**: source data to use as usage examples.
-* **`/notebooks`**: Jupyter notebooks to use the modules and visualise results
-* **`/pyguidos`**: script repository
+* **`/examples`**: source data to use in the notebook examples.
+* **`/notebooks`**: Jupyter notebooks to use the modules and visualise results.
+* **`/pyguidos`**: script repository.
 
 
 Features
