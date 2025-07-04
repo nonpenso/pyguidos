@@ -9,7 +9,8 @@ def _gwb_common(
     command: List[str],  
     param_file_path: Path,
     param_file_content: List[str],
-    blank_lines: int
+    blank_lines: int,
+    verbose: bool = True
 ) -> None:
     """
     Common helper function to execute GWB modules and handle basic error reporting.
@@ -21,6 +22,7 @@ def _gwb_common(
                                         parameter TXT file, in the correct order.
         blank_lines (int): The number of blank lines to write at the beginning of the
                            parameter file.
+        verbose (bool): If True, prints standard output on success and warnings
 
     Returns:
         None: The function communicates success/failure and output through printed messages
@@ -43,7 +45,7 @@ def _gwb_common(
 		# Execute GWB module using subprocess.run
         result = subprocess.run(command, capture_output=True, text=True, check=True)
 
-        if result.stdout:
+        if verbose and result.stdout:
             print(result.stdout)
 
         # Clean up the parameter file if the command was successful
@@ -69,63 +71,6 @@ def _gwb_common(
         return
 
 
-def gwb_rss(
-    input_dir: Union[str, Path],
-    output_dir: Union[str, Path],
-    conn_8: bool = True
-) -> None:
-    """
-    Processes GeoTIFF file using the GWB_RSS module for Restoration Status Summary analysis.
-    The input files are expected to be 8-bit unsigned with specific values:
-            0: missing/NoData (optional)
-            1: background
-            2: foreground
-	The resulted output is a tabular summary statistics in CSV format.
-
-    Args:
-        input_dir (str | Path): Path of the input TIFF files.
-        output_dir (str | Path): Path to the directory where results will be saved.
-                                 Note: the module requires this directory to be empty.
-        conn_8 (bool, optional): Foreground connectivity.
-                                 True = 8-connectivity (default),
-                                 False = 4-connectivity.
-
-    Returns:
-        None: The function primarily communicates success/failure and output
-              through printed messages and writes files to the specified `output_dir`.
-    """
-    
-    # Paths
-    input_dir_path = Path(input_dir)
-    output_dir_path = Path(output_dir)
-
-    # Parameter file
-    param_file_path = input_dir_path / "rss-parameters.txt"
-
-    # Parameter values
-    conn_val = '8' if conn_8 else '4'
-
-    # List of parameter in order for the TXY
-    param_file_content = [
-        conn_val
-    ]
-
-    # Build the command line here
-    gwb_executable = "GWB_RSS"
-    command = [
-        gwb_executable,
-        '-i=' + str(input_dir_path),
-        '-o=' + str(output_dir_path)
-    ]
-
-    _gwb_common(
-        command=command,
-        param_file_path=param_file_path,
-        param_file_content=param_file_content,
-        blank_lines=13
-    )
-
-
 def gwb_mspa(
     input_dir: Union[str, Path],
     output_dir: Union[str, Path],
@@ -133,8 +78,9 @@ def gwb_mspa(
     edge_width: int = 1,
     transition: bool = True,
     int_ext: bool = True,
-    save_ram: bool = False,
-    stats: bool = False
+    disk: bool = False,
+    stats: bool = False,
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF file using the GWB_MSPA module for Morphological Spatial Pattern Analysis.
@@ -157,10 +103,12 @@ def gwb_mspa(
                            True = enable (default), False = disable
         int_ext (bool): distinguish between internal and external features
                         True = enable (default), False = disable
-        save_ram (bool, optional): -20% RAM but +40% processing time.
-                                   True = enable, False = disable (default)
+        disk (bool, optional): Store temporary maps on disk (-20% RAM but +40% 
+                               processing time).
+                               True = enable, False = disable (default)
         stats (bool, optional): add summary statistics
                                 True = enable, False = disable (default).
+        verbose (bool, optional): If True, prints standard output on success and warnings.
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -177,7 +125,7 @@ def gwb_mspa(
     conn_val = '8' if conn_8 else '4'
     transition_val = '1' if transition else '0'
     int_ext_val = '1' if int_ext else '0'
-    save_ram_val = '1' if save_ram else '0'
+    disk_val = '1' if disk else '0'
     stats_val = '1' if stats else '0'
 
     # List of parameters in order for the TXT
@@ -186,7 +134,7 @@ def gwb_mspa(
         str(edge_width),
         transition_val,
         int_ext_val,
-        save_ram_val,
+        disk_val,
         stats_val
     ]
 
@@ -202,7 +150,8 @@ def gwb_mspa(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=26
+        blank_lines=26,
+        verbose=verbose
     )
 
 
@@ -213,7 +162,8 @@ def gwb_acc(
     thresh: List[int],
     conn_8: bool = True,
     out_opt: bool = True,
-    big3pink: bool = False
+    big3pink: bool = False,
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF files using the GWB_ACC module for Accounting analysis.
@@ -241,6 +191,7 @@ def gwb_acc(
                                   False = stats + images of ID, area, viewport (requires much more CPU/RAM!).
         big3pink (bool, optional): Show 3 largest objects in pink color.
                                    True = enable, False = disable (default).
+        verbose (bool, optional): If True, prints standard output on success and warnings.
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -281,8 +232,10 @@ def gwb_acc(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=24
+        blank_lines=24,
+        verbose=verbose
     )
+
 
 def gwb_frag(
     input_dir: Union[str, Path],
@@ -293,7 +246,8 @@ def gwb_frag(
     precision: bool = True,
     conn_8: bool = True,
     stats: bool = False,
-    input_map: str = 'Binary'
+    input_map: str = 'Binary',
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF files using the GWB_FRAG module for Fragmentation analysis.
@@ -305,11 +259,11 @@ def gwb_frag(
             3: special background 1 (optional)
             4: special background 2 (optional)
         - Grayscale: grayt = grayscale threshold in [1,100]
-           [0, grayt-1]: background
-           [grayt, 100]: foreground
-           103: special background (optional) 
-           104: non-fragmenting background (optional)
-           255: missing/NoData (optional)
+            [0, grayt-1]: background
+            [grayt, 100]: foreground
+            103: special background (optional) 
+            104: non-fragmenting background (optional)
+            255: missing/NoData (optional)
 	The resulted outputs are:
 			TIFF map: classified with FRAG classes.
 			TXT file: with summary statistics.
@@ -343,6 +297,7 @@ def gwb_frag(
                                 True = enable, False = disable (default).
         input_map (str, optional): Input map type
                                    "Binary" (default), "Grayscale grayt" (e.g., "Grayscale 30")
+        verbose (bool, optional): If True, prints standard output on success and warnings.
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -389,14 +344,77 @@ def gwb_frag(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=36
+        blank_lines=36,
+        verbose=verbose
     )
+
+
+def gwb_rss(
+    input_dir: Union[str, Path],
+    output_dir: Union[str, Path],
+    conn_8: bool = True,
+    verbose: bool = True
+) -> None:
+    """
+    Processes GeoTIFF file using the GWB_RSS module for Restoration Status Summary analysis.
+    The input files are expected to be 8-bit unsigned with specific values:
+            0: missing/NoData (optional)
+            1: background
+            2: foreground
+	The resulted output is a tabular summary statistics in CSV format.
+
+    Args:
+        input_dir (str | Path): Path of the input TIFF files.
+        output_dir (str | Path): Path to the directory where results will be saved.
+                                 Note: the module requires this directory to be empty.
+        conn_8 (bool, optional): Foreground connectivity.
+                                 True = 8-connectivity (default),
+                                 False = 4-connectivity.
+        verbose (bool, optional): If True, prints standard output on success and warnings.
+
+    Returns:
+        None: The function primarily communicates success/failure and output
+              through printed messages and writes files to the specified `output_dir`.
+    """
+    
+    # Paths
+    input_dir_path = Path(input_dir)
+    output_dir_path = Path(output_dir)
+
+    # Parameter file
+    param_file_path = input_dir_path / "rss-parameters.txt"
+
+    # Parameter values
+    conn_val = '8' if conn_8 else '4'
+
+    # List of parameter in order for the TXY
+    param_file_content = [
+        conn_val
+    ]
+
+    # Build the command line here
+    gwb_executable = "GWB_RSS"
+    command = [
+        gwb_executable,
+        '-i=' + str(input_dir_path),
+        '-o=' + str(output_dir_path)
+    ]
+
+    _gwb_common(
+        command=command,
+        param_file_path=param_file_path,
+        param_file_content=param_file_content,
+        blank_lines=13,
+        verbose=verbose
+    )
+
 
 def gwb_dist(
     input_dir: Union[str, Path],
     output_dir: Union[str, Path],
     eucl_hysom: bool,
-    conn_8: bool = True
+    conn_8: bool = True,
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF file using the GWB_DIST module for Euclidean Distance analysis.
@@ -421,6 +439,7 @@ def gwb_dist(
         conn_8 (bool, optional): Foreground connectivity.
                                  True = 8-connectivity (default), 
                                  False = 4-connectivity.
+        verbose (bool, optional): If True, prints standard output on success and warnings.
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -456,13 +475,15 @@ def gwb_dist(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=16
+        blank_lines=16,
+        verbose=verbose
     )
 
 def gwb_lm(
     input_dir: Union[str, Path],
     output_dir: Union[str, Path],
-    kdim: Union[str, List[int]]
+    kdim: Union[str, List[int]],
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF file using the GWB_LM module for Landscape Mosaic analysis.
@@ -484,7 +505,8 @@ def gwb_lm(
         output_dir (str | Path): Path to the directory where results will be saved.
                                  Note: the module requires this directory to be empty.
         kdim (int | list[int]): 1 to 10 window sizes (unit: pixels, uneven within [3, 501] ) 
-                                in increasing order, e.g. [3, 5, 11, 17].        
+                                in increasing order, e.g. [3, 5, 11, 17]. 
+        verbose (bool, optional): If True, prints standard output on success and warnings.       
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -521,13 +543,15 @@ def gwb_lm(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=13
+        blank_lines=13,
+        verbose=verbose
     )
 
 def gwb_parc(
     input_dir: Union[str, Path],
     output_dir: Union[str, Path],
-    conn_8: bool = True
+    conn_8: bool = True,
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF file using the GWB_PARC module for Parcellation analysis.
@@ -543,7 +567,8 @@ def gwb_parc(
         output_dir (str | Path): Path to the directory where results will be saved.
                                  Note: the module requires this directory to be empty.
         conn_8 (bool, optional): Foreground connectivity.
-                                 True = 8-connectivity (default), False = 4-connectivity.   
+                                 True = 8-connectivity (default), False = 4-connectivity. 
+        verbose (bool, optional): If True, prints standard output on success and warnings.  
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -577,14 +602,16 @@ def gwb_parc(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=16
+        blank_lines=16,
+        verbose=verbose
     )
 
 
 def gwb_rec(
     input_dir: Union[str, Path],
     output_dir: Union[str, Path],
-    classes: List[Tuple[int, int]]
+    classes: List[Tuple[int, int]],
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF file using the GWB_REC module for Recoding of categorical class values.
@@ -597,6 +624,7 @@ def gwb_rec(
                                  Note: the module requires this directory to be empty.
         classes (list[tuple[int, int]]): list of tuples (max 255) with pairs of class values (old value, new value).
 										 E.g.: [(1,4), (2,5), (3,6)]
+        verbose (bool, optional): If True, prints standard output on success and warnings.
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -628,7 +656,8 @@ def gwb_rec(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=22
+        blank_lines=22,
+        verbose=verbose
     )
 
 
@@ -640,7 +669,8 @@ def gwb_sc(
 	A: int = 0,
 	B: int = 0,
 	H: bool = True,
-	F: bool = False
+	F: bool = False,
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF file using the GWB_SC module for the spatial convolution program SpatCon.
@@ -686,6 +716,7 @@ def gwb_sc(
 						    True = ignore (default), False = include. 
 		F (bool, optional): output in 32-bit float raster file
 							True = 32-bit float. False = 8-bit byte (default)
+        verbose (bool, optional): If True, prints standard output on success and warnings.
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -727,7 +758,8 @@ def gwb_sc(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=52
+        blank_lines=52,
+        verbose=verbose
     )
 
 
@@ -743,7 +775,8 @@ def gwb_gsc(
 	B: int = 1,
 	X: int = 0,
 	Y: int = 0,
-	K: int = 0
+	K: int = 0,
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF file using the GWB_GSC module for the spatial convolution program GraySpatCon.
@@ -813,6 +846,7 @@ def gwb_gsc(
 		X (int, optional): target code 1 (t1), with N in a range [0, 100]. Required for metrics 21, 22, 23, 24.
 		Y (int, optional): target code 2 (t2), with N in a range [0, 100]. Required for metrics 23, 24.
 		K (int, optional): target difference level (k*), with N in a range [0, 100]. Required for metric 49.
+        verbose (bool, optional): If True, prints standard output on success and warnings.
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -858,7 +892,8 @@ def gwb_gsc(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=121
+        blank_lines=121,
+        verbose=verbose
     )
 
 
@@ -866,7 +901,8 @@ def gwb_spa(
     input_dir: Union[str, Path],
     output_dir: Union[str, Path],
 	classes: int,
-    stats: bool = False
+    stats: bool = False,
+    verbose: bool = True 
 ) -> None:
     """
     Processes GeoTIFF file using the GWB_SPA module for Simplified Spatial Pattern Analysis.
@@ -887,6 +923,7 @@ def gwb_spa(
 						6 = Core, Core-Openings, Edge, Perforation, Islet, Margin		
         stats (bool, optional): add summary statistics
                                 True = enable, False = disable (default).
+        verbose (bool, optional): If True, prints standard output on success and warnings.
 
     Returns:
         None: The function primarily communicates success/failure and output
@@ -920,7 +957,8 @@ def gwb_spa(
         command=command,
         param_file_path=param_file_path,
         param_file_content=param_file_content,
-        blank_lines=20
+        blank_lines=20,
+        verbose=verbose
     )
 
 

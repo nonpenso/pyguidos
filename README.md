@@ -21,27 +21,16 @@ Features
 ========
 
 `pyguidos` currently wraps the following GWB modules:
-
-* **`gwb_rss`**: Restoration Status Summary analysis.
-
-* **`gwb_mspa`**: Morphological Spatial Pattern Analysis.
-
 * **`gwb_acc`**: Accounting analysis (object identification and thresholding).
-
 * **`gwb_frag`**: Fragmentation analysis with various methods (FAD, FED, FAC).
-
+* **`gwb_mspa`**: Morphological Spatial Pattern Analysis.
+* **`gwb_rss`**: Restoration Status Summary analysis.
 * **`gwb_dist`**: Euclidean Distance analysis, optionally with Hypsometric Curve.
-
 * **`gwb_lm`**: Landscape Mosaic analysis (19-class and 103-class versions).
-
 * **`gwb_parc`**: Parcellation analysis for landcover classification.
-
 * **`gwb_rec`**: Recoding of categorical class values in TIFF maps.
-
 * **`gwb_sc`**: Spatial Convolution (SpatCon) for various landscape metrics.
-
 * **`gwb_gsc`**: Gray Spatial Convolution (GraySpatCon) for grayscale image metrics.
-
 * **`gwb_spa`**: Simplified Spatial Pattern Analysis.
 
 All functions handle parameter file generation, command-line execution, and basic error reporting, streamlining the use of the underlying GWB executables.
@@ -102,7 +91,7 @@ gwb_mspa(
     edge_width=1,      # Default edge width
     transition=True,   # Show transition pixels
     int_ext=True,      # Distinguish internal/external features
-    save_ram=False,    # Do not save RAM (faster processing)
+    disk=False,        # Do not save temporary maps on disk (faster processing)
     stats=True         # Generate summary statistics
 )
 print("GWB_MSPA processing complete (check output_results_dir for results).")
