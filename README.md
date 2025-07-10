@@ -99,3 +99,15 @@ print("GWB_MSPA processing complete (check output_results_dir for results).")
 # You can similarly call other functions like gwb_rss, gwb_acc, etc.
 # Refer to the function signatures in the source code or the GWB documentation for parameters.
 ```
+
+
+Notebooks
+=========
+The `/notebooks` directory contains Jupyter notebooks with detailed examples demonstrating how to use `pyguidos` functions, visualize results, and interact with the provided sample data in the `/data` directory.
+
+To run these notebooks, you need to install `pyguidos` with its `notebooks` optional dependencies. If you've followed the "Installation" steps above to clone the repository and set up a virtual environment, simply run:
+
+```bash
+pip install -e ".[notebooks]"
+```
+This command will install all necessary packages for the notebooks (e.g., jupyterlab, rasterio, matplotlib).
