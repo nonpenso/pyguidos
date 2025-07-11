@@ -15,6 +15,7 @@ This module acts as a bridge, allowing Python users to integrate powerful GWB fu
 * **`/data`**: source data to use in the notebook examples.
 * **`/notebooks`**: Jupyter notebooks to use the modules and visualise results.
 * **`/pyguidos`**: script repository.
+* **`/tests`**: Unit and integration tests for the `pyguidos` module.
 
 
 Features
@@ -64,9 +65,9 @@ cd pyguidos
 python3 -m venv myvenv
 source myvenv/bin/activate
 ```
-3. Install the module in editable mode:
+3. Install the module in editable mode, including development dependencies (for testing and notebooks):
 ```bash
-pip install -e .
+pip install -e ".[test,notebooks]"
 ```
 This links module's source code directly to your Python environment, so any changes you make are immediately reflected without reinstallation.
 
@@ -105,9 +106,6 @@ Notebooks
 =========
 The `/notebooks` directory contains Jupyter notebooks with detailed examples demonstrating how to use `pyguidos` functions, visualize results, and interact with the provided sample data in the `/data` directory.
 
-To run these notebooks, you need to install `pyguidos` with its `notebooks` optional dependencies. If you've followed the "Installation" steps above to clone the repository and set up a virtual environment, simply run:
+If you have already followed the "Installation" steps above to clone the repository and installed in editable mode (e.g., `pip install -e ".[test,notebooks]"`), you already have all necessary packages for the notebooks (e.g., jupyterlab, rasterio, matplotlib) installed. You can simply activate your virtual environment and run Jupyter.
 
-```bash
-pip install -e ".[notebooks]"
-```
-This command will install all necessary packages for the notebooks (e.g., jupyterlab, rasterio, matplotlib).
+
