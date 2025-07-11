@@ -202,6 +202,9 @@ def gwb_acc(
     input_dir_path = Path(input_dir)
     output_dir_path = Path(output_dir)
 
+    if not thresh: 
+        raise ValueError("Threshold list 'thresh' cannot be empty for gwb_acc.")
+    
     # Parameter file
     param_file_path = input_dir_path / "acc-parameters.txt"
 
