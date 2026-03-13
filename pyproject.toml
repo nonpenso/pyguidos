@@ -2,11 +2,12 @@
 
 [project]
 name = "pyguidos" 
-version = "0.1.0" 
+version = "1.0.0"
 authors = [
-  { name="Giovanni Caudullo", email="your.email@example.com" },
+  { name="Giovanni Caudullo", email="giovanni.caudullo@ext.ec.europa.eu" },
+  { name="Peter Vogt", email="peter.vogt@ec.europa.eu" },
 ]
-description = "pyguidos"
+description = "Python module to access GuidosToolbox Workbench (GWB)"
 readme = "README.md" 
 requires-python = ">=3.8" 
 keywords = ["utility", "functions", "example", "pyguidos"] 
