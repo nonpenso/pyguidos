@@ -1,10 +1,25 @@
-# pyguidos/__init__.py
+from .mspa import mspa, mspa_stats
+from .fragmentation import frag, frag_stats
+from .land_mosaic import landmos, landmos_stats
+from .accounting import acc, acc_stats
+from .rss import rss
+from .extract_by_polygon import extract_by_polygon
 
-from .gwb import gwb_acc, gwb_dist, gwb_frag, gwb_gsc, gwb_lm, gwb_mspa, gwb_parc, gwb_rec, gwb_rss, gwb_sc, gwb_spa
+from .results import MSPAResult, FragResult, LandMosResult, AccResult, RssResult
 
-from . import data
+# Package metadata
+__version__ = "2.0.0"
+__author__ = "European Commission, Joint Research Centre"
 
-# Package version:
-__version__ = "1.0.0"
-
+# from pyguidos import *
+__all__ = ["mspa", "mspa_stats", 
+           "frag", "frag_stats",
+           "landmos", "landmos_stats"
+           "acc", "acc_stats"
+           "rss", 
+           "extract_by_polygon", 
+           "MSPAResult", "FragResult", 
+           "LandMosResult", "AccResult",
+           "RssResult"
+           ]
 

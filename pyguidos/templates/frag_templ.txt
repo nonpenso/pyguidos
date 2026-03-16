@@ -1,0 +1,53 @@
+FRAGMENTATION ANALYSIS 
+Using Fixed Observation Scale (FOS)
+Fragmentation is complementary to Connectivity: Fragmentation = 100% - Connectivity
+
+================================================================================
+INPUT FILE
+================================================================================
+Input image: {input_file}
+EPSG: {epsg_code}
+Unit: {unit_type}
+Pixel size (x,y): {resolx}, {resoly} {unit_type}
+Rows: {rows_val}
+Columns: {cols_val}
+Total pixels: {tot_pxl}
+Foreground [pixel=2]: {foreg_pxl}
+Background [pixel=1]: {backg_pxl}
+Missing/Nodata [pixel=0]: {miss_pxl}
+Special background [pixel=3]: {spec3_pxl}
+Special background [pixel=4]: {spec4_pxl}
+
+================================================================================
+PARAMETRES
+================================================================================
+Method: {used_method}
+Window size [pixels]: {window_size} x {window_size}
+Window area - observation scale (if unit is in metres):
+    {window_areaHA} hectares 
+    {window_areaAC} acres
+
+================================================================================
+RESULTS
+================================================================================
+Output image: {output_file}
+Reported unit (Background + Foreground): {rep_unit_pxl}
+Foreground proportion [% of Reported unit]: {foreg_area_rel:.4f}
+
+Frequency of the 5 Foreground classes in Foreground area:
+---------------------------------------------------------------------------------
+    CLASS         FAD VALUES  FREQUENCY [%]
+    Rare          [0-9]       {rare_val:7.4f} 
+    Patchy        [10-39]     {patch_val:7.4f}
+    Transitional  [40-59]     {trans_val:7.4f}
+    Dominant      [60-89]     {domin_val:7.4f}
+    Interior      [90-100]    {inter_val:7.4f}
+
+FAD_AV [%]: {fad_av_idx:.4f}
+AVCON [%]: {avcon_idx:.4f}
+
+Computational time: {comp_time}
+
+================================================================================
+Online guide:
+https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf

@@ -1,0 +1,43 @@
+ACCOUNTING ANALYSIS 
+
+================================================================================
+INPUT FILE
+================================================================================
+Input image: {input_file}
+EPSG: {epsg_code}
+Unit: {unit_type}
+Pixel size (x,y): {resolx}, {resoly} {unit_type}
+Rows: {rows_val}
+Columns: {cols_val}
+Total pixels: {tot_pxl}
+Foreground [pixel=2]: {foreg_pxl}
+Background [pixel=1]: {backg_pxl}
+Missing/Nodata [pixel=0]: {miss_pxl}
+Special background [pixel=3]: {spec3_pxl}
+Special background [pixel=4]: {spec4_pxl}
+
+================================================================================
+PARAMETRES
+================================================================================
+Thresholds = {threshold_list}
+
+================================================================================
+RESULTS
+================================================================================
+Output image: {output_file}
+
+Patch classification table
+---------------------------------------------------------------------------------
+CLASS  PXL VAL  COLOR   PXL SIZE CLASS        N.PXL   FOREGR.%  N.PATCH   PATCH % 
+{table_rows}
+
+Total number of patches: {tot_pch}
+Average patch size [pixel]: {avg_pch}
+Median patch size [pixel]: {med_pch} 
+Largest patch [pixel]: {lar_pch}
+
+Computational time: {comp_time}
+
+================================================================================
+Online guide:
+https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Objects-Accounting.pdf
