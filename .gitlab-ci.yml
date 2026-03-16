@@ -2,6 +2,8 @@ image: python:3.11-slim
 
 pages:
   stage: deploy
+  tags:
+    - jrc-aws
   script:
     - pip install --upgrade pip
     - pip install sphinx pydata-sphinx-theme
