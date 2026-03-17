@@ -4,38 +4,110 @@ MSPA
 Morphological Spatial Pattern Analysis (MSPA) is a multi-scale image
 processing approach that classifies the pixels of a binary foreground/
 background image into mutually exclusive morphological classes based on
-their spatial context. MSPA was originally developed at the European
-Commission Joint Research Centre and is described in detail in
-`LINK_TO_MSPA_PAPER <https://LINK_TO_MSPA_PAPER>`_.
+their spatial context. 
+Further details about MSPA are available in `MSPA product sheet
+<https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Pattern-Morphology.pdf>`_.
 
 
 MSPA Classes
 ------------
 
-MSPA classifies foreground pixels into 7 structural categories:
+MSPA classifies foreground pixels into up to 22 foreground (11 internal + 
+11 external) and 3 background feature classes. The results are then aggregated
+to 7 foreground (Core, Islet, Perforation, Edge, Loop, Bridge, Branch) and
+3 background (Baground, Border-Opening, Core-Opening) feature classes. 
 
-.. list-table::
+.. list-table:: Class names, color codes, and byte values for MSPA feature classes.
    :header-rows: 1
 
    * - Class
-     - Description
-   * - **Core**
-     - Interior foreground pixels, away from the background
-   * - **Edge**
-     - Foreground pixels at the boundary with the background
-   * - **Perforation**
-     - Foreground pixels at the boundary with background holes
-   * - **Islet**
-     - Small isolated foreground patches, too small to have core
-   * - **Branch**
-     - Elongated foreground connections ending at background
-   * - **Loop**
-     - Elongated foreground connections between edge pixels
-   * - **Bridge**
-     - Elongated foreground connections between core pixels
+     - Color
+     - RGB
+     - Pxl value External
+     - Pxl value Internal
+   * - Core
+     - Green
+     - 000/200/000
+     - 17
+     - 117
+   * - Islet
+     - Brown
+     - 160/060/000
+     - 9
+     - 109
+   * - Perforation
+     - Blue
+     - 000/000/255
+     - 5
+     - 105
+   * - Edge
+     - Black
+     - 000/000/000
+     - 3
+     - 103
+   * - Loop
+     - Yellow
+     - 255/255/000
+     - 65
+     - 165
+   * - Loop in Edge
+     - Yellow
+     - 255/255/000
+     - 67
+     - 167
+   * - Loop in Perforation
+     - Yellow
+     - 255/255/000
+     - 69
+     - 169
+   * - Bridge
+     - Red
+     - 255/000/000
+     - 33
+     - 133
+   * - Bridge in Edge
+     - Red
+     - 255/000/000
+     - 35
+     - 135
+   * - Bridge in Perforation
+     - Red
+     - 255/000/000
+     - 37
+     - 137
+   * - Branch
+     - Orange
+     - 255/140/000
+     - 1
+     - 101
+   * - Background
+     - Light Grey
+     - 220/220/220
+     - 0
+     - 0
+   * - Border-Opening
+     - Grey
+     - 194/194/194
+     - N/A
+     - 220
+   * - Core-Opening
+     - Dark Grey
+     - 136/136/136
+     - N/A
+     - 100
+   * - No Data
+     - White
+     - 255/255/255
+     - 129
+     - 129
 
-Each class is further subdivided into **external** (suffix ``_e``) and
-**internal** (suffix ``_i``) subclasses when ``int_ext=True``.
+
+.. figure:: ../_image/MSPA_classes.png
+    :width: 100%
+    :align: center
+    :alt: MSPA classes
+
+    Map and list of the 7 aggregated feature classes of MSPA.
 
 
 Usage
@@ -175,29 +247,17 @@ without rerunning the analysis:
     )
 
 .. note::
-    :func:`mspa_stats` requires the input GeoTIFF to contain a valid
-    ``GTB_MSPA`` metadata tag. See :doc:`input_format` for details.
-
-
-Edge Width and Connectivity
----------------------------
-
-The two most important parameters are ``edge_width`` and ``connectivity``:
-
-- **edge_width** controls the width of the Edge and Perforation classes
-  in pixels. A value of 1 means a single pixel border. Larger values
-  produce wider edge zones and smaller core areas.
-- **connectivity** controls how pixels are considered connected.
-  8-connectivity (default) allows diagonal connections, 4-connectivity
-  does not. 8-connectivity is recommended for most applications.
-
-.. tip::
-    For a given spatial resolution, choose an ``edge_width`` that corresponds
-    to a meaningful ecological distance. For example, at 25m resolution,
-    ``edge_width=2`` corresponds to a 50m edge zone.
+    :func:`mspa_stats` requires the input GeoTIFF to be an pyGuidos (or
+    GTB) output raster file. See :doc:`input_format` for details.
 
 
 References
 ----------
 
-CITATION_PLACEHOLDER
+- Vogt P, Riitters K, 2017. GuidosToolbox: universal digital image object analysis. 
+  European Journal of Remote Sensing 50(1), 352-361. DOI: `10.1080/22797254.2017.1330650 
+  <https://doi.org/10.1080/22797254.2017.1330650>`_.
+
+- Soille P, Vogt P, 2009. Morphological segmentation of binary patterns. Pattern Recognition
+  Letters 30(4):456-459. DOI: `10.1016/j.patrec.2008.10.015 
+  <https://doi.org/10.1080/22797254.2017.1330650>`_

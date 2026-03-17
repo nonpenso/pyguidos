@@ -30,7 +30,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitLab",
-            "url": "https://code.europa.eu/jrc-forest/guidos/pyguidos",
+            "url": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos",
             "icon": "fa-brands fa-gitlab",
         },
     ],

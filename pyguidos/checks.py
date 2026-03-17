@@ -28,7 +28,7 @@ def validate_wsize(wsize):
         sys.exit(f"The window size must be an odd number (received {wsize}). Try {wsize+1} or {wsize-1}.")
 
 
-def validate_fmap_input(present_values, dtype, allow_34=False):
+def validate_fmap_input(present_values, bands, allow_34=False):
     """
     Validates the pixel values and data type of a binary or multi-class
     input GeoTIFF. Ensures mandatory values are present and no 
@@ -38,8 +38,8 @@ def validate_fmap_input(present_values, dtype, allow_34=False):
     ----------
     present_values : list
         List of unique pixel values found in the raster.
-    dtype : str
-        Data type string of the raster (e.g. 'uint8'). Must be 'uint8'.
+    bands : int
+        Number of bands. Must be 1.
     allow_34 : bool, optional
         If True, allows optional values 3 and 4 in addition to 0, 1, 2.
         Used for Fragmentation, Accounting and RSS tools.
@@ -52,10 +52,9 @@ def validate_fmap_input(present_values, dtype, allow_34=False):
         If dtype is not 'uint8', if mandatory values 1 and 2 are missing,
         or if invalid pixel values are present.
     """
-    # Check Data Type (Mandatory for both, but MSPA is stricter)
-    if dtype != 'uint8':
-        # Using sys.exit to match your current style, or raise TypeError
-        sys.exit(f"ERROR: Input Geotiff must be 'uint8', but received '{dtype}'.")
+    # Check number of bands 
+    if bands != 1:
+        sys.exit(f"ERROR: Input GeoTIFF must be single-band, but has {bands} bands.")
 
     # Setup Sets
     present_set = set(present_values)
@@ -72,12 +71,11 @@ def validate_fmap_input(present_values, dtype, allow_34=False):
     # Check for Invalid Values
     invalid = present_set - allowed
     if invalid:
-        tool_name = "Fragmentation" if allow_34 else "MSPA"
-        sys.exit(f"ERROR: {tool_name} input contains invalid values: {sorted(list(invalid))}. "
+         sys.exit(f"ERROR: Input GeoTIFF contains invalid values: {sorted(list(invalid))}. "
                  f"Allowed: {sorted(list(allowed))}")
 
 
-def validate_lm_input(present_values):
+def validate_lm_input(present_values, bands):
     """
     Validates the pixel values of an input GeoTIFF for the Landscape
     Mosaic tool. Requires all three land cover classes to be present.
@@ -87,6 +85,8 @@ def validate_lm_input(present_values):
     present_values : list
         List of unique pixel values found in the raster.
         Mandatory: 1, 2, 3. Optional: 0 (NoData).
+    bands : int
+        Number of bands. Must be 1.
 
     Raises
     ------
@@ -94,17 +94,24 @@ def validate_lm_input(present_values):
         If any of the mandatory values 1, 2 or 3 are missing, or if
         values other than 0, 1, 2 and 3 are present.
     """
+    # Check number of bands 
+    if bands != 1:
+        sys.exit(f"ERROR: Input GeoTIFF must be single-band, but has {bands} bands.")
+
+    # Setup Sets
     present_set = set(present_values)
     mandatory = {1, 2, 3}
     allowed = {0, 1, 2, 3}
     
+    # Check for Mandatory Values
     missing = mandatory - present_set
     if missing:
         sys.exit(
             f"Input Geotiff requires classes 1, 2, and 3. Missing: {missing}. "
             "Ensure your map contains all three (e.g., Natural, Agriculture, Developed)."
         )
-        
+    
+    # Check for Invalid Values
     invalid = present_set - allowed
     if invalid:
         sys.exit(f"Input Geotiff contains invalid values: {sorted(list(invalid))}.")

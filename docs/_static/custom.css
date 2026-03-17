@@ -8,3 +8,8 @@ html[data-theme="dark"] {
   html[data-theme="light"] {
     --pst-color-primary: #034DA1;
   }
+  
+/* Center table header cells */
+thead th {
+    text-align: center !important;
+}

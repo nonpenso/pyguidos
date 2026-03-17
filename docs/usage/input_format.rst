@@ -6,11 +6,11 @@ specific pixel value convention. Understanding this format is essential
 before using any of the analysis functions.
 
 
-Binary and Multi-class Maps
+Binary
 ---------------------------
 
 Most pyGuidos tools (MSPA, Fragmentation, Accounting, RSS) expect a
-binary or multi-class uint8 GeoTIFF with the following pixel values:
+binary uint8 GeoTIFF with the following pixel values:
 
 .. list-table::
    :header-rows: 1
@@ -18,21 +18,27 @@ binary or multi-class uint8 GeoTIFF with the following pixel values:
    * - Value
      - Meaning
      - Required
+     - Example
    * - 0
      - NoData
      - Optional
+     - Missing data/Cloud
    * - 1
      - Background
      - Mandatory
+     - Non-forest land
    * - 2
      - Foreground
      - Mandatory
+     - Forest
    * - 3
      - Background class 2
      - Optional
+     - Inland water
    * - 4
      - Background class 3
      - Optional
+     - Sea/Ocean
 
 .. note::
     Values 3 and 4 are only accepted by Fragmentation, Accounting and RSS.
@@ -51,18 +57,23 @@ the following pixel values:
    * - Value
      - Meaning
      - Required
+     - Example
    * - 0
      - NoData
      - Optional
+     - Missing data/Cloud
    * - 1
-     - Class 1 (e.g. Agriculture)
+     - Class 1
      - Mandatory
+     - Agriculture
    * - 2
-     - Class 2 (e.g. Natural)
+     - Class 2
      - Mandatory
+     - Natural
    * - 3
-     - Class 3 (e.g. Developed)
+     - Class 3
      - Mandatory
+     - Developed
 
 .. note::
     All three classes must be present in the input map. The tool will
@@ -74,8 +85,7 @@ Coordinate Reference System
 
 pyGuidos accepts both **projected** and **geographic** coordinate
 reference systems. However, area-based statistics (window area in
-hectares and acres) are only computed for projected CRS. For
-geographic CRS these fields will report ``--`` in the output report.
+hectares and acres) are only computed for projected CRS.
 
 
 GTB Output Format
@@ -85,32 +95,10 @@ All pyGuidos output GeoTIFFs follow the GuidosToolbox (GTB) convention:
 
 - Single-band **uint8 GeoTIFF** with a colour palette
 - **NoData is not set** in the TIFF header -- instead a specific pixel
-  value encodes NoData by convention (e.g. 129 for MSPA, 102 for
+  value encodes Missing/NoData by convention (e.g. 129 for MSPA, 102 for
   Fragmentation)
-- A **GTB metadata tag** is written to ``TIFFTAG_IMAGEDESCRIPTION``,
-  encoding the tool and parameters used:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Tool
-     - Tag format
-     - Example
-   * - MSPA
-     - ``GTB_MSPA, connectivity edge_width transition int_ext``
-     - ``GTB_MSPA, 8 1 1 1``
-   * - Fragmentation
-     - ``GTB_FOS, method WSsizexsize``
-     - ``GTB_FOS, FAD WS27x27``
-   * - Landscape Mosaic
-     - ``GTB_LM, WSsizexsize``
-     - ``GTB_LM, WS33x33``
-   * - Accounting
-     - ``GTB_ACC, (threshold list)``
-     - ``GTB_ACC, (10 100 1000)``
-
-This tag allows the standalone ``*_stats()`` functions to identify the
-tool and parameters without requiring the user to pass them explicitly.
+- Output file name includes the input file name followed by the **used tool and
+  the parameters**
 
 
 Checking Your Input
@@ -126,21 +114,15 @@ You can verify your input file before running any tool:
     info = utils.get_raster_info("my_map.tif")
 
     print(f"Size:  {info['rows']} x {info['cols']} pixels")
+    print(f"Bands: (info['bands'])")
     print(f"dtype: {info['dtype']}")
     print(f"EPSG:  {info['epsg']}")
     print(f"Res:   {info['resX']} x {info['resY']}")
-    print(f"Tag:   {info['tag']}")
-
-    # Check pixel value frequencies
-    freq = utils.get_pxl_freq(info['profile'])
-    print(f"Values: {sorted(freq.keys())}")
 
 
 Using GTB Outputs as Inputs
 ----------------------------
 
-Several pyGuidos tools accept GTB output maps as inputs. For example,
-MSPA output can be used as input to Fragmentation or Accounting after
-reclassifying the MSPA classes back to a binary map. The GTB metadata
-tag is preserved through :func:`extract_by_polygon` so downstream tools
-can always identify the source analysis.
+The statistic functions `*_stats` accept only pyGuidos (or GTB) output 
+maps as inputs. For example, using the GeoTIFF outputs after the function 
+`extract_by_polygon` to compute the statistics of extracted GeoTIFFs.

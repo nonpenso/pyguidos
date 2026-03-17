@@ -1,24 +1,38 @@
 Fragmentation
 =============
 
-Fragmentation analysis computes the proportion of foreground pixels within
-a moving window, classifying each pixel based on the local density of
-foreground cover. The analysis is performed using the Spatcon moving window
-tool and is described in detail in
-`LINK_TO_FRAG_PAPER <https://LINK_TO_FRAG_PAPER>`_.
+Fragmentation analysis uses a Fixed Observation Scale (FOS) approach to compute
+foreground pattern indices within a user-defined moving window. Each foreground
+pixel is assigned a value based on the local neighbourhood composition, providing
+a spatially explicit measure of landscape fragmentation.
+
+Two methods are available:
+
+- **FAD** (Foreground Area Density): computes within each window the proportion
+  of foreground pixels relative to the total number of window pixels.
+- **FAC** (Foreground Area Clustering): computes within each window the proportion
+  of common adjacencies (shared vertical or horizontal pixel edges) between
+  foreground pixels relative to the total number of adjacencies inside the
+  moving window.
+
+Further details about Fragmentation analysis are available in the
+`Connectivity/Fragmentation product sheet
+<https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf>`_.
 
 
 Fragmentation Classes
 ---------------------
 
-Each foreground pixel is assigned to one of 5 fragmentation classes based
-on the proportion of foreground pixels within the moving window:
+The result of a FOS analysis is a map with the same spatial extent as the input,
+where each foreground pixel receives a value in the range [0, 100] reflecting the
+FAD or FAC metric in its local neighbourhood. These continuous values are then
+aggregated into 5 classes and colour-coded in the output map:
 
 .. list-table::
    :header-rows: 1
 
    * - Class
-     - FAD range
+     - FOS range
      - Description
    * - **Rare**
      - 0 -- 10%
@@ -35,17 +49,6 @@ on the proportion of foreground pixels within the moving window:
    * - **Interior**
      - 90 -- 100%
      - Very high foreground density
-
-
-Methods
--------
-
-Two methods are available:
-
-- **FAD** (Forest Area Density): computes the proportion of foreground
-  pixels within the moving window relative to the total window area.
-- **FOS** (Forest Overall Status): similar to FAD but uses a different
-  background handling convention.
 
 
 Usage
@@ -179,28 +182,7 @@ statistics without rerunning the analysis:
     )
 
 .. note::
-    :func:`frag_stats` requires the input GeoTIFF to contain a valid
-    ``GTB_FOS`` metadata tag. See :doc:`input_format` for details.
+    :func:`frag_stats` requires the input GeoTIFF to be an pyGuidos (or
+    GTB) output raster file. See :doc:`input_format` for details.
 
 
-Window Size
------------
-
-The ``window_size`` parameter controls the scale of the analysis:
-
-- Larger windows capture broader landscape context but reduce spatial
-  detail
-- Smaller windows are more sensitive to local variation
-- The window size should reflect a meaningful ecological scale for
-  your application
-
-.. tip::
-    For landscape-scale analysis at 25m resolution, a window size of
-    27 pixels corresponds to a 675m x 675m neighbourhood (approximately
-    45.6 hectares).
-
-
-References
-----------
-
-CITATION_PLACEHOLDER

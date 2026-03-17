@@ -92,12 +92,12 @@ def mspa(in_tiff,
     input_pxl_freq = utils.get_pxl_freq(input_data)
     
     # Input Geotiff validations
-    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["dtype"], allow_34=False)  
+    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=False)  
     
     try:
         # Copy input tiff to temp dir
         tmpdir = utils.setup_run_dir()
-        utils.write_guidos_input(tmpdir, "mspa", source_path=in_tiff)
+        utils.write_mspa_input(tmpdir, in_tiff, input_data, info['dtype'])
         
         # Execute Binary
         args = ["-i", "mspa_input.tif",

@@ -233,42 +233,69 @@ def write_spatcon_params(tmp_dir, dimentions, method):
         f.write(param_content)
 
 
-def write_guidos_input(out_path, tool_name, source_path=None, data_array=None):
+def write_mspa_input(out_path, source_path, data_array, dtype):
     """
-    Standardises input preparation for GuidosToolbox binaries.
-    Copies a GeoTIFF for MSPA or writes a raw binary array for Spatcon.
+    Prepares the input GeoTIFF for the MSPA binary.
+    Copies the file directly if already uint8, otherwise converts
+    the data to uint8 and writes a new GeoTIFF.
 
     Parameters
     ----------
     out_path : str or Path
         Destination directory where the input file will be written.
-    tool_name : str
-        Target tool. Must be 'mspa' or 'spatcon'.
-    source_path : str or Path, optional
-        Path to the source GeoTIFF. Required when tool_name='mspa'.
-    data_array : np.ndarray, optional
-        Input data array to write as raw binary. Required when
-        tool_name='spatcon'.
+    source_path : str or Path
+        Path to the source GeoTIFF.
+    data_array : np.ndarray
+        Input data array already read from source_path (2D single band)
+    dtype : str
+        Data type string of the source GeoTIFF (e.g. 'uint8', 'uint16'),
+        as returned by get_raster_info().
 
     Returns
     -------
-    Path or None
-        Path to the written input file, or None if tool_name is
-        not recognised.
+    Path
+        Path to the written input file.
     """
     out_path = Path(out_path)
-    
-    if tool_name.lower() == "mspa":
-        target_path = out_path / "mspa_input.tif"
+    target_path = out_path / "mspa_input.tif"
+
+    if dtype == 'uint8':
         shutil.copy2(source_path, target_path)
-        return target_path
+    else:
+        with rasterio.open(source_path) as src:
+            profile = src.profile.copy()
+        profile.update(dtype='uint8')
+        with rasterio.open(target_path, 'w', **profile) as dst:
+            dst.write(data_array.astype(np.uint8), 1)
 
-    elif tool_name.lower() == "spatcon":
-        target_path = out_path / "scinput"
-        data_array.tofile(target_path)
-        return target_path
+    return target_path
 
-    return None
+
+def write_spatcon_input(out_path, data_array):
+    """
+    Prepares the input binary file for the Spatcon tool.
+    Converts the array to uint8 if needed and writes it as raw binary.
+
+    Parameters
+    ----------
+    out_path : str or Path
+        Destination directory where the input file will be written.
+    data_array : np.ndarray
+        Input data array to write as raw binary.
+
+    Returns
+    -------
+    Path
+        Path to the written input file.
+    """
+    out_path = Path(out_path)
+    target_path = out_path / "scinput"
+
+    if data_array.dtype != np.uint8:
+        data_array = data_array.astype(np.uint8)
+    data_array.tofile(target_path)
+
+    return target_path
 
 
 def get_raster_info(intiff_path):
@@ -287,6 +314,7 @@ def get_raster_info(intiff_path):
         - 'profile' (dict): full rasterio profile.
         - 'rows' (int): number of rows.
         - 'cols' (int): number of columns.
+        - 'bands' (int): number of bands.
         - 'resX' (float): pixel width.
         - 'resY' (float): pixel height.
         - 'dtype' (str): data type string (e.g. 'uint8').
@@ -325,6 +353,7 @@ def get_raster_info(intiff_path):
             "profile": prof,
             "rows": src.height,
             "cols": src.width,
+            "bands": src.count,
             "resX": resX,
             "resY": resY,
             "dtype": prof['dtype'],

@@ -125,7 +125,7 @@ Example data and Jupyter notebooks with worked examples are available in the [pr
 Documentation
 =============
 
-Full API documentation is available at [LINK_TO_DOCS].
+Full API documentation is available at https://jrc-forest.pages.code.europa.eu/guidos/pyguidos.
 
 ---
 

@@ -98,12 +98,12 @@ def landmos(in_tiff,
     input_pxl_freq = utils.get_pxl_freq(input_data)
     
     # Input Geotiff validations
-    checks.validate_lm_input(list(input_pxl_freq.keys()))
+    checks.validate_lm_input(list(input_pxl_freq.keys()), info["bands"])
 
     try:
         # Prepare Binary Input
         tmpdir = utils.setup_run_dir()
-        utils.write_guidos_input(tmpdir, "spatcon", data_array=input_data)
+        utils.write_spatcon_input(tmpdir, input_data)
         
         # Write Spatcon TXT files
         dims = (info['rows'], info['cols'])

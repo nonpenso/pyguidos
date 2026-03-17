@@ -90,12 +90,12 @@ def frag(
     input_pxl_freq = utils.get_pxl_freq(input_data)
     
     # Input Geotiff validations
-    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["dtype"], allow_34=True)
+    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=True)
     
     try:
         # Copy input tiff to temp dir
         tmpdir = utils.setup_run_dir()
-        utils.write_guidos_input(tmpdir, "spatcon", data_array=input_data)
+        utils.write_spatcon_input(tmpdir, input_data)
         
         # Write Spatcon TXT files
         dims = (info['rows'], info['cols'])
