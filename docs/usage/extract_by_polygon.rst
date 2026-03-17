@@ -4,12 +4,12 @@ Extract by Polygon
 The :func:`extract_by_polygon` function extracts and saves a separate
 GeoTIFF for each polygon feature in a shapefile, clipping and masking
 the input raster to each polygon's extent and shape. It is particularly
-useful for batch processing a GTB output map over multiple study areas
-such as countries, administrative regions or protected areas.
+useful for batch processing a pyGuidos (or GTB) output map over multiple 
+study areas such as countries, administrative regions or protected areas.
 
-The function preserves the original colour palette and GTB metadata tag
-from the input GeoTIFF, so all downstream pyGuidos tools can be applied
-directly to the extracted outputs.
+The function preserves the original colour palette and metadata from the 
+input GeoTIFF, so all downstream pyGuidos tools can be applied directly 
+to the extracted outputs.
 
 
 Usage
@@ -86,7 +86,7 @@ The ``nodata_value`` parameter controls what value is assigned to pixels
 outside the polygon mask. If ``None`` (default), the value is automatically
 resolved using a three-level priority:
 
-1. **GTB output** (has GTB tag): uses the GTB convention nodata value
+1. **GTB output**: uses the GTB convention nodata value
    for that tool (e.g. 129 for MSPA, 102 for Fragmentation, 0 for
    Landscape Mosaic)
 2. **Non-GTB, nodata not set**: uses 0
@@ -104,8 +104,7 @@ Geometry Handling
 
 The function automatically handles several geometry issues:
 
-- **Invalid geometries** are repaired using ``buffer(0)`` before
-  processing
+- **Invalid geometries** are repaired before processing
 - **Empty geometries** are skipped with a warning message
 - **Geometries outside the raster extent** are skipped with a warning
   message

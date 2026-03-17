@@ -6,39 +6,179 @@ proportional composition of three land cover classes within a moving
 window. The result describes the local landscape context of each pixel
 in terms of the dominant land cover mixture, producing up to 103
 compositional classes subsequently remapped to 19 aggregated classes.
-The methodology is described in detail in
-`LINK_TO_LM_PAPER <https://LINK_TO_LM_PAPER>`_.
+The methodology is described in detail in the `Landscape Mosaic sheet 
+<https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Pattern-LM.pdf>`_.
 
 
 Landscape Mosaic Classes
 ------------------------
 
-The 19 aggregated classes describe the dominant land cover mixture
-within the moving window:
+The 19-class aggregation is based on the proportion of the three input
+land cover classes within the moving window. By default, the three classes
+are interpreted as:
+
 
 .. list-table::
    :header-rows: 1
+   :widths: 15 25 15
 
-   * - Class
+   * - Pixel Value
+     - Default Interpretation
+     - Color
+   * - 1
+     - Agriculture
+     - Blue
+   * - 2
+     - Natural
+     - Green
+   * - 3
+     - Developed
+     - Red
+
+.. note::
+    The class assignment is purely conventional. Pixel values 1, 2 and 3
+    can represent any three mutually exclusive land cover types defined
+    by the user (e.g. Forest/Non-forest/Water, Urban/Rural/Natural).
+    The labels Agriculture, Natural and Developed are used throughout
+    this documentation for consistency with the GuidosToolbox convention,
+    but the analysis is valid for any three-class input map.
+
+
+.. figure:: ../_image/LM_trinagle.png
+    :width: 100%
+    :align: center
+    :alt: LM triangle
+
+    The Landscape Mosaic triangle with the 19 classes and their proportions 
+    to the three land cover types Agriculture, Natural, and Developed.
+
+
+Each of the 19 aggregated classes is defined by the combination of
+proportions of the three input classes within the moving window:
+
+.. list-table:: Landscape Mosaic 19-class aggregation scheme.
+   :header-rows: 1
+
+   * - N
+     - Code
      - Description
-   * - **A**
-     - Dominated by Class 1 (> 90%)
-   * - **N**
-     - Dominated by Class 2 (> 90%)
-   * - **D**
-     - Dominated by Class 3 (> 90%)
-   * - **An, Ad, Na, Nd, Dn, Da**
-     - Secondary transition zones (60-90%)
-   * - **Adn, Nad, Dan**
-     - Tertiary transition zones (40-60%)
-   * - **an, ad, dn**
-     - Mid-transition zones
-   * - **adn**
-     - Mixed centre zone
-   * - **AA, NN, DD**
-     - Pure corners (> 90% single class)
-   * - **NoData**
-     - No data
+     - AGR [%]
+     - NAT [%]
+     - DEV [%]
+   * - 1
+     - A
+     - Agriculture dominant
+     - [80-100[
+     - [0-10[
+     - [0-10[
+   * - 2
+     - D
+     - Developed dominant
+     - [0-10[
+     - [0-10[
+     - [80-100[
+   * - 3
+     - N
+     - Natural dominant
+     - [0-10[
+     - [80-100[
+     - [0-10[
+   * - 4
+     - Ad
+     - Agriculture with Developed
+     - [60-90[
+     - [0-10[
+     - [10-60[
+   * - 5
+     - An
+     - Agriculture with Natural
+     - [60-90[
+     - [10-40[
+     - [0-10[
+   * - 6
+     - Dn
+     - Developed with Natural
+     - [0-10[
+     - [10-40[
+     - [60-90[
+   * - 7
+     - Da
+     - Developed with Agriculture
+     - [10-40[
+     - [0-10[
+     - [60-90[
+   * - 8
+     - Na
+     - Natural with Agriculture
+     - [10-40[
+     - [60-90[
+     - [0-10[
+   * - 9
+     - Nd
+     - Natural with Developed
+     - [0-10[
+     - [60-90[
+     - [10-40[
+   * - 10
+     - Adn
+     - Agriculture dominant mixed
+     - [60-80[
+     - [10-40[
+     - [10-40[
+   * - 11
+     - Dan
+     - Developed dominant mixed
+     - [10-40[
+     - [10-40[
+     - [60-80[
+   * - 12
+     - Nad
+     - Natural dominant mixed
+     - [10-40[
+     - [60-80[
+     - [10-40[
+   * - 13
+     - ad
+     - Agriculture-Developed transition
+     - [30-60[
+     - [0-10[
+     - [30-60[
+   * - 14
+     - an
+     - Agriculture-Natural transition
+     - [30-60[
+     - [30-60[
+     - [0-10[
+   * - 15
+     - dn
+     - Developed-Natural transition
+     - [0-10[
+     - [30-60[
+     - [30-60[
+   * - 16
+     - adn
+     - Mixed transition
+     - [10-60[
+     - [10-60[
+     - [10-60[
+   * - 17
+     - NN
+     - Pure Natural (100%)
+     - [0]
+     - [100]
+     - [0]
+   * - 18
+     - AA
+     - Pure Agriculture (100%)
+     - [100]
+     - [0]
+     - [0]
+   * - 19
+     - DD
+     - Pure Developed (100%)
+     - [0]
+     - [0]
+     - [100]
 
 
 Usage
@@ -50,7 +190,7 @@ Usage
 
     result = pg.landmos(
         in_tiff="my_landcover.tif",
-        window_size=33,
+        window_size=31,
         outdir="output/",
         statists=True,
         stat_files=True,
@@ -177,29 +317,19 @@ statistics without rerunning the analysis:
     )
 
 .. note::
-    :func:`landmos_stats` requires the input GeoTIFF to contain a valid
-    ``GTB_LM`` metadata tag. See :doc:`input_format` for details.
+    :func:`landmos_stats` requires the input GeoTIFF to be an pyGuidos 
+    (or GTB) output raster file. . See :doc:`input_format` for details.
 
-
-Window Size
------------
-
-The ``window_size`` parameter controls the scale of the landscape
-context analysis:
-
-- Larger windows capture broader landscape patterns but smooth out
-  local variation
-- Smaller windows are more sensitive to fine-scale spatial heterogeneity
-- The window size should reflect a meaningful ecological neighbourhood
-  for your application
-
-.. tip::
-    For landscape-scale analysis at 25m resolution, a window size of
-    33 pixels corresponds to a 825m x 825m neighbourhood (approximately
-    68 hectares).
 
 
 References
 ----------
 
-CITATION_PLACEHOLDER
+- Riitters K H, Wickham J D, Wade T G, 2009. An indicator of forest dynamics 
+  using a shifting landscape mosaic. Ecological Indicators 9: 107-117. 
+  DOI: `10.1016/j.ecolind.2008.02.003 
+  <https://dx.doi.org/10.1016/j.ecolind.2008.02.003>`_.
+
+- Vogt P, Wickham J, Barredo J I, Riitters K, 2024. Revisiting the Landscape 
+  Mosaic model. PLoS ONE 19(5): e0304215. DOI: `10.1371/journal.pone.0304215 
+  <https://doi.org/10.1371/journal.pone.0304215>`_.

@@ -4,6 +4,12 @@ pages:
   stage: deploy
   tags:
     - shared-docker
+  cache:
+    key: pip-cache
+    paths:
+      - .pip-cache/
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
   script:
     - pip install --upgrade pip
     - pip install sphinx pydata-sphinx-theme

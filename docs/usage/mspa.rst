@@ -2,20 +2,21 @@ MSPA
 ====
 
 Morphological Spatial Pattern Analysis (MSPA) is a multi-scale image
-processing approach that classifies the pixels of a binary foreground/
-background image into mutually exclusive morphological classes based on
-their spatial context. 
-Further details about MSPA are available in `MSPA product sheet
+processing approach that classifies the pixels of a binary foreground/background
+image into mutually exclusive morphological classes based on their spatial
+context. Further details about MSPA are available in the
+`MSPA product sheet
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Pattern-Morphology.pdf>`_.
 
 
 MSPA Classes
 ------------
 
-MSPA classifies foreground pixels into up to 22 foreground (11 internal + 
-11 external) and 3 background feature classes. The results are then aggregated
-to 7 foreground (Core, Islet, Perforation, Edge, Loop, Bridge, Branch) and
-3 background (Baground, Border-Opening, Core-Opening) feature classes. 
+MSPA classifies foreground pixels into up to 22 foreground classes
+(11 internal + 11 external) and 3 background classes. Results are aggregated
+into 7 foreground feature classes (Core, Islet, Perforation, Edge, Loop,
+Bridge, Branch) and 3 background feature classes (Background, Border-Opening,
+Core-Opening).
 
 .. list-table:: Class names, color codes, and byte values for MSPA feature classes.
    :header-rows: 1

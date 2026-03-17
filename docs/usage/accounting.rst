@@ -1,12 +1,90 @@
 Accounting
 ==========
 
-Foreground Patch Size Accounting (ACC) labels and measures all individual
+Foreground patch size Accounting labels and measures all individual
 foreground patches in a binary raster, classifying them into user-defined
 size classes. The result is a spatially explicit map and tabular summary
 statistics describing the patch size distribution across the landscape.
-The methodology is described in detail in
-`LINK_TO_ACC_PAPER <https://LINK_TO_ACC_PAPER>`_.
+Further details about Accounting analysis are available in the
+`Accounting product sheet
+<https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Objects-Accounting.pdf>`_.
+
+
+Accounting Classes
+------------------
+
+Foreground patches are labelled and classified into up to 6 size classes
+based on user-defined area thresholds. Each class groups patches whose
+size in pixels falls within a specific range, from the smallest isolated
+patches to the largest connected foreground areas.
+
+The number of classes depends on the number of thresholds provided:
+1 threshold produces 2 classes, 2 thresholds produce 3 classes, and so on
+up to a maximum of 5 thresholds producing 6 classes. Classes are assigned
+from smallest to largest and colour-coded in the output map as follows:
+
+.. list-table:: Accounting size classes, pixel values and colors.
+   :header-rows: 1
+   :widths: 15 20 20 45
+
+   * - Class
+     - Pixel Value
+     - Color
+     - Size Range
+   * - 1
+     - 103
+     - Black
+     - Smallest patches [1 -- threshold 1]
+   * - 2
+     - 33
+     - Red
+     - [threshold 1 + 1 -- threshold 2]
+   * - 3
+     - 65
+     - Yellow
+     - [threshold 2 + 1 -- threshold 3]
+   * - 4
+     - 1
+     - Orange
+     - [threshold 3 + 1 -- threshold 4]
+   * - 5
+     - 9
+     - Brown
+     - [threshold 4 + 1 -- threshold 5]
+   * - 6
+     - 17
+     - Green
+     - Largest patches [> last threshold]
+
+In addition to the foreground classes, the output map encodes background
+and special pixel values:
+
+.. list-table:: Accounting background and special pixel values.
+   :header-rows: 1
+   :widths: 20 20 60
+
+   * - Pixel Value
+     - Color
+     - Meaning
+   * - 0
+     - Grey
+     - Background (value 1 in input)     
+   * - 129
+     - White
+     - NoData (value 0 in input)
+   * - 105
+     - Blue
+     - Special background (value 3 in input)
+   * - 176
+     - Light Blue
+     - Special background (value 4 in input)
+
+
+.. note::
+    Thresholds are expressed in pixels. To convert to area units, multiply
+    by the pixel area (e.g. for a 25 m resolution raster, 1 pixel = 0.0625 ha).
+    For example, a threshold of 200 pixels at 25 m resolution corresponds
+    to 12.5 hectares.
 
 
 Usage
@@ -163,11 +241,6 @@ statistics without rerunning the analysis:
     )
 
 .. note::
-    :func:`acc_stats` requires the input GeoTIFF to contain a valid
-    ``GTB_ACC`` metadata tag. See :doc:`input_format` for details.
+    :func:`acc_stats` requires the input GeoTIFF to be an pyGuidos (or
+    GTB) output raster file. See :doc:`input_format` for details.
 
-
-References
-----------
-
-CITATION_PLACEHOLDER

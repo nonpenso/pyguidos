@@ -114,7 +114,7 @@ You can verify your input file before running any tool:
     info = utils.get_raster_info("my_map.tif")
 
     print(f"Size:  {info['rows']} x {info['cols']} pixels")
-    print(f"Bands: (info['bands'])")
+    print(f"Bands: {info['bands'])")
     print(f"dtype: {info['dtype']}")
     print(f"EPSG:  {info['epsg']}")
     print(f"Res:   {info['resX']} x {info['resY']}")

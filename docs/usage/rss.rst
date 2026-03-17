@@ -1,12 +1,14 @@
-RSS
-===
+Restoration Status Summary
+==========================
 
-Raster Spatial Statistics (RSS) computes patch-based connectivity indices
+Restoration Status Summary (RSS) computes patch-based connectivity indices
 for a binary raster map. RSS characterises the spatial structure of the
 foreground by analysing the size distribution of individual patches,
 providing a set of indices that quantify landscape connectivity and
-restoration potential. The methodology is described in detail in
-`LINK_TO_RSS_PAPER <https://LINK_TO_RSS_PAPER>`_.
+restoration potential. 
+Further details about Restoration Status Summary analysis are 
+available in the `RSS product sheet
+<https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-RestorationPlanner.pdf>`_.
 
 
 Connectivity Indices
@@ -14,32 +16,34 @@ Connectivity Indices
 
 RSS computes the following indices:
 
-.. list-table::
+.. list-table:: RSS connectivity indices.
    :header-rows: 1
+   :widths: 35 15 15 35
 
-   * - Index
-     - Full Name
+   * - Full Name
+     - Code
+     - Unit
      - Description
-   * - **ECA**
-     - Equivalent Connected Area
-     - Area of a single patch that would provide the same
-       connectivity as the observed patch mosaic
-   * - **COH**
-     - Degree of Coherence
-     - Percentage of foreground pixels that are effectively
-       connected, relative to total foreground area
-   * - **CNOA**
-     - Connectivity Number of Areas
-     - Equivalent number of equally sized and maximally connected
-       patches that would provide the same connectivity as observed
-   * - **RPOT**
-     - Restoration Potential
-     - Percentage of foreground pixels that could potentially
-       improve connectivity through restoration (100 - COH)
-   * - **RAC**
-     - Relative Area of the Core
-     - Percentage of foreground pixels relative to total
-       foreground and background pixels
+   * - Critical New Object Area
+     - CNOA
+     - pixels
+     - Minimum area of a new patch that would increase connectivity
+   * - Equivalent Connected Area
+     - ECA
+     - pixels
+     - Area of a single patch providing the same connectivity as observed
+   * - Reference Area Coverage
+     - RAC
+     - %
+     - Percentage of foreground relative to total foreground and background
+   * - Coherence
+     - COH
+     - %
+     - Percentage of foreground pixels effectively connected
+   * - Restoration Potential
+     - RPOT
+     - %
+     - Percentage of foreground pixels that could improve connectivity (100 - COH)
 
 
 Usage
@@ -140,9 +144,3 @@ size statistics:
 - **Average patch size**: mean patch size in pixels
 - **Median patch size**: median patch size in pixels
 - **Largest patch size**: size of the largest patch in pixels
-
-
-References
-----------
-
-CITATION_PLACEHOLDER

@@ -20,6 +20,15 @@ Further details about Fragmentation analysis are available in the
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf>`_.
 
 
+.. figure:: ../_image/FOS_methods.png
+    :width: 100%
+    :align: center
+    :alt: FOS methods
+
+    Comparison of FAD and FAC methods exemplified for a 5x5 moving window 
+    on a binary input map where black pixels are the foreground.
+
+
 Fragmentation Classes
 ---------------------
 
