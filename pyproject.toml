@@ -45,7 +45,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://code.europa.eu/jrc-forest/guidos/pyguidos"
-Documentation = "LINK_TO_DOCS"
+Documentation = "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/"
 "Bug Tracker" = "https://code.europa.eu/jrc-forest/guidos/pyguidos/-/issues"
 
 [project.optional-dependencies]
@@ -57,6 +57,9 @@ test = [
     "pytest>=6.0",
     "pytest-mock>=3.0",
 ]
+
+[tool.setuptools.packages.find]
+include = ["pyguidos*"]
 
 [tool.setuptools.package-data]
 pyguidos = [

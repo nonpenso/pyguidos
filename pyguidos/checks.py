@@ -49,7 +49,7 @@ def validate_fmap_input(present_values, bands, allow_34=False):
     Raises
     ------
     SystemExit
-        If dtype is not 'uint8', if mandatory values 1 and 2 are missing,
+        If band are more than 1, if mandatory values 1 and 2 are missing,
         or if invalid pixel values are present.
     """
     # Check number of bands 
