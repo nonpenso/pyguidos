@@ -4,15 +4,19 @@ import rasterio
 from rasterio.mask import mask as rio_mask
 from rasterio.crs import CRS
 from rasterio.transform import Affine
-from rasterio.enums import ColorInterp 
+from rasterio.enums import ColorInterp
 from shapely.geometry import shape, mapping, Polygon, MultiPolygon
 from pyproj import Transformer
 
 from . import utils
 
 
+SUPPORTED_VECTOR_FORMATS = {
+    '.shp', '.gpkg', '.geojson', '.json', '.kml', '.fgb', '.gdb'
+}
+
 def extract_by_polygon(
-    shapefile_path: str,
+    vector_path: str,
     geotiff_path: str,
     output_dir: str,
     id_field: str,
@@ -28,8 +32,11 @@ def extract_by_polygon(
 
     Parameters
     ----------
-    shapefile_path : str or Path
-        Path to the input ESRI Shapefile (.shp) containing polygon features.
+    vector_path : str or Path
+        Path to the input vector file containing polygon features.
+        Supported formats: ESRI Shapefile (.shp), GeoPackage (.gpkg),
+        GeoJSON (.geojson), KML (.kml), FlatGeobuf (.fgb),
+        ESRI FileGDB (.gdb).
     geotiff_path : str or Path
         Path to the input GeoTIFF raster to extract from.
     output_dir : str or Path
@@ -59,30 +66,48 @@ def extract_by_polygon(
     - <output_dir>/<name_prefix><id_field_value>.tif : one per polygon feature
     """
     os.makedirs(output_dir, exist_ok=True)
-    
+
+    # Check the supported vector files
+    vector_path = Path(vector_path)
+    if vector_path.suffix.lower() not in SUPPORTED_VECTOR_FORMATS:
+        sys.exit(f"ERROR: Vector format '{vector_path.suffix}' is not supported. "
+                 f"Supported formats: {sorted(SUPPORTED_VECTOR_FORMATS)}")
+
     # Resolve nodata value
     if nodata_value is None:
         nodata_value = utils.get_gtb_nodata(geotiff_path)
 
     with rasterio.open(geotiff_path) as src:
+
+        # Check raster CRS
         raster_crs = src.crs
+        if raster_crs is None:
+            sys.exit("ERROR: Input GeoTIFF has not a defined Projection. "
+                     "Please assign a coordinate reference system before using extract_by_polygon().")
+
         res_x, res_y = src.res
         in_tags = src.tags()
         tag_descr = in_tags.get('TIFFTAG_IMAGEDESCRIPTION') or '--'
-        try: 
+        try:
             cmap = src.colormap(1)
         except ValueError:
-            cmap = None            
-        
-        with fiona.open(shapefile_path, "r") as vector:
-            vector_crs = CRS.from_wkt(vector.crs_wkt) if vector.crs_wkt else CRS.from_epsg(4326)
-        
+            cmap = None
+
+        with fiona.open(vector_path, "r") as vector:
+
+            # Check vector CRS
+            if not vector.crs_wkt:
+                sys.exit("ERROR: Input vector file has not a defined Projection. "
+                         "Please assign a coordinate reference system before using extract_by_polygon().")
+
+            vector_crs = CRS.from_wkt(vector.crs_wkt)
+
             # Check if reprojection is needed
             needs_reproject = raster_crs != vector_crs
             transformer = None
             if needs_reproject:
                 transformer = Transformer.from_crs(vector_crs, raster_crs, always_xy=True)
-        
+
             for idx, feature in enumerate(vector):
                 # --- Determine output filename ---
                 if id_field in feature["properties"]:
@@ -90,16 +115,16 @@ def extract_by_polygon(
                     outname = str(feature["properties"][id_field]).replace(" ", "_").replace("/", "-")
                 else:
                     outname = f"feature_{idx}"
-            
+
                 output_path = os.path.join(output_dir, f"{name_prefix}{outname}.tif")
-            
+
                 # --- Get polygon geometry ---
                 geom = shape(feature["geometry"])
-            
+
                 if not geom.is_valid:
                     # Attempt the repair
                     fixed_geom = geom.buffer(0)
-                    
+
                     # Check if the repair resulted in a valid, non-empty geometry
                     if fixed_geom.is_valid and not fixed_geom.is_empty:
                         # Safety check: ensure it is a polygon type (not a Point or Line)
@@ -116,17 +141,17 @@ def extract_by_polygon(
                     if geom.is_empty:
                         print(f"  [SKIP] Feature '{outname}': Geometry is empty. Skipping.")
                         continue
-            
+
                 # --- Reproject geometry to raster CRS if needed ---
                 if needs_reproject:
                     geom = _reproject_geometry(geom, transformer)
-            
+
                 # --- Check bounding box intersects raster ---
                 raster_bounds = src.bounds
                 if not _bounds_intersect(geom.bounds, raster_bounds):
                     print(f"  [SKIP] Feature '{outname}': geometry does not intersect raster extent.")
                     continue
-            
+
                 # --- Mask raster with polygon ---
                 try:
                     out_image, out_transform = rio_mask(
@@ -140,20 +165,20 @@ def extract_by_polygon(
                 except Exception as e:
                     print(f"  [ERROR] Feature '{outname}': {e}")
                     continue
-            
+
                 # out_image shape: (bands, rows, cols)
                 if out_image.size == 0:
                     print(f"  [SKIP] Feature '{outname}': masked result is empty.")
                     continue
-                
-                # --- Snap transform to the input grid --- 
+
+                # --- Snap transform to the input grid ---
                 off_x = round((out_transform[2] - src.transform[2]) / res_x) * res_x
                 off_y = round((out_transform[5] - src.transform[5]) / res_y) * res_y
                 snapped_transform = Affine(
                     out_transform[0], out_transform[1], src.transform[2] + off_x,
                     out_transform[3], out_transform[4], src.transform[5] + off_y
-                )            
-                
+                )
+
                 # --- Write output GeoTIFF ---
                 out_meta = src.meta.copy()
                 meta_params = {
@@ -169,7 +194,7 @@ def extract_by_polygon(
                     }
                 if cmap is not None:
                     meta_params["photometric"] = "palette"
-                    
+
                 out_meta.update(meta_params)
                 tags = {
                     "TIFFTAG_IMAGEDESCRIPTION": tag_descr,
@@ -181,7 +206,7 @@ def extract_by_polygon(
                         dst.colorinterp = [ColorInterp.palette]
                         dst.write_colormap(1, cmap)
                     dst.update_tags(**tags)
-            
+
 
 
 
@@ -204,14 +229,3 @@ def _bounds_intersect(bounds_a, bounds_b):
         or bounds_a[1] > bounds_b.top
     )
 
-# ---------------------------------------------------------------------------
-# Example usage
-# ---------------------------------------------------------------------------
-# if __name__ == "__main__":
-#     extract_raster_by_polygon(
-#         shapefile_path="countries.shp",
-#         geotiff_path="landcover.tif",
-#         output_dir="output_landcover/",
-#         id_field="NAME",        # use the country name attribute as filename
-#         nodata_value=255,       # typical nodata for uint8
-#     )

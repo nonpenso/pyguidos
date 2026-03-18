@@ -14,6 +14,7 @@ import numpy as np
 from scipy.ndimage import label, generate_binary_structure
 import rasterio
 from rasterio.enums import ColorInterp
+from pyproj import CRS as pyprojCRS
 
 
 # def get_module_root():
@@ -234,7 +235,7 @@ def write_spatcon_params(tmp_dir, dimentions, method):
         f.write(param_content)
 
 
-def write_mspa_input(out_path, source_path, data_array, dtype):
+def write_mspa_input(out_path, source_path, data_array, dtype, is_tiled):
     """
     Prepares the input GeoTIFF for the MSPA binary.
     Copies the file directly if already uint8, otherwise converts
@@ -251,6 +252,8 @@ def write_mspa_input(out_path, source_path, data_array, dtype):
     dtype : str
         Data type string of the source GeoTIFF (e.g. 'uint8', 'uint16'),
         as returned by get_raster_info().
+    is_tiled : bool
+        True is if it is a tiled GeoTIFF.
 
     Returns
     -------
@@ -260,12 +263,18 @@ def write_mspa_input(out_path, source_path, data_array, dtype):
     out_path = Path(out_path)
     target_path = out_path / "mspa_input.tif"
 
-    if dtype == 'uint8':
+    if dtype == 'uint8' and not is_tiled:
         shutil.copy2(source_path, target_path)
     else:
         with rasterio.open(source_path) as src:
             profile = src.profile.copy()
-        profile.update(dtype='uint8')
+        profile.update(
+            dtype='uint8',
+            nodata=None,
+            tiled=False,
+            blockxsize=None,
+            blockysize=None
+        )
         with rasterio.open(target_path, 'w', **profile) as dst:
             dst.write(data_array.astype(np.uint8), 1)
 
@@ -319,7 +328,8 @@ def get_raster_info(intiff_path):
         - 'resX' (float): pixel width.
         - 'resY' (float): pixel height.
         - 'dtype' (str): data type string (e.g. 'uint8').
-        - 'wkt' (str): CRS as Well Known Text.
+        - 'is_tiles' (bool): True if it is a tiled Geotiff.
+        - 'crs' (str): CRS as Well Known Text.
         - 'epsg' (int or str): EPSG code, or 'Unknown' if not resolvable.
         - 'is_projected' (bool): True if CRS is a projected coordinate system.
         - 'bounds' (BoundingBox): raster bounding box.
@@ -333,11 +343,10 @@ def get_raster_info(intiff_path):
         resX, resY = src.res
 
         # Get projection
-        wkt = src.crs.to_wkt()
-        epsg = src.crs.to_epsg()
+        crs_pyproj = pyprojCRS.from_user_input(src.crs)
+        epsg = crs_pyproj.to_epsg(min_confidence=20)
         if epsg is None:
-            matches = re.findall(r'AUTHORITY\["EPSG","(\d+)"\]', wkt)
-            epsg = matches[-1] if matches else "Unknown"
+            epsg = "Unknown"
 
         # Get colormap
         try:
@@ -345,6 +354,9 @@ def get_raster_info(intiff_path):
         except ValueError:
             # Input raster has no colormap
             cmap = None
+
+        # Check if tiled
+        is_tiled = src.profile.get('tiled', False)
 
         # Tags
         tags = src.tags()
@@ -358,7 +370,8 @@ def get_raster_info(intiff_path):
             "resX": resX,
             "resY": resY,
             "dtype": prof['dtype'],
-            "wkt": wkt,
+            "is_tiled": is_tiled,
+            "crs": crs_pyproj,
             "epsg": epsg,
             "is_projected": src.crs.is_projected,
             "bounds": src.bounds,
@@ -593,22 +606,24 @@ def get_tool_parameters(tag_description):
     dict or None
         Dictionary with 'tool_id' and tool-specific parameter keys,
         or None if the tag is empty or not in the expected format.
-        Keys vary by tool:
-        - GTB_MSPA: 'connectivity', 'edge_width', 'transition', 'int_ext'
-        - GTB_FOS:  'tiftype', 'for_thres', 'connect', 'method', 'pxlsize', 'wsize'
-        - GTB_LM:   'wsize'
-        - GTB_ACC:  'thresholds'
     """
     if not tag_description or "," not in tag_description:
         return None
 
-    # Split into ID and Params
-    tool, param_str, weblink = [s.strip() for s in tag_description.split(",")]
-    params = param_str[1:-1].split(',')
+    # Extract tool_id
+    tool_id = tag_description.split(",")[0].strip()
 
-    result = {"tool_id": tool, "web_link": weblink}
+    # Extract parameters
+    params_match = re.search(r'<([^>]+)>', tag_description)
+    params = [p.strip() for p in params_match.group(1).split(",")] if params_match else []
 
-    if tool == "GTB_FOS":
+    # Extract link
+    link_match = re.search(r'https?://\S+', tag_description)
+    link = link_match.group(0) if link_match else None
+
+    result = {"tool_id": tool_id, "web_link": link}
+
+    if tool_id == "GTB_FOS":
         # Format: "GTB_FOS, <Binary,-1,8,FAD_5,100.000,31>"
         result["tiftype"] = params[0]
         result["for_thres"] = params[1]
@@ -617,18 +632,18 @@ def get_tool_parameters(tag_description):
         result["pxlsize"] = params[4]
         result["wsize"] = params[5]
 
-    elif tool == "GTB_MSPA":
+    elif tool_id == "GTB_MSPA":
         # Format: "GTB_MSPA, <8,1,1,1>"
         result["connectivity"] = params[0]
         result["edge_width"] = params[1]
         result["transition"] = params[2]
         result["int_ext"] = params[3]
 
-    elif tool == "GTB_LM":
+    elif tool_id == "GTB_LM":
         # Format: "GTB_LM, <33>"
         result["wsize"] = params[0]
 
-    elif tool == "GTB_ACC":
+    elif tool_id == "GTB_ACC":
         # Format: "GTB_ACC, <1000,100000,1000000,2000000>"
         result["thresholds"] = params
 

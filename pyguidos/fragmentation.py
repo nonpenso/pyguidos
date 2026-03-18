@@ -14,19 +14,19 @@ from .results import FragResult
 
 
 def frag(
-    in_tiff, 
-    method, 
-    window_size, 
-    outdir=None, 
+    in_tiff,
+    method,
+    window_size,
+    outdir=None,
     statists=True,
     stat_files=True,
-    return_array=False, 
+    return_array=False,
     verb=False
     ):
     """
-    Performs Fragmentation analysis on a binary raster using Spatcon moving 
-    window tool. Computes the proportion of foreground pixels within each 
-    window, classifying landscape fragmentation into 5 classes: Rare, Patchy, 
+    Performs Fragmentation analysis on a binary raster using Spatcon moving
+    window tool. Computes the proportion of foreground pixels within each
+    window, classifying landscape fragmentation into 5 classes: Rare, Patchy,
     Transitional, Dominant, and Interior.
 
     Parameters
@@ -68,35 +68,35 @@ def frag(
     """
     start_time = time.time()
     success = False
-    
+
     # Validate parametres
     checks.validate_frag_params(window_size, method)
-    
+
     # Initialize Paths and Metadata
     in_tiff = Path(in_tiff)
     outdir = Path(outdir) if outdir else in_tiff.parent
     in_name = in_tiff.stem
     out_name = f"{in_name}_{method.lower()}_{window_size}"
     info = utils.get_raster_info(in_tiff)
-    
+
     # Get OS info
     os_name, arch, is_win = utils.get_os_info()
-    
+
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
         input_data = src.read()
-    
+
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
-    
+
     # Input Geotiff validations
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=True)
-    
+
     try:
         # Copy input tiff to temp dir
         tmpdir = utils.setup_run_dir()
         utils.write_spatcon_input(tmpdir, input_data)
-        
+
         # Write Spatcon TXT files
         dims = (info['rows'], info['cols'])
         meth_codes = {"FAD": [81, 0], "FAC": [76, 2]}
@@ -108,30 +108,30 @@ def frag(
         m = 0
         f = 1
         utils.write_spatcon_params(tmpdir, dims, (w, r, b, a, h, m, f))
-        
+
         # Execute Spatcon Binary
         args = []
         utils.run_guidos_tool("spatcon", tmpdir, args, verbose=verb)
-        
+
         # Process Output
         spat_bin = tmpdir / "scoutput"
         out_data = np.fromfile(spat_bin, dtype=np.float32).reshape(1, info['rows'], info['cols'])
         out_data_int = np.floor(out_data * 100 + 0.5).astype(np.uint8)
-        
+
         # Mapping logic (NoData, Background, Special codes)
         data_masked = np.select(
-            [input_data == 0, input_data == 1, input_data == 3, input_data == 4], 
-            [102, 101, 105, 106], 
+            [input_data == 0, input_data == 1, input_data == 3, input_data == 4],
+            [102, 101, 105, 106],
             default=out_data_int
         ).astype(np.uint8)
-        
+
         # Save Final Geotiff with Palette and Tags
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/"
-        tag_descr = f"GTB_LM, <Binary,-1,8,{method}_5,{info['resX']},{window_size}>, {weblink}"
+        tag_descr = f"GTB_FOS, <Binary,-1,8,{method}_5,{info['resX']},{window_size}>, {weblink}"
         cmap_path = utils.TEMPL_DIR / "frag_colormap.txt"
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, data_masked, info['profile'], cmap_path, tag_descr)
-        
+
         # Statistics and Reporting
         stats_dict = None
         if statists:
@@ -149,10 +149,10 @@ def frag(
         if statists:
             txt_file = txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)
-        
+
         # Success of the process
         success = True
-        
+
         return FragResult(
                     stats = stats_dict,
                     array = data_masked if return_array else None
@@ -217,20 +217,20 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
     - <frag_tiff_stem>.png : foreground pixel histogram
     """
     start_time_stat = time.time()
-    
+
     # Read metadata
     frag_tiff = Path(frag_tiff)
     minfo = utils.get_raster_info(frag_tiff)
     if minfo["tag"] is None:
         sys.exit("ERROR: No valid GuidosToolbox metadata found in the input Geotiff")
-    
+
     # Check input tag with used tool and parametres
     tool_params = utils.get_tool_parameters(minfo["tag"])
     if tool_params.get("tool_id") != "GTB_FOS":
         sys.exit(f"ERROR: Input Geotiff is labeled as '{tool_params.get('tool_id')}', "
                  "frag_stats requires a 'GTB_FOS' result file."
         )
-        
+
     # Get Fragmentation parameters
     method,fclasses = tool_params["method"].split('_')
     window_size = int(tool_params["wsize"])
@@ -239,7 +239,7 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
     out_name = Path(frag_tiff).stem
     outdir = Path(outdir) if outdir else frag_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
-    
+
     # Fragmentation pixel counting
     if frag_freq:
         frag_pxl_freq = frag_freq
@@ -247,18 +247,18 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
         with rasterio.open(frag_tiff) as src:
             frag_data = src.read()
         frag_pxl_freq = utils.get_pxl_freq(frag_data)
- 
+
     # Counting pixel per Frag class
     rare = sum(frag_pxl_freq[i] for i in range(10))
     patchy = sum(frag_pxl_freq[i] for i in range(10, 40))
     trans = sum(frag_pxl_freq[i] for i in range(40, 60))
     domin = sum(frag_pxl_freq[i] for i in range(60, 90))
     inter = sum(frag_pxl_freq[i] for i in range(90, 101))
-    
+
     fgrnd = rare + patchy + trans + domin + inter
     ruarea = fgrnd + frag_pxl_freq[101]
     sum_prod = sum(v * frag_pxl_freq[v] for v in range(101))
-    
+
     fad_av = sum_prod / fgrnd
     avcon = sum_prod / ruarea
 
@@ -271,14 +271,14 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
             writer.writerow(['pixel_value', 'pixel_count', 'foreground_proportion'])
             for v in range(101):
                 pct = (frag_pxl_freq[v] / fgrnd * 100)
-                writer.writerow([v, frag_pxl_freq[v], f"{pct:.6f}"])    
-    
+                writer.writerow([v, frag_pxl_freq[v], f"{pct:.6f}"])
+
         ### Histogram PNG figure ###
-    
+
         # X & Y values
         pixel_values = list(range(101))
         frag_pxl_prop = [frag_pxl_freq[i]/fgrnd * 100 for i in pixel_values]
-        
+
         # Create the colormap
         cmap_path = utils.TEMPL_DIR / "frag_colormap.txt"
         colors = {}
@@ -291,50 +291,50 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
                     r, g, b = int(parts[1])/255, int(parts[2])/255, int(parts[3])/255
                     colors[val] = (r, g, b)
         bar_colors = [colors.get(v) for v in pixel_values]
-    
+
         # Create the figure with bar chart
         fig, ax = plt.subplots(figsize=(7, 6))
         ax.bar(pixel_values, frag_pxl_prop, color=bar_colors, width=1.0,
                       edgecolor='black', linewidth=0.4)
-        
+
         # Formatting the Axes
         ax.set_xlabel(method, fontsize=14)
         ax.set_ylabel('Frequency [%]', fontsize=14)
         ax.set_title('Foreground pixel histogram', fontsize=15, pad=20)
         ax.tick_params(axis='both', which='major', labelsize=12)
-        
+
         # Set X-axis limits and ticks (show every 10 units for clarity)
         ax.set_xlim(-1, 101)
         ax.set_xticks(range(0, 101, 10))
-        
+
         # Plotting
         plt.tight_layout()
         png_file = outdir / f'{out_name}.png'
-        plt.savefig(png_file, dpi=300, facecolor='white', transparent=False)  
+        plt.savefig(png_file, dpi=300, facecolor='white', transparent=False)
         plt.close()
-        
+
         ### TXT Template Reporting ###
         content = {
-            "input_file": source_tiff.name if source_tiff else "n/a", 
+            "input_file": source_tiff.name if source_tiff else "n/a",
             "epsg_code": minfo["epsg"],
             "unit_type": 'metres' if minfo["is_projected"] else 'degrees',
-            "resolx": minfo["resX"], 
-            "resoly": minfo["resY"], 
-            "rows_val": minfo["rows"], 
+            "resolx": minfo["resX"],
+            "resoly": minfo["resY"],
+            "rows_val": minfo["rows"],
             "cols_val": minfo["cols"],
-            "tot_pxl": minfo["rows"] * minfo["cols"], 
+            "tot_pxl": minfo["rows"] * minfo["cols"],
             "foreg_pxl": fgrnd,
-            "backg_pxl": frag_pxl_freq[101], 
+            "backg_pxl": frag_pxl_freq[101],
             "miss_pxl": frag_pxl_freq[102],
-            "spec3_pxl": frag_pxl_freq[105], 
+            "spec3_pxl": frag_pxl_freq[105],
             "spec4_pxl": frag_pxl_freq[106],
-            
-            "used_method": method, 
+
+            "used_method": method,
             "window_size": window_size,
             "window_areaHA": f"{(window_size**2)*minfo['resX']*minfo['resY']/10000:.4f}" if minfo["is_projected"] else '--',
             "window_areaAC": f"{(window_size**2)*minfo['resX']*minfo['resY']*0.000247105:.4f}" if minfo["is_projected"] else '--',
-            
-            "output_file": f"{out_name}.tif", 
+
+            "output_file": f"{out_name}.tif",
             "rep_unit_pxl": ruarea,
             "foreg_area_rel": (fgrnd / ruarea * 100),
             "rare_val": (rare / fgrnd * 100),
@@ -342,14 +342,14 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
             "trans_val": (trans / fgrnd * 100),
             "domin_val": (domin / fgrnd * 100),
             "inter_val": (inter / fgrnd * 100),
-            "fad_av_idx": fad_av, 
+            "fad_av_idx": fad_av,
             "avcon_idx": avcon,
             "comp_time": f"{utils.running_time(start_time_stat, time.time())}"
         }
-    
+
         txt_file = outdir / f'{out_name}.txt'
         utils.generate_text_report(utils.TEMPL_DIR / 'frag_templ.txt', txt_file, content)
-    
+
     # Statistic dictionaries
     path_stats_dict = None
     if outfile:
@@ -366,12 +366,15 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
         "backgr3 pxl" : frag_pxl_freq[105],
         "backgr4 pxl" : frag_pxl_freq[106]
         }
+    class_freq = {
+        "1 rare pxl" : rare,
+        "2 patch pxl" : patchy,
+        "3 trans pxl" : trans,
+        "4 domin pxl" : domin,
+        "5 inter pxl" : inter
+    }
     output_stats_dict = {
-        "rare pxl" : rare,
-        "patch pxl" : patchy,
-        "trans pxl" : trans,
-        "domin pxl" : domin,
-        "inter pxl" : inter,
+        "class freq" : class_freq,
         "fad_av" : fad_av,
         "avcon" : avcon
         }
@@ -380,5 +383,5 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
         "input stats" : input_stats_dict,
         "output stats" : output_stats_dict
                   }
-    
+
     return stats_dict

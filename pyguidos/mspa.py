@@ -11,15 +11,15 @@ from . import checks
 from .results import MSPAResult
 
 
-def mspa(in_tiff, 
-         edge_width, 
-         connectivity=8, 
-         transition=True, 
-         int_ext=True, 
-         outdir=None, 
-         statists=True, 
+def mspa(in_tiff,
+         edge_width,
+         connectivity=8,
+         transition=True,
+         int_ext=True,
+         outdir=None,
+         statists=True,
          stat_files=True,
-         return_array=False, 
+         return_array=False,
          verb=False):
     """
     Performs Morphological Spatial Pattern Analysis (MSPA) on a binary raster.
@@ -66,51 +66,51 @@ def mspa(in_tiff,
     """
     start_time = time.time()
     success = False
-    
+
     # Validate parametres
     checks.validate_mspa_params(edge_width, connectivity)
-    
+
     # Parametres
     trans = 1 if transition else 0
     i_e = 1 if int_ext else 0
-    
+
     # Initialize Paths and Metadata
     in_tiff = Path(in_tiff)
     outdir = Path(outdir) if outdir else in_tiff.parent
     in_name = in_tiff.stem
     out_name = in_name + f'_mspa_{connectivity}_{edge_width}_{trans}_{i_e}'
     info = utils.get_raster_info(in_tiff)
-    
+
     # Get metadata
     os_name, arch, is_win = utils.get_os_info()
-    
+
     # Read input Geotif
     with rasterio.open(in_tiff) as src:
         input_data = src.read(1)
-    
+
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
-    
+
     # Input Geotiff validations
-    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=False)  
-    
+    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=False)
+
     try:
         # Copy input tiff to temp dir
         tmpdir = utils.setup_run_dir()
-        utils.write_mspa_input(tmpdir, in_tiff, input_data, info['dtype'])
-        
+        utils.write_mspa_input(tmpdir, in_tiff, input_data, info['dtype'], info['is_tiled'])
+
         # Execute Binary
         args = ["-i", "mspa_input.tif",
                "-o", "mspa_output.tif",
                "-graphfg", str(connectivity),
                "-eew", str(edge_width),
-               "-transition", str(trans),               
+               "-transition", str(trans),
                "-internal", str(i_e)
                ]
         if verb:
             args.append("-v")
         utils.run_guidos_tool("mspa", tmpdir, args, verbose=verb)
-        
+
         # Read Output
         out_tiff = tmpdir / "mspa_output.tif"
         with warnings.catch_warnings():
@@ -118,15 +118,16 @@ def mspa(in_tiff,
             with rasterio.open(out_tiff) as result_src:
                 mspa_data = result_src.read()
                 mspa_colormap = result_src.colormap(1)
-        
+
         # MSPA bug correction: value = 2 to 0 (Background)
         mspa_data[mspa_data == 2] = 0
-        
+
         # Save Final Geotiff with Palette and Tags
-        tag_descr = f"GTB_MSPA, {connectivity} {edge_width} {trans} {i_e}"
+        weblink = 'https://forest.jrc.ec.europa.eu/en/activities/lpa'
+        tag_descr = f"GTB_MSPA, <{connectivity},{edge_width},{trans},{i_e}>, {weblink}"
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, mspa_data, info['profile'], mspa_colormap, tag_descr)
-        
+
         # Statistics and Reporting
         stats_dict = None
         if statists:
@@ -137,7 +138,7 @@ def mspa(in_tiff,
                                     source_tiff = in_tiff,
                                     mspa_freq = mspa_pxl_freq
                                     )
-        
+
         # Computational time
         time_str = utils.running_time(start_time, time.time())
         if verb:
@@ -148,12 +149,12 @@ def mspa(in_tiff,
 
         # Success of the process
         success = True
-        
+
         return MSPAResult(
                     stats = stats_dict,
                     array = mspa_data if return_array else None
                     )
-    
+
     except Exception as e:
         print(f"Error during run: {e}")
         raise # Still show the error
@@ -207,7 +208,7 @@ def mspa_stats(mspa_tiff, outfile = True, outdir = None, source_tiff=None, mspa_
     Output Files
     ------------
     - <mspa_tiff_stem>.txt : statistics report
-    """  
+    """
 
     start_time_stat = time.time()
 
@@ -216,25 +217,25 @@ def mspa_stats(mspa_tiff, outfile = True, outdir = None, source_tiff=None, mspa_
     minfo = utils.get_raster_info(mspa_tiff)
     if minfo["tag"] is None:
         sys.exit("ERROR: No valid GuidosToolbox metadata found in the input Geotiff")
-    
+
     # Check input tag with used tool and parametres
     tool_params = utils.get_tool_parameters(minfo["tag"])
     if tool_params.get("tool_id") != "GTB_MSPA":
         sys.exit(f"ERROR: Input Geotiff is labeled as '{tool_params.get('tool_id')}', "
             "mspa_stats requires a 'GTB_MSPA' result file."
         )
-        
+
     # Get MSPA parameters
     connectivity = tool_params["connectivity"]
     edge_width = tool_params["edge_width"]
     trans = tool_params["transition"]
     i_e = tool_params["int_ext"]
-    
+
     # Define input and output file names
     out_name = Path(mspa_tiff).stem
     outdir = Path(outdir) if outdir else mspa_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
- 
+
     # MSPA pixel counting
     if mspa_freq:
         mspa_pxl_freq = mspa_freq
@@ -273,7 +274,7 @@ def mspa_stats(mspa_tiff, outfile = True, outdir = None, source_tiff=None, mspa_
 
     ndata = mspa_pxl_freq[129]
     fgrnd = (minfo["rows"] * minfo["cols"]) - bgrnd - ndata
-    
+
     # Counting  pixel of 7 classes and indices
     cor7cl = cor_e + cor_i
     isl7cl = isl_e + isl_i
@@ -287,19 +288,19 @@ def mspa_stats(mspa_tiff, outfile = True, outdir = None, source_tiff=None, mspa_
     contiguous = cor7cl + edg7cl + prf7cl
     base = contiguous + cor_opn
     poros = 100.0 - (contiguous/base * 100.0)
-    
+
     if outfile:
         ### TXT Template Reporting ###
-        
+
         content = {
-            "input_file": source_tiff.name if source_tiff else "n/a", 
+            "input_file": source_tiff.name if source_tiff else "n/a",
             "epsg_code": minfo["epsg"],
             "unit_type": 'metres' if minfo["is_projected"] else 'degrees',
-            "resolx": minfo["resX"], 
-            "resoly": minfo["resY"], 
-            "rows_val": minfo["rows"], 
+            "resolx": minfo["resX"],
+            "resoly": minfo["resY"],
+            "rows_val": minfo["rows"],
             "cols_val": minfo["cols"],
-            "tot_pxl": minfo["rows"] * minfo["cols"], 
+            "tot_pxl": minfo["rows"] * minfo["cols"],
             "foreg_pxl": fgrnd,
             "backg_pxl": bgrnd,
             "miss_pxl": ndata,
@@ -354,7 +355,7 @@ def mspa_stats(mspa_tiff, outfile = True, outdir = None, source_tiff=None, mspa_
 
         txt_file = outdir / f'{out_name}.txt'
         utils.generate_text_report(utils.TEMPL_DIR / 'mspa_templ.txt', txt_file, content)
-    
+
     # Statistic dictionaries
     path_stats_dict = None
     if outfile:
@@ -367,19 +368,24 @@ def mspa_stats(mspa_tiff, outfile = True, outdir = None, source_tiff=None, mspa_
         "background pxl" : bgrnd,
         "missing pxl" : ndata
         }
+    class_freq = {
+        "1 core pxl" : cor7cl,
+        "2 edge pxl" : edg7cl,
+        "3 perforation pxl" : prf7cl,
+        "4 islet pxl" : isl7cl,
+        "5 branch pxl" : bch7cl,
+        "6 loop pxl" : loo7cl,
+        "7 bridge pxl" : brg7cl
+        }
     output_stats_dict = {
-        "core pxl" : cor7cl,
-        "edge pxl" : edg7cl,
-        "perforation pxl" : prf7cl,
-        "islet pxl" : isl7cl,
-        "branch pxl" : bch7cl,
-        "loop pxl" : loo7cl,
-        "bridge pxl" : brg7cl                
+        "class freq" : class_freq,
+        "integral foregr" : ifrgr,
+        "porosity" : poros
         }
     stats_dict = {
         "output paths" : path_stats_dict,
         "input stats" : input_stats_dict,
         "output stats" : output_stats_dict
                   }
-    
+
     return stats_dict
