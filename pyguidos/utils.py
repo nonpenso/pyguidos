@@ -7,12 +7,13 @@ import subprocess
 import collections
 import time
 from pathlib import Path
+import tempfile
 import uuid
 
 import numpy as np
 from scipy.ndimage import label, generate_binary_structure
 import rasterio
-from rasterio.enums import ColorInterp 
+from rasterio.enums import ColorInterp
 
 
 # def get_module_root():
@@ -38,8 +39,8 @@ from rasterio.enums import ColorInterp
 MODULE_ROOT = Path(__file__).resolve().parent
 PROGS_DIR = MODULE_ROOT / "progs"
 TEMPL_DIR = MODULE_ROOT / "templates"
-WORK_DIR = MODULE_ROOT / "work"
 DATA_DIR = MODULE_ROOT / "data"
+WORK_DIR = MODULE_ROOT / "work"
 
 
 def get_os_info():
@@ -58,7 +59,7 @@ def get_os_info():
     """
     current_os = platform.system()
     machine = platform.machine().lower()
-    
+
     # Map architectures
     if machine in ['x86_64', 'amd64']:
         arch = ""
@@ -67,7 +68,7 @@ def get_os_info():
     else:
         # Fallback to empty or specific handling if needed
         arch = "Unknown"
-        
+
     is_win = (current_os == "Windows")
     return current_os, arch, is_win
 
@@ -76,7 +77,7 @@ def setup_run_dir():
     """
     Creates a unique temporary working directory for a single binary
     executable run. Silently removes job folders older than
-    14 days from the work directory.
+    7 days from the work directory.
 
     Returns
     -------
@@ -84,8 +85,8 @@ def setup_run_dir():
         Path to the newly created temporary run directory,
         named 'job_<uuid>' inside the package work/ folder.
     """
-    # Silently clean up folders older than 2 weeks
-    max_age_seconds = 14 * 24 * 3600
+    # Silently clean up folders older than 1 weeks
+    max_age_seconds = 7 * 24 * 3600
     now = time.time()
     for old_job in WORK_DIR.glob("job_*"):
         if old_job.is_dir():
@@ -95,14 +96,14 @@ def setup_run_dir():
                     shutil.rmtree(old_job)
                 except Exception:
                     pass  # Silent: never block a new run over cleanup
-    
+
     # Create a unique subfolder for this specific run
     unique_id = str(uuid.uuid4())[:8]
     run_dir = WORK_DIR / f"job_{unique_id}"
-    
+
     # 3. Create the directories
     run_dir.mkdir(parents=True, exist_ok=True)
-    
+
     return run_dir
 
 
@@ -140,7 +141,7 @@ def run_guidos_tool(tool_name, tmp_dir, args, verbose=False):
         If the binary returns a non-zero exit code.
     """
     current_os, arch, is_win = get_os_info()
-    
+
     # 1. Binary Mapping Table
     bins = {
         "mspa": {
@@ -149,12 +150,12 @@ def run_guidos_tool(tool_name, tmp_dir, args, verbose=False):
             "Darwin": f'mspa{arch}_mac'
         },
         "spatcon": {
-            "Linux": f'spatcon{arch}_lin64', 
-            "Windows": f'spatcon{arch}64.exe', 
+            "Linux": f'spatcon{arch}_lin64',
+            "Windows": f'spatcon{arch}64.exe',
             "Darwin": f'spatcon{arch}_mac'
         }
     }
-    
+
     try:
         bin_filename = bins[tool_name][current_os]
     except KeyError:
@@ -165,12 +166,12 @@ def run_guidos_tool(tool_name, tmp_dir, args, verbose=False):
     exe_source = PROGS_DIR / bin_filename
     exe_name = "tool.exe" if is_win else "tool"
     exe_target = Path(tmp_dir) / exe_name
-    
+
     # 3. Copy and Set Permissions
     shutil.copy2(exe_source, exe_target)
     if not is_win:
         os.chmod(exe_target, os.stat(exe_target).st_mode | stat.S_IEXEC)
-    
+
     # 4. Execute
     exec_cmd = [str(exe_target)] + args
     try:
@@ -190,7 +191,7 @@ def run_guidos_tool(tool_name, tmp_dir, args, verbose=False):
                     if "No output given" in line: # Skip MSPA default dir wartning
                         continue
                     print(line)
-                
+
     except subprocess.CalledProcessError as e:
         print(f"ERROR: {tool_name.upper()} failed. Exit code: {e.returncode}")
         if e.stdout: print(f"STDOUT: {e.stdout.strip()}")
@@ -198,7 +199,7 @@ def run_guidos_tool(tool_name, tmp_dir, args, verbose=False):
         # Stop the script here
         import sys
         sys.exit(1)
-        
+
     return result
 
 def write_spatcon_params(tmp_dir, dimentions, method):
@@ -218,8 +219,8 @@ def write_spatcon_params(tmp_dir, dimentions, method):
     # dims.txt
     with open(tmp_dir / 'scsize.txt', "w") as f:
        f.write(f'nrows {dimentions[0]}\nncols {dimentions[1]}\n')
-        
-    # spatcon.txt 
+
+    # spatcon.txt
     param_content = (
         f"w {method[0]}\n"
         f"r {method[1]}\n"
@@ -327,28 +328,28 @@ def get_raster_info(intiff_path):
     """
     with rasterio.open(intiff_path) as src:
         prof = src.profile.copy()
-        
+
         # Get resolution
         resX, resY = src.res
-        
+
         # Get projection
         wkt = src.crs.to_wkt()
         epsg = src.crs.to_epsg()
         if epsg is None:
             matches = re.findall(r'AUTHORITY\["EPSG","(\d+)"\]', wkt)
             epsg = matches[-1] if matches else "Unknown"
-        
+
         # Get colormap
         try:
-            cmap = src.colormap(1) 
+            cmap = src.colormap(1)
         except ValueError:
             # Input raster has no colormap
             cmap = None
-        
+
         # Tags
         tags = src.tags()
         tag_descr = tags.get('TIFFTAG_IMAGEDESCRIPTION') or "--"
-        
+
         return {
             "profile": prof,
             "rows": src.height,
@@ -403,7 +404,7 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
 
     # Resolve Colormap
     color_map = {}
-    
+
     # Check if it's a dictionary (MSPA style)
     if isinstance(colormap_input, dict):
         color_map = colormap_input
@@ -417,11 +418,11 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
                     val = int(parts[0])
                     r, g, b = int(parts[1]), int(parts[2]), int(parts[3])
                     color_map[val] = (r, g, b, 255)
-    
+
     # Ensure data is 3D (bands, rows, cols) for rasterio writing
     if data.ndim == 2:
         data = data[np.newaxis, :]
-    
+
     # Write the file
     with rasterio.open(output_path, 'w', **out_profile) as dst:
         dst.write(data)
@@ -456,15 +457,15 @@ def get_pxl_freq(array, chunk_size=1000):
     # Fast path for uint8: bincount covers all 256 possible values instantly
     if data.dtype == np.uint8:
         counts = np.bincount(data.ravel(), minlength=256)
-        return collections.Counter({i: int(c) for i, c in enumerate(counts) if c > 0})    
-    
+        return collections.Counter({i: int(c) for i, c in enumerate(counts) if c > 0})
+
     # General path for int32/large arrays (e.g. labeled patch arrays)
     total_counts = collections.Counter()
     for i in range(0, data.shape[0], chunk_size):
         chunk = data[i : i + chunk_size, :]
-        values, counts = np.unique(chunk, return_counts=True)  
+        values, counts = np.unique(chunk, return_counts=True)
         total_counts.update(dict(zip(values.tolist(), counts.tolist())))
-        
+
     return total_counts
 
 
@@ -516,7 +517,7 @@ def generate_text_report(template_path, output_path, data_dict):
     """
     with open(template_path, 'r') as f:
         template_content = f.read()
-    
+
     try:
         # Use .format_map to safely handle keys
         report = template_content.format(**data_dict)
@@ -553,10 +554,10 @@ def update_time_line(file_path, time_str):
 
         # Pattern: Starts with 'Computational time:', then matches everything to the end of the line
         pattern = r"^(Computational time:\s*).*"
-        
+
         new_lines = []
         found = False
-        
+
         for line in lines:
             # re.sub will replace the whole line if the pattern matches
             if re.match(pattern, line):
@@ -569,7 +570,7 @@ def update_time_line(file_path, time_str):
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.writelines(new_lines)
             return True
-        
+
         return False
     except Exception:
         return False
@@ -626,7 +627,7 @@ def get_tool_parameters(tag_description):
     elif tool == "GTB_LM":
         # Format: "GTB_LM, <33>"
         result["wsize"] = params[0]
-    
+
     elif tool == "GTB_ACC":
         # Format: "GTB_ACC, <1000,100000,1000000,2000000>"
         result["thresholds"] = params
@@ -662,19 +663,19 @@ def labelling_array(input_array, target_values):
 
     # Create the mask for specific forest classes
     foreground_mask = np.isin(input_array, target_values)
-    
+
     # Define 8-connectivity (diagonal connections allowed)
     structure = generate_binary_structure(2, 2)
     labeled_array, num_patches = label(foreground_mask, structure=structure)
-    
+
     # Count pixels per unique label (patch ID)
     label_freq = get_pxl_freq(labeled_array)
-    
+
     # Remove background (0) from the frequency count
     # '0' represents everything NOT in your target_values
     if 0 in label_freq:
         del label_freq[0]
-    
+
     return labeled_array, label_freq
 
 def get_gtb_nodata(tiff_path):
@@ -704,12 +705,12 @@ def get_gtb_nodata(tiff_path):
     }
 
     info = get_raster_info(tiff_path)
-    
+
     # Priority 1: GTB output
     if info["tag"] and info["tag"] != "--":
         tool_params = get_tool_parameters(info["tag"])
         if tool_params and tool_params.get("tool_id") in GTB_NODATA:
             return GTB_NODATA[tool_params["tool_id"]]
-    
+
     # Priority 2 & 3: non-GTB
     return info["profile"].get("nodata") or 0
