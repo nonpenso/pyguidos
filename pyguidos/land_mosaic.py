@@ -19,13 +19,13 @@ from .results import LandMosResult
 
 
 
-def landmos(in_tiff, 
-            window_size, 
-            outdir=None, 
+def landmos(in_tiff,
+            window_size,
+            outdir=None,
             statists=True,
             stat_files=True,
-            out_colors='bgr', 
-            return_array=False, 
+            out_colors='bgr',
+            return_array=False,
             verb=False):
     """
     Performs Landscape Mosaic analysis on a three-class raster using a
@@ -49,7 +49,7 @@ def landmos(in_tiff,
     stat_files : bool, optional
         If True (default), writes statistics to .txt, .csv and .png files.
     out_colors : str, optional
-        Color scheme for the 103-class output colormap: 'agr', 'ant', 'bgr', 
+        Color scheme for the 103-class output colormap: 'agr', 'ant', 'bgr',
         'dev', 'div', 'nat'. Default 'bgr'.
     return_array : bool, optional
         If True, includes the 103-class output numpy array in the result.
@@ -73,13 +73,13 @@ def landmos(in_tiff,
     - <in_name>_lm_<window_size>.csv          : per-value pixel counts
     - <in_name>_lm_<window_size>_heatmap.csv  : ternary diagram data table
     - <in_name>_lm_<window_size>_heatmap.png  : ternary diagram heatmap
-    """ 
+    """
     start_time = time.time()
     success = False
-    
+
     # Validate parametres
     checks.validate_wsize(window_size)
-    
+
     # Initialize Paths and Metadata
     in_tiff = Path(in_tiff)
     outdir = Path(outdir) if outdir else in_tiff.parent
@@ -93,10 +93,10 @@ def landmos(in_tiff,
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
         input_data = src.read()
-    
+
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
-    
+
     # Input Geotiff validations
     checks.validate_lm_input(list(input_pxl_freq.keys()), info["bands"])
 
@@ -104,7 +104,7 @@ def landmos(in_tiff,
         # Prepare Binary Input
         tmpdir = utils.setup_run_dir()
         utils.write_spatcon_input(tmpdir, input_data)
-        
+
         # Write Spatcon TXT files
         dims = (info['rows'], info['cols'])
         w = window_size
@@ -119,44 +119,44 @@ def landmos(in_tiff,
         # Execute Spatcon Binary
         args = []
         utils.run_guidos_tool("spatcon", tmpdir, args, verbose=verb)
-        
+
         # Process Output
         spat_bin = tmpdir / "scoutput"
         spat_data = np.fromfile(spat_bin, dtype=np.uint8).reshape((1, info['rows'], info['cols']))
         data_masked = np.select([input_data == 0], [0], default=spat_data)
-        
+
         # Save 103 classes Geotiff
-        weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/"
-        tag_descr = f"GTB_LM, WS{window_size}x{window_size}, {weblink}"
+        weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/"
+        tag_descr = f"GTB_LM, <{window_size}>, {weblink}"
         cmap_path = utils.TEMPL_DIR / f"lm_{out_colors}_colormap.txt"
         out_tiff103c = outdir / f"{out_name}_103class.tif"
         utils.save_output_geotiff(out_tiff103c, data_masked, info['profile'], cmap_path, tag_descr)
-        
+
         # Reclassiafy Geotiff 103 -> 19 classes
         reclass = {}
         with open(utils.TEMPL_DIR / 'lm_103to19.txt' , 'r') as f:
             for line in f:
                 l = [int(x) for x in line.split(' ')]
                 reclass[l[0]]=l[1]
-        
+
         max_value = max(reclass.keys())
         mapping_array = np.zeros(max_value + 1, dtype=int)
         for old_val, new_val in reclass.items():
             mapping_array[old_val] = new_val
         data_19cl = mapping_array[data_masked]
-        
+
         # Save 19 classes Geotiff
-        cmap_path19 = utils.TEMPL_DIR / "lm_19c_colormap.txt" 
+        cmap_path19 = utils.TEMPL_DIR / "lm_19c_colormap.txt"
         out_tiff19c = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff19c, data_19cl, info['profile'], cmap_path19, tag_descr)
-        
+
         # Statistics and Reporting
         stats_dict = None
         if statists:
             lm_pixel_freq = utils.get_pxl_freq(data_masked)
-            stats_dict = landmos_stats(lm_tiff=out_tiff103c, 
+            stats_dict = landmos_stats(lm_tiff=out_tiff103c,
                                        outfile = stat_files,
-                                       outdir=outdir, 
+                                       outdir=outdir,
                                        source_tiff=in_tiff,
                                        lm_freq=lm_pixel_freq,
                                        source_freq=input_pxl_freq)
@@ -171,12 +171,12 @@ def landmos(in_tiff,
 
         # Success of the process
         success = True
-        
+
         return LandMosResult(
                     stats = stats_dict,
                     array = data_masked if return_array else None
                     )
-        
+
     except Exception as e:
         print(f"Error during run: {e}")
         raise # Still show the error
@@ -241,7 +241,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
     - <lm_tiff_stem>.csv         : per-value pixel counts and frequencies
     - <lm_tiff_stem>_heatmap.csv : ternary diagram data table
     - <lm_tiff_stem>_heatmap.png : ternary diagram heatmap
-    """  
+    """
     start_time_stat = time.time()
 
     # Read metadata
@@ -249,17 +249,17 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
     minfo = utils.get_raster_info(lm_tiff)
     if minfo["tag"] is None:
         sys.exit("ERROR: No valid GuidosToolbox metadata found in the input Geotiff")
-    
+
     # Check input tag with used tool and parametres
     tool_params = utils.get_tool_parameters(minfo["tag"])
     if tool_params.get("tool_id") != "GTB_LM":
         sys.exit(f"ERROR: Input Geotiff is labeled as '{tool_params.get('tool_id')}', "
             "landmos_stats requires a 'GTB_LM' result file."
         )
-        
+
     # Get Landscape Mosaic parameters
-    window_size = int(tool_params["wsize"].split('x')[1])
-    
+    window_size = int(tool_params["wsize"])
+
     # Define input and output file names
     out_name = Path(lm_tiff).stem
     outdir = Path(outdir) if outdir else lm_tiff.parent
@@ -275,26 +275,26 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             source_pxl_numb = utils.get_pxl_freq(source_data)
         else:
             source_pxl_numb=None
-    
+
     class1 = source_pxl_numb[1] if source_pxl_numb else "n/a"
     class2 = source_pxl_numb[2] if source_pxl_numb else "n/a"
     class3 = source_pxl_numb[3] if source_pxl_numb else "n/a"
-    
+
     # Landscape Mosaic pixel counting
     if lm_freq:
         lm_pixel_freq = lm_freq
     else:
         with rasterio.open(lm_tiff) as src:
-            lm_data = src.read()  
-        lm_pixel_freq = utils.get_pxl_freq(lm_data)    
+            lm_data = src.read()
+        lm_pixel_freq = utils.get_pxl_freq(lm_data)
 
     NoData = lm_pixel_freq[0]
     foregr = (minfo["rows"] * minfo["cols"]) - NoData
     lm_pixel_prop = {k: v / foregr * 100 for k, v in lm_pixel_freq.items()}
-    
+
     # Max value
     max_key = max((k for k in lm_pixel_prop if k > 0), key=lm_pixel_prop.get)
-    
+
     # Remap to 19 classes and pixel counting
     reclass_map = {}
     with open(utils.TEMPL_DIR / 'lm_103to19.txt' , 'r') as f:
@@ -306,9 +306,9 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
         new_class = reclass_map.get(orig_val)
         if new_class is not None:
             lm_pixel_freq_19[new_class] += count
-    
-    lm_pixel_prop_19 = Counter({k: v / foregr *100 
-                                          for k, v in lm_pixel_freq_19.items()}) 
+
+    lm_pixel_prop_19 = Counter({k: v / foregr *100
+                                          for k, v in lm_pixel_freq_19.items()})
     A_rel = lm_pixel_prop_19[1]
     D_rel = lm_pixel_prop_19[2]
     N_rel = lm_pixel_prop_19[3]
@@ -329,10 +329,10 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
     AA_rel = lm_pixel_prop_19[18]
     DD_rel = lm_pixel_prop_19[19]
     NoD_rel = lm_pixel_prop_19[0]
-    
-    
+
+
     if outfile:
-        
+
         ### PNG HEATMAP ###
         fig = None
         try:
@@ -351,15 +351,15 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             tri_seq = []
             for i in range(10, 0, -1):
                 tri_seq += value_ids[i]
-            
+
             fig, ax = plt.subplots(figsize=(10, 8))
-            
+
             # Initialize the tax object
             tax = ternary.TernaryAxesSubplot(ax=ax, scale=100)
             ax.set_aspect('equal', adjustable='box')
             tax.boundary(linewidth=2)
             tax.gridlines(multiple=10, color="lightgrey", linestyle='-', linewidth=0.7)
-            
+
             # Bolding the 0%, 10%, 60% lines
             # Coordinates follow: (Natural, Agriculture, Developed)
             def draw_line(p1, p2, color='black', linewidth=2.0):
@@ -368,12 +368,12 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
                 #tax.get_axes().plot([fp1[0], fp2[0]], [fp1[1], fp2[1]], color=color, linewidth=linewidth, zorder=3)
                 xs, ys = zip(project_point(p1), project_point(p2))
                 tax.get_axes().plot(xs, ys, color=color, linewidth=linewidth, zorder=3)
-            
+
             for v in [0, 10, 60]:
                 draw_line((v, 100-v, 0), (v, 0, 100-v))
                 draw_line((100-v, v, 0), (0, v, 100-v))
                 draw_line((100-v, 0, v), (0, 100-v, v))
-            
+
             # # Helper function to convert (1, 2, 3) to (x, y)
             # def draw_filled_region(points, color, alpha=0.5):
             #     # Project all ternary points to cartesian x,y
@@ -382,14 +382,14 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             #     xs, ys = zip(*projected_points)
             #     # Use the underlying matplotlib axes to fill
             #     tax.get_axes().fill(xs, ys, facecolor=color, alpha=alpha, edgecolor='black', linewidth=0.5)
-            
+
             # Regions
             zones = {
                 # Pure Corners (>90%)
-                "A":  {"poly": [(100,0,0), (90,10,0), (80,10,10), (90,0,10)], "rgb": (0, 0, 1)}, 
-                "N":  {"poly": [(0,100,0), (10,90,0), (10,80,90), (0,90,10)], "rgb": (0, 1, 0)}, 
-                "D":  {"poly": [(0,0,100), (10,0,90), (10,10,80), (0,10,90)], "rgb": (1, 0, 0)}, 
-                
+                "A":  {"poly": [(100,0,0), (90,10,0), (80,10,10), (90,0,10)], "rgb": (0, 0, 1)},
+                "N":  {"poly": [(0,100,0), (10,90,0), (10,80,90), (0,90,10)], "rgb": (0, 1, 0)},
+                "D":  {"poly": [(0,0,100), (10,0,90), (10,10,80), (0,10,90)], "rgb": (1, 0, 0)},
+
                 # Secondary Transition Zones (60-90%) - Fixed Geometry
                 "An": {"poly": [(90,10,0), (60,40,0), (60,30,10), (80,10,10)], "rgb": (0/255, 128/255, 255/255)},
                 "Ad": {"poly": [(90,0,10), (80,10,10), (60,10,30), (60,0,40)], "rgb": (128/255, 0/255, 255/255)},
@@ -397,17 +397,17 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
                 "Nd": {"poly": [(0,90,10), (0,60,40), (10,60,30), (10,80,10)], "rgb": (128/255, 255/255, 0/255)},
                 "Dn": {"poly": [(0,10,90), (0,40,60), (10,30,60), (10,10,80)], "rgb": (255/255, 128/255, 0/255)},
                 "Da": {"poly": [(10,0,90), (40,0,60), (40,10,50), (10,10,80)], "rgb": (255/255, 0/255, 128/255)},
-            
+
                 # Tertiary Transition Zones (40-60%)
                 "Adn": {"poly": [(60,10,30), (80,10,1), (60,30,10)], "rgb": (128/255, 128/255, 255/255)},
                 "Nad": {"poly": [(10,60,30), (30,60,10), (10,80,10)], "rgb": (128/255, 255/255, 128/255)},
                 "Dan": {"poly": [(10,10,80), (30,10,60), (10,30,60)], "rgb": (255/255, 128/255, 128/255)},
-            
+
                 # Mid-Transition Zones
                 "ad": {"poly": [(60,0,40), (60,10,30), (30,10,60), (40,0,60)], "rgb": (128/255, 0, 128/255)},
                 "an": {"poly": [(40,60,0), (30,60,10), (60,30,10), (60,40,0)], "rgb": (0, 128/255, 128/255)},
                 "dn": {"poly": [(0,60,40), (0,40,60), (10,30,60), (10,60,30)], "rgb": (128/255, 128/255, 0)},
-            
+
                 # Large Center Zone (adn)
                 "adn": {"poly": [(10,30,60), (30,10,60), (60,10,30), (60,30,10), (30,60,10), (10,60,30)], "rgb": (128/255, 128/255, 128/255)},
             }
@@ -416,16 +416,16 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
                 #xs, ys = zip(*projected_poly)
                 xs, ys = zip(*[project_point(p) for p in zone["poly"]])
                 ax.fill(xs, ys, facecolor=zone["rgb"], edgecolor='white', linewidth=0.7, zorder=1)
-                
-            
+
+
             # Axis Labels with Arrows (Matching the Reference)
-            ax.text(50, -7, "More Blue (class=1) $\\rightarrow$", 
+            ax.text(50, -7, "More Blue (class=1) $\\rightarrow$",
                     ha='center', va='top', fontsize=16)
-            ax.text(15, 45, "$\leftarrow$ More Red (class=3)", 
+            ax.text(15, 45, "$\leftarrow$ More Red (class=3)",
                     rotation=60, ha='center', va='center', fontsize=16)
-            ax.text(86, 45, "$\leftarrow$ More Green (class=2)", 
+            ax.text(86, 45, "$\leftarrow$ More Green (class=2)",
                     rotation=-60, ha='center', va='center', fontsize=16)
-            
+
             # Ticks
             tax.ticks(axis='lbr', multiple=10, linewidth=1, offset=0.018, tick_formats="%d%%",
                       fontsize=12)
@@ -433,13 +433,13 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
                 label = text.get_text()
                 if "%" in label:
                     x, y = text.get_position()
-                    if y < 1: 
-                        # Decrease the second value to move it "down", 
+                    if y < 1:
+                        # Decrease the second value to move it "down",
                         # or increase it to move it "up" (closer to the triangle)
-                        text.set_position((x, y + 3)) 
+                        text.set_position((x, y + 3))
                         text.set_verticalalignment('top')
             tax.get_axes().axis('off')
-            
+
             # Corner Circles
             corners = {
                 180: {"coord": (109, -9, 0), "color": "#0000FF", "offset": (6, -6)},
@@ -451,23 +451,23 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
                 center = project_point(params["coord"])
                 prop = lm_pixel_prop.get(value)
                 bg_col, txt_col = use_color(value, max_key)
-                
+
                 # Create big circle
-                circle = patches.Circle((center[0], center[1]), 3.6, color=params["color"], 
+                circle = patches.Circle((center[0], center[1]), 3.6, color=params["color"],
                         ec='black', lw=1.5, zorder=10)
                 ax.add_patch(circle)
-                
+
                 # Create small circle
-                circle = patches.Circle((center[0], center[1]), 2.2, 
-                                        color=bg_col, 
+                circle = patches.Circle((center[0], center[1]), 2.2,
+                                        color=bg_col,
                                         ec='none', alpha=0.9, zorder=14)
                 ax.add_patch(circle)
-                
+
                 # Add freqeuncy value
                 ax.text(center[0], center[1], frq_str(prop),
-                                   color=txt_col, 
+                                   color=txt_col,
                                    fontsize=9, ha='center', va='center', zorder=15)
-                
+
             # Corner Arrows
             end_pos = project_point((0, 100, 0))
             start_pos = project_point((0, 106, -6))
@@ -481,73 +481,73 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             start_pos = project_point((-6, 0, 106))
             ax.annotate('', xy=(end_pos[0], end_pos[1]), xytext=(start_pos[0], start_pos[1]),
                         arrowprops=dict(arrowstyle='->', lw=2, mutation_scale=10))
-            
+
             # 100 Circles
             circle_patches = []
             circle_colors  = []
             text_items     = []
-            
+
             step = 10
             id_counter = 1  # Placeholder for IDs
             for i in range(0, 100, step):
                 for j in range(0, 100 - i, step):
-                    
+
                     # 1. UPWARD TRIANGLES
                     if i + step <= 100:
                         # Mid-point of the cell
                         c_a = i + 3.33
                         c_n = j + 3.33
                         c_d = 100 - c_a - c_n
-                        
+
                         if c_d >= 0:
                             id_cell = tri_seq[id_counter-1]
                             prop = lm_pixel_prop.get(id_cell)
                             bg_col, txt_col = use_color(id_cell, max_key)
                             pos = project_point((c_n, c_a, c_d))
-                            
+
                             circle_patches.append(patches.Circle(pos, 2.3))
                             circle_colors.append(bg_col)
                             text_items.append((pos[0], pos[1], frq_str(prop), txt_col))
                             id_counter += 1
-            
-                    # 2. DOWNWARD TRIANGLES 
+
+                    # 2. DOWNWARD TRIANGLES
                     if i + step <= 100 and j + step <= 100 and (100 - i - j - step) >= 0:
                         # Shifted center for the inverted triangles
                         c_a_down = i + 6.66
                         c_n_down = j + 6.66
                         c_d_down = 100 - c_a_down - c_n_down
-                        
+
                         if c_d_down > 0:
                             id_cell = tri_seq[id_counter-1]
-                            prop = lm_pixel_prop.get(id_cell) 
+                            prop = lm_pixel_prop.get(id_cell)
                             bg_col, txt_col = use_color(id_cell, max_key)
                             pos_down = project_point((c_n_down, c_a_down, c_d_down))
-                            
+
                             circle_patches.append(patches.Circle(pos_down, 2.3))
                             circle_colors.append(bg_col)
                             text_items.append((pos_down[0], pos_down[1], frq_str(prop), txt_col))
                             id_counter += 1
-            
-            # Add all circles 
+
+            # Add all circles
             pc = PatchCollection(circle_patches, facecolors=circle_colors, edgecolors='none', alpha=0.9, zorder=14)
             ax.add_collection(pc)
-            
+
             # Add all text in one batch
             for x, y, txt, col in text_items:
                 ax.text(x, y, txt, color=col, fontsize=9, ha='center', va='center', zorder=15)
-            
+
             ax.set_xlim(-15, 120)
             ax.set_ylim(-15, 100)
-            
+
             plt.tight_layout()
             png_file = outdir / f'{out_name}_heatmap.png'
             plt.savefig(png_file, dpi=300, facecolor='white', transparent=False)
             plt.close()
-        
+
         finally:
             if fig is not None:
                 plt.close(fig)
-        
+
         ### CSV Export ####
         csv_file = outdir / f'{out_name}.csv'
         with open(csv_file, 'w', newline='') as f:
@@ -557,8 +557,8 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
                 if v>0:
                     freq = lm_pixel_prop[v]
                     writer.writerow([v, lm_pixel_freq[v], f"{freq:.6f}"])
-        
-        
+
+
         ### CSV Triangle Export ###
         csv_file_hm = outdir / f'{out_name}_heatmap.csv'
         with open(csv_file_hm, 'w', newline='') as f:
@@ -579,17 +579,17 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             freq190 = lm_pixel_prop[190]
             freq180 = lm_pixel_prop[180]
             writer.writerow([' '] + [f"{freq190:.3f}"] + [' ']*19 + [f"{freq180:.3f}"])
-        
-       
+
+
         ### TXT Template Reporting ###
-     
+
         content = {
-            "input_file": source_tiff.name if source_tiff else "n/a",  
+            "input_file": source_tiff.name if source_tiff else "n/a",
             "epsg_code": minfo["epsg"],
             "unit_type": 'metres' if minfo["is_projected"] else 'degrees',
-            "resolx": minfo["resX"], 
-            "resoly": minfo["resY"], 
-            "rows_val": minfo["rows"], 
+            "resolx": minfo["resX"],
+            "resoly": minfo["resY"],
+            "rows_val": minfo["rows"],
             "tot_pxl": minfo["rows"] * minfo["cols"],
             "cols_val": minfo["cols"],
             "class1_pxl": class1,
@@ -597,13 +597,13 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             "class3_pxl": class3,
             "miss_pxl": NoData,
             "foregr_pxl": foregr,
-         
+
             "w_size": window_size,
             "window_areaHA": f"{(window_size**2)*minfo['resX']*minfo['resY']/10000:.4f}" if minfo["is_projected"] else '--',
             "window_areaAC": f"{(window_size**2)*minfo['resX']*minfo['resY']*0.000247105:.4f}" if minfo["is_projected"] else '--',
-            
+
             "output_file": f'{out_name}.tif',
-        
+
             "A_val": f'{A_rel:6.3f}',
             "D_val": f'{D_rel:6.3f}',
             "N_val": f'{N_rel:6.3f}',
@@ -624,15 +624,15 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             "AA_val": f'{AA_rel:6.3f}',
             "DD_val": f'{DD_rel:6.3f}',
             "NoD_val": f'{NoD_rel:6.3f}',
-        
+
             "comp_time": f"{utils.running_time(start_time_stat, time.time())}"
         }
         txt_file = outdir / f'{out_name}.txt'
         utils.generate_text_report(utils.TEMPL_DIR / 'lm_templ.txt', txt_file, content)
-    
+
     # Statistic dictionaries
     path_stats_dict = None
-    if outfile:    
+    if outfile:
         path_stats_dict = {
             "path tif" : str(lm_tiff),
             "path_txt" : str(txt_file),
@@ -656,7 +656,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
         "input stats" : input_stats_dict,
         "output stats" : output_stats_dict
                   }
-    
+
     return stats_dict
 
 

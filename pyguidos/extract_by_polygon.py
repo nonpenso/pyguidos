@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 import fiona
 import rasterio
 from rasterio.mask import mask as rio_mask
@@ -93,7 +95,7 @@ def extract_by_polygon(
         except ValueError:
             cmap = None
 
-        with fiona.open(vector_path, "r") as vector:
+        with fiona.open(str(vector_path), "r") as vector:
 
             # Check vector CRS
             if not vector.crs_wkt:

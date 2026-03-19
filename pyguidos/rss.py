@@ -10,14 +10,14 @@ from .results import RssResult
 
 
 def rss(
-    in_tiff, 
+    in_tiff,
     outdir=None,
     stat_files=True,
     verb=False
     ):
     """
     Performs Restoration Status Summary (RSS) analysis on a binary or
-    multi-class raster. Computes patch-based habitat network indices 
+    multi-class raster. Computes patch-based habitat network indices
     including Degree of Coherence (COH) and Restoration Potential (RPOT),
     providing a summary of habitat network status based on patch size
     distribution.
@@ -47,87 +47,87 @@ def rss(
     - <in_name>_rss.txt : statistics report
     """
     start_time = time.time()
-    
+
     # Initialize Paths and Metadata
     in_tiff = Path(in_tiff)
     outdir = Path(outdir) if outdir else in_tiff.parent
     in_name = in_tiff.stem
     out_name = f"{in_name}_rss"
     info = utils.get_raster_info(in_tiff)
-    
+
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
         input_data = src.read(1)
-    
+
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
-    
+
     # Input Geotiff validations
-    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["dtype"], allow_34=True)
-    
+    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=True)
+
     # Get patch size frequencies
     labeled_array, lab_pxl_freq = utils.labelling_array(input_data, 2)
-        
+
     # Counting pixel per input class
     fgrnd = input_pxl_freq[2]
     bgrnd = input_pxl_freq[1]
     bgr3 = input_pxl_freq[3]
     bgr4 = input_pxl_freq[4]
     ndata =  input_pxl_freq[0]
-    
+
     # Counting output pixels per patch
     patch_sizes = [count for pid, count in lab_pxl_freq.items() if pid > 0]
-    
+
     # Computing indicies
     tot_pch = len(patch_sizes)
     avg_size = np.mean(patch_sizes)
     median_size = np.median(patch_sizes)
     largest_size = np.max(patch_sizes)
-    
+
     sizes_array = np.array(patch_sizes)
     RAC = fgrnd / (fgrnd + bgrnd) * 100
     ECA = np.sqrt(np.sum(sizes_array**2))
     COH = (ECA / fgrnd) * 100
     CNOA = 1.0 + ((2.0 * fgrnd * ECA**2)/(fgrnd**2 - ECA**2))
     RPOT = 100 - COH
-    
+
     if stat_files:
-        
+
         ### TXT Template Reporting ###
         content = {
-            "input_file": in_tiff.name, 
+            "input_file": in_tiff.name,
             "epsg_code": info["epsg"],
             "unit_type": 'metres' if info["is_projected"] else 'degrees',
-            "resolx": info["resX"], 
-            "resoly": info["resY"], 
-            "rows_val": info["rows"], 
+            "resolx": info["resX"],
+            "resoly": info["resY"],
+            "rows_val": info["rows"],
             "cols_val": info["cols"],
-            "tot_pxl": info["rows"] * info["cols"], 
+            "tot_pxl": info["rows"] * info["cols"],
             "foreg_pxl": fgrnd,
-            "backg_pxl": bgrnd, 
+            "backg_pxl": bgrnd,
             "miss_pxl": ndata,
-            "spec3_pxl": bgr3, 
+            "spec3_pxl": bgr3,
             "spec4_pxl": bgr4,
-                
+
             "output_file": f'{out_name}.tif',
-        
+
             "tot_pch": tot_pch,
             "avg_pch": f"{avg_size:.1f}",
             "med_pch": median_size,
             "lar_pch": largest_size,
-            
+
             "CNOA_val": int(round(CNOA)),
-            "ECA_val": int(round(ECA)),         
+            "ECA_val": int(round(ECA)),
             "RAC_val": f"{RAC:.2f}",
             "COH_val": f"{COH:.2f}",
             "RPOT_val":  f"{RPOT:.2f}",
-            
+
             "comp_time": f"{utils.running_time(start_time, time.time())}"
         }
-    
+
         txt_file = outdir / f'{out_name}.txt'
-        utils.generate_text_report(utils.TEMPL_DIR / 'rss_templ.txt', txt_file, content)    
-    
+        utils.generate_text_report(utils.TEMPL_DIR / 'rss_templ.txt', txt_file, content)
+
     # Statistic dictionaries
     path_stats_dict = None
     if stat_files:
@@ -150,17 +150,17 @@ def rss(
         "ECA": ECA,
         "RAC": RAC,
         "COH": COH,
-        "RPOT": RPOT
+        "REST_POT": RPOT
         }
     stats_dict = {
         "output paths" : path_stats_dict,
         "input stats" : input_stats_dict,
         "output stats" : output_stats_dict
                   }
-    
+
     # Completed
     if verb:
         print(f"\nFragmentation completed in {utils.running_time(start_time, time.time())}")
-    
+
     return RssResult(stats=stats_dict)
 
