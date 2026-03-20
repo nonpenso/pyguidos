@@ -31,6 +31,13 @@ Tools
 
 ---
 
+Documentation
+=============
+
+Full API documentation is available at https://jrc-forest.pages.code.europa.eu/guidos/pyguidos.
+
+---
+
 Requirements
 ============
 
@@ -120,13 +127,6 @@ pg.extract_by_polygon(
 ```
 
 Example data and Jupyter notebooks with worked examples are available in the [project repository](https://code.europa.eu/jrc-forest/guidos/pyguidos).
-
----
-
-Documentation
-=============
-
-Full API documentation is available at https://jrc-forest.pages.code.europa.eu/guidos/pyguidos.
 
 ---
 
