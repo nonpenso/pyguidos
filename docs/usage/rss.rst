@@ -41,7 +41,7 @@ RSS computes the following indices:
      - %
      - Percentage of foreground pixels effectively connected
    * - Restoration Potential
-     - RPOT
+     - REST_POT
      - %
      - Percentage of foreground pixels that could improve connectivity (100 - COH)
 
@@ -123,7 +123,7 @@ Result Object
     print(result.stats["output stats"])
     # {'total patches': 142, 'average patch size': 88.0,
     #  'median patch size': 12.0, 'largest patch size': 8542,
-    #  'ECA': 8764.3, 'COH': 70.1, 'CNOA': 3, 'RPOT': 29.9, 'RAC': 25.0}
+    #  'ECA': 8764.3, 'COH': 70.1, 'CNOA': 3, 'REST_POT': 29.9, 'RAC': 25.0}
 
     # Output file paths
     print(result.stats["output paths"])

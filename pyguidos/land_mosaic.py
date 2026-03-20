@@ -127,9 +127,9 @@ def landmos(in_tiff,
 
         # Save 103 classes Geotiff
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/"
-        tag_descr = f"GTB_LM, <{window_size}>, {weblink}"
+        tag_descr = f"GTB_LM, <{window_size},{out_colors}>, {weblink}"
         cmap_path = utils.TEMPL_DIR / f"lm_{out_colors}_colormap.txt"
-        out_tiff103c = outdir / f"{out_name}_103class.tif"
+        out_tiff103c = outdir / f"{out_name}_103class_{out_colors}.tif"
         utils.save_output_geotiff(out_tiff103c, data_masked, info['profile'], cmap_path, tag_descr)
 
         # Reclassiafy Geotiff 103 -> 19 classes
@@ -161,6 +161,10 @@ def landmos(in_tiff,
                                        lm_freq=lm_pixel_freq,
                                        source_freq=input_pxl_freq)
 
+        # Add 19-class path — known here but not inside landmos_stats()
+        if stats_dict["output paths"]["path tif 19cl"] is None:
+            stats_dict["output paths"]["path tif 19cl"] = str(out_tiff19c)
+        
         # Computational time
         time_str = utils.running_time(start_time, time.time())
         if verb:
@@ -261,7 +265,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
     window_size = int(tool_params["wsize"])
 
     # Define input and output file names
-    out_name = Path(lm_tiff).stem
+    out_name = Path(lm_tiff).stem.split('_103class')[0]
     outdir = Path(outdir) if outdir else lm_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
 
@@ -450,6 +454,8 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
                 # Get the XY position of the vertex
                 center = project_point(params["coord"])
                 prop = lm_pixel_prop.get(value)
+                if prop is None:
+                    prop = 0.0
                 bg_col, txt_col = use_color(value, max_key)
 
                 # Create big circle
@@ -566,18 +572,18 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             # Title
             writer.writerow([f'Landscape Mosaic using Window size ({window_size}x{window_size})'] + [' ']*21)
             # NN
-            freq170 = lm_pixel_prop[170]
+            freq170 = lm_pixel_prop.get(170, 0.0)
             writer.writerow([' ']*11 + [f"{freq170:.3f}"] + [' ']*10)
             # Triangle
             for lin in sorted(value_ids.keys()):
                 frqs = []
                 for p in value_ids[lin]:
-                    freq_val = lm_pixel_prop[p]
+                    freq_val = lm_pixel_prop.get(p, 0.0)
                     frqs.append(f'{freq_val:.3f}')
                 writer.writerow([' ']*(12-lin) + frqs + [' ']*(11-lin))
             # DD and AA
-            freq190 = lm_pixel_prop[190]
-            freq180 = lm_pixel_prop[180]
+            freq190 = lm_pixel_prop.get(190, 0.0)
+            freq180 = lm_pixel_prop.get(180, 0.0)
             writer.writerow([' '] + [f"{freq190:.3f}"] + [' ']*19 + [f"{freq180:.3f}"])
 
 
@@ -631,14 +637,22 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
         utils.generate_text_report(utils.TEMPL_DIR / 'lm_templ.txt', txt_file, content)
 
     # Statistic dictionaries
+    
+    # Try to find the 19-class file in the same folder
+    path_19cl = None
+    tif_19cl = outdir / f"{out_name}.tif"
+    if tif_19cl.exists():
+        path_19cl = str(tif_19cl)
+    
     path_stats_dict = None
     if outfile:
         path_stats_dict = {
-            "path tif" : str(lm_tiff),
-            "path_txt" : str(txt_file),
-            "path_csv" : str(csv_file),
-            "path_csv_hm" : str(csv_file_hm),
-            "path_png" : str(png_file)
+            "path tif 103cl" : str(lm_tiff),
+            "path tif 19cl" : path_19cl,
+            "path txt" : str(txt_file),
+            "path csv" : str(csv_file),
+            "path csv hm" : str(csv_file_hm),
+            "path png" : str(png_file)
             }
     input_stats_dict = {
         "class1 pxl": class1,
@@ -663,7 +677,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
 
 # Frequency visialization
 def frq_str(frq):
-    if frq == 0:
+    if frq is None or frq == 0:
         return '-'
     elif frq >= 0.1:
         return f"{frq:.1f}"

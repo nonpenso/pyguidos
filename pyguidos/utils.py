@@ -7,7 +7,6 @@ import subprocess
 import collections
 import time
 from pathlib import Path
-import tempfile
 import uuid
 
 import numpy as np
@@ -640,8 +639,9 @@ def get_tool_parameters(tag_description):
         result["int_ext"] = params[3]
 
     elif tool_id == "GTB_LM":
-        # Format: "GTB_LM, <33>"
+        # Format: "GTB_LM, <33, bgr>"
         result["wsize"] = params[0]
+        result["cmap"] = params[1]
 
     elif tool_id == "GTB_ACC":
         # Format: "GTB_ACC, <1000,100000,1000000,2000000>"
