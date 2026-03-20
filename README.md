@@ -10,6 +10,7 @@ Overview
 ``pyguidos`` is a Python interface to [GuidosToolbox](https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/) (GTB), a scientific software package for pattern spatial analysis of raster images. This Python module provides programmatic access to the core GTB analytical tools, enabling reproducible landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 ### Repository Contents
+* **`/docs`**: Documentation files.
 * **`/notebooks`**: Jupyter notebooks to use the module and visualise results.
 * **`/pyguidos`**: script repository.
 * **`/tests`**: Unit and integration tests for the `pyguidos` module.
@@ -22,10 +23,10 @@ Tools
 | Function | Description |
 |---|---|
 | `mspa()` | Morphological Spatial Pattern Analysis |
-| `frag()` | Fragmentation analysis (FAD/FOS) |
+| `frag()` | Fragmentation analysis |
 | `landmos()` | Landscape Mosaic |
 | `acc()` | Foreground Patch Size Accounting |
-| `rss()` | Raster Spatial Statistics |
+| `rss()` | Restoration Status Summary |
 | `extract_by_polygon()` | Extract raster by polygon features |
 
 ---

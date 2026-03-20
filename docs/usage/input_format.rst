@@ -1,7 +1,7 @@
 Input Format
 ============
 
-All pyGuidos tools operate on single-band **uint8 GeoTIFF** files with a
+All pyGuidos tools operate on **single-band GeoTIFF** files with a
 specific pixel value convention. Understanding this format is essential
 before using any of the analysis functions.
 
@@ -10,7 +10,7 @@ Binary
 ---------------------------
 
 Most pyGuidos tools (MSPA, Fragmentation, Accounting, RSS) expect a
-binary uint8 GeoTIFF with the following pixel values:
+binary GeoTIFF with the following pixel values:
 
 .. list-table::
    :header-rows: 1
@@ -48,7 +48,7 @@ binary uint8 GeoTIFF with the following pixel values:
 Landscape Mosaic Maps
 ---------------------
 
-The Landscape Mosaic tool expects a three-class uint8 GeoTIFF with
+The Landscape Mosaic tool expects a three-class GeoTIFF with
 the following pixel values:
 
 .. list-table::
@@ -93,7 +93,7 @@ GTB Output Format
 
 All pyGuidos output GeoTIFFs follow the GuidosToolbox (GTB) convention:
 
-- Single-band **uint8 GeoTIFF** with a colour palette
+- **Single-band uint8 GeoTIFF** with a colour palette
 - **NoData is not set** in the TIFF header -- instead a specific pixel
   value encodes Missing/NoData by convention (e.g. 129 for MSPA, 102 for
   Fragmentation)
@@ -124,5 +124,5 @@ Using GTB Outputs as Inputs
 ----------------------------
 
 The statistic functions `*_stats` accept only pyGuidos (or GTB) output 
-maps as inputs. For example, using the GeoTIFF outputs after the function 
+GetoTIFFs as input. For example, using the GeoTIFF outputs after the function 
 `extract_by_polygon` to compute the statistics of extracted GeoTIFFs.

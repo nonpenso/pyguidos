@@ -20,7 +20,7 @@ Usage
     import pyguidos as pg
 
     pg.extract_by_polygon(
-        shapefile_path="regions.shp",
+        vector_path="regions.shp",
         geotiff_path="my_map.tif",
         output_dir="output/",
         id_field="NAME",
@@ -39,10 +39,10 @@ Parameters
      - Type
      - Default
      - Description
-   * - ``shapefile_path``
+   * - ``vector_path``
      - str or Path
      - --
-     - Path to input ESRI Shapefile (.shp)
+     - Path to input vector file (.json, .shp, .kml, .gpkg, etc.)
    * - ``geotiff_path``
      - str or Path
      - --
@@ -126,7 +126,7 @@ Example with prefix
     # Extract MSPA results for each country
     # Output files: country_France.tif, country_Germany.tif, ...
     pg.extract_by_polygon(
-        shapefile_path="countries.shp",
+        vector_path="countries.shp",
         geotiff_path="europe_mspa.tif",
         output_dir="output/countries/",
         id_field="NAME",
