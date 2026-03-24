@@ -32,3 +32,4 @@ Authors
 
    installation
    usage/index
+   changelog
