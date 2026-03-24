@@ -14,6 +14,7 @@ import ternary
 from ternary.helpers import project_point
 
 from . import utils
+from . import engine
 from . import checks
 from .results import LandMosResult
 
@@ -87,9 +88,6 @@ def landmos(in_tiff,
     out_name = f"{in_name}_lm_{window_size}"
     info = utils.get_raster_info(in_tiff)
 
-    # Get metadata
-    os_name, arch, is_win = utils.get_os_info()
-
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
         input_data = src.read()
@@ -103,7 +101,7 @@ def landmos(in_tiff,
     try:
         # Prepare Binary Input
         tmpdir = utils.setup_run_dir()
-        utils.write_spatcon_input(tmpdir, input_data)
+        engine.write_spatcon_input(tmpdir, input_data)
 
         # Write Spatcon TXT files
         dims = (info['rows'], info['cols'])
@@ -114,11 +112,10 @@ def landmos(in_tiff,
         h = 1
         m = 0
         f = 0
-        utils.write_spatcon_params(tmpdir, dims, (w, r, b, a, h, m, f))
+        engine.write_spatcon_params(tmpdir, dims, (w, r, b, a, h, m, f))
 
         # Execute Spatcon Binary
-        args = []
-        utils.run_guidos_tool("spatcon", tmpdir, args, verbose=verb)
+        engine.run_spatcon(tmpdir, verbose=verb)
 
         # Process Output
         spat_bin = tmpdir / "scoutput"

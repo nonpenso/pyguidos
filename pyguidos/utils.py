@@ -1,39 +1,15 @@
-import os
 import re
-import stat
 import shutil
-import platform
-import subprocess
 import collections
 import time
 from pathlib import Path
 import uuid
 
 import numpy as np
-from scipy.ndimage import label, generate_binary_structure
 import rasterio
 from rasterio.enums import ColorInterp
 from pyproj import CRS as pyprojCRS
 
-
-# def get_module_root():
-#     """
-#     Locates the package root directory containing the 'progs' folder.
-#     Works in two contexts:
-#     - Standard scripts/console: climbs from __file__
-#     - Jupyter notebooks: climbs from os.getcwd() since __file__ is undefined
-#     """
-#     try:
-#         current = Path(__file__).resolve()
-#     except NameError:
-#         # Fallback: For Jupyter/IPython
-#         current = Path(os.getcwd()).resolve()
-
-#     # Climb up until finds the 'progs' folder
-#     for parent in [current] + list(current.parents):
-#         if (parent / "progs").exists():
-#             return parent
-#     return current
 
 # --- GLOBAL PATHS ---
 MODULE_ROOT = Path(__file__).resolve().parent
@@ -41,36 +17,6 @@ PROGS_DIR = MODULE_ROOT / "progs"
 TEMPL_DIR = MODULE_ROOT / "templates"
 DATA_DIR = MODULE_ROOT / "data"
 WORK_DIR = MODULE_ROOT / "work"
-
-
-def get_os_info():
-    """
-    Detects the current Operating System and CPU architecture.
-    Used internally to select the correct binary executable for
-    MSPA and Spatcon tools.
-
-    Returns
-    -------
-    tuple
-        - os_name (str): Operating system name ('Linux', 'Windows', 'Darwin').
-        - arch (str): Architecture suffix ('' for x86_64, 'ARM' for arm64/aarch64,
-          'Unknown' for unrecognised architectures).
-        - is_win (bool): True if running on Windows.
-    """
-    current_os = platform.system()
-    machine = platform.machine().lower()
-
-    # Map architectures
-    if machine in ['x86_64', 'amd64']:
-        arch = ""
-    elif machine in ['arm64', 'aarch64']:
-        arch = "ARM"
-    else:
-        # Fallback to empty or specific handling if needed
-        arch = "Unknown"
-
-    is_win = (current_os == "Windows")
-    return current_os, arch, is_win
 
 
 def setup_run_dir():
@@ -105,206 +51,6 @@ def setup_run_dir():
     run_dir.mkdir(parents=True, exist_ok=True)
 
     return run_dir
-
-
-def run_guidos_tool(tool_name, tmp_dir, args, verbose=False):
-    """
-    Locates, copies and executes a GuidosToolbox binary (MSPA or Spatcon)
-    in a temporary working directory. Selects the correct binary
-    automatically based on the current OS and architecture.
-
-    Parameters
-    ----------
-    tool_name : str
-        Name of the tool to run. Must be 'mspa' or 'spatcon'.
-    tmp_dir : str or Path
-        Temporary working directory where the binary will be copied
-        and executed.
-    args : list
-        List of command-line arguments to pass to the binary.
-        Pass an empty list if no arguments are needed.
-    verbose : bool, optional
-        If True, prints the binary stdout output, filtering out
-        progress bars and default warnings. Default False.
-
-    Returns
-    -------
-    subprocess.CompletedProcess
-        The result object from subprocess.run(), containing returncode,
-        stdout and stderr.
-
-    Raises
-    ------
-    OSError
-        If the tool_name and OS combination is not supported.
-    SystemExit
-        If the binary returns a non-zero exit code.
-    """
-    current_os, arch, is_win = get_os_info()
-
-    # 1. Binary Mapping Table
-    bins = {
-        "mspa": {
-            "Linux": f'mspa{arch}_lin64',
-            "Windows": f'mspa_win64{arch}.exe',
-            "Darwin": f'mspa{arch}_mac'
-        },
-        "spatcon": {
-            "Linux": f'spatcon{arch}_lin64',
-            "Windows": f'spatcon{arch}64.exe',
-            "Darwin": f'spatcon{arch}_mac'
-        }
-    }
-
-    try:
-        bin_filename = bins[tool_name][current_os]
-    except KeyError:
-        raise OSError(f"Tool '{tool_name}' not supported on {current_os}")
-
-
-    # 2. Setup Execution Path
-    exe_source = PROGS_DIR / bin_filename
-    exe_name = "tool.exe" if is_win else "tool"
-    exe_target = Path(tmp_dir) / exe_name
-
-    # 3. Copy and Set Permissions
-    shutil.copy2(exe_source, exe_target)
-    if not is_win:
-        os.chmod(exe_target, os.stat(exe_target).st_mode | stat.S_IEXEC)
-
-    # 4. Execute
-    exec_cmd = [str(exe_target)] + args
-    try:
-        result = subprocess.run(
-            exec_cmd,
-            cwd=str(tmp_dir),
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        if result.stdout:
-            if verbose:
-                output_lines = result.stdout.splitlines()
-                for line in output_lines:
-                    if "% [" in line:  # Skip MSPA progress bar
-                        continue
-                    if "No output given" in line: # Skip MSPA default dir wartning
-                        continue
-                    print(line)
-
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR: {tool_name.upper()} failed. Exit code: {e.returncode}")
-        if e.stdout: print(f"STDOUT: {e.stdout.strip()}")
-        if e.stderr: print(f"STDERR: {e.stderr.strip()}")
-        # Stop the script here
-        import sys
-        sys.exit(1)
-
-    return result
-
-def write_spatcon_params(tmp_dir, dimentions, method):
-    """
-    Writes the Spatcon parameter files (scsize.txt and scpars.txt)
-    required by the Spatcon binary before execution.
-
-    Parameters
-    ----------
-    tmp_dir : str or Path
-        Temporary working directory where parameter files will be written.
-    dimensions : tuple
-        Raster dimensions as (rows, cols).
-    method : tuple
-        Spatcon parameters as: w, r, b, a, h, m, f
-    """
-    # dims.txt
-    with open(tmp_dir / 'scsize.txt', "w") as f:
-       f.write(f'nrows {dimentions[0]}\nncols {dimentions[1]}\n')
-
-    # spatcon.txt
-    param_content = (
-        f"w {method[0]}\n"
-        f"r {method[1]}\n"
-        f"b {method[2]}\n"
-        f"a {method[3]}\n"
-        f"h {method[4]}\n"
-        f"m {method[5]}\n"
-        f"f {method[6]}\n"
-    )
-    with open(tmp_dir / 'scpars.txt', 'w') as f:
-        f.write(param_content)
-
-
-def write_mspa_input(out_path, source_path, data_array, dtype, is_tiled):
-    """
-    Prepares the input GeoTIFF for the MSPA binary.
-    Copies the file directly if already uint8, otherwise converts
-    the data to uint8 and writes a new GeoTIFF.
-
-    Parameters
-    ----------
-    out_path : str or Path
-        Destination directory where the input file will be written.
-    source_path : str or Path
-        Path to the source GeoTIFF.
-    data_array : np.ndarray
-        Input data array already read from source_path (2D single band)
-    dtype : str
-        Data type string of the source GeoTIFF (e.g. 'uint8', 'uint16'),
-        as returned by get_raster_info().
-    is_tiled : bool
-        True is if it is a tiled GeoTIFF.
-
-    Returns
-    -------
-    Path
-        Path to the written input file.
-    """
-    out_path = Path(out_path)
-    target_path = out_path / "mspa_input.tif"
-
-    if dtype == 'uint8' and not is_tiled:
-        shutil.copy2(source_path, target_path)
-    else:
-        with rasterio.open(source_path) as src:
-            profile = src.profile.copy()
-        profile.update(
-            dtype='uint8',
-            nodata=None,
-            tiled=False,
-            blockxsize=None,
-            blockysize=None
-        )
-        with rasterio.open(target_path, 'w', **profile) as dst:
-            dst.write(data_array.astype(np.uint8), 1)
-
-    return target_path
-
-
-def write_spatcon_input(out_path, data_array):
-    """
-    Prepares the input binary file for the Spatcon tool.
-    Converts the array to uint8 if needed and writes it as raw binary.
-
-    Parameters
-    ----------
-    out_path : str or Path
-        Destination directory where the input file will be written.
-    data_array : np.ndarray
-        Input data array to write as raw binary.
-
-    Returns
-    -------
-    Path
-        Path to the written input file.
-    """
-    out_path = Path(out_path)
-    target_path = out_path / "scinput"
-
-    if data_array.dtype != np.uint8:
-        data_array = data_array.astype(np.uint8)
-    data_array.tofile(target_path)
-
-    return target_path
 
 
 def get_raster_info(intiff_path):
@@ -649,49 +395,6 @@ def get_tool_parameters(tag_description):
 
     return result
 
-def labelling_array(input_array, target_values):
-    """
-    Labels connected clusters of target pixel values using 8-connectivity
-    and returns a frequency Counter of patch sizes. Used internally by
-    acc() and rss() to identify and measure individual foreground patches.
-
-    Parameters
-    ----------
-    input_array : np.ndarray
-        2D input array to label.
-    target_values : int or list of int
-        Pixel value(s) to treat as foreground for labelling.
-        Accepts a single integer or a list of integers.
-
-    Returns
-    -------
-    tuple
-        - labeled_array (np.ndarray): integer array where each connected
-          patch of target_values is assigned a unique positive label ID.
-          Background pixels (not in target_values) are labelled 0.
-        - label_freq (Counter): mapping of patch label ID to pixel count,
-          excluding background label 0.
-    """
-    # Ensure target_values is a list/array (handles single integer input)
-    if isinstance(target_values, (int, np.integer)):
-        target_values = [target_values]
-
-    # Create the mask for specific forest classes
-    foreground_mask = np.isin(input_array, target_values)
-
-    # Define 8-connectivity (diagonal connections allowed)
-    structure = generate_binary_structure(2, 2)
-    labeled_array, num_patches = label(foreground_mask, structure=structure)
-
-    # Count pixels per unique label (patch ID)
-    label_freq = get_pxl_freq(labeled_array)
-
-    # Remove background (0) from the frequency count
-    # '0' represents everything NOT in your target_values
-    if 0 in label_freq:
-        del label_freq[0]
-
-    return labeled_array, label_freq
 
 def get_gtb_nodata(tiff_path):
     """

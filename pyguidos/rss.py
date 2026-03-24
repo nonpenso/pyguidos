@@ -5,6 +5,7 @@ import rasterio
 import numpy as np
 
 from . import utils
+from . import engine
 from . import checks
 from .results import RssResult
 
@@ -66,7 +67,7 @@ def rss(
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=True)
 
     # Get patch size frequencies
-    labeled_array, lab_pxl_freq = utils.labelling_array(input_data, 2)
+    labeled_array, lab_pxl_freq = engine.labelling_array(input_data, 2)
 
     # Counting pixel per input class
     fgrnd = input_pxl_freq[2]

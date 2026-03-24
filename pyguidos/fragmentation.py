@@ -10,6 +10,7 @@ import numpy as np
 
 from . import utils
 from . import checks
+from . import engine
 from .results import FragResult
 
 
@@ -79,9 +80,6 @@ def frag(
     out_name = f"{in_name}_{method.lower()}_{window_size}"
     info = utils.get_raster_info(in_tiff)
 
-    # Get OS info
-    os_name, arch, is_win = utils.get_os_info()
-
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
         input_data = src.read()
@@ -95,7 +93,7 @@ def frag(
     try:
         # Copy input tiff to temp dir
         tmpdir = utils.setup_run_dir()
-        utils.write_spatcon_input(tmpdir, input_data)
+        engine.write_spatcon_input(tmpdir, input_data)
 
         # Write Spatcon TXT files
         dims = (info['rows'], info['cols'])
@@ -107,11 +105,10 @@ def frag(
         h = 1
         m = 0
         f = 1
-        utils.write_spatcon_params(tmpdir, dims, (w, r, b, a, h, m, f))
+        engine.write_spatcon_params(tmpdir, dims, (w, r, b, a, h, m, f))
 
         # Execute Spatcon Binary
-        args = []
-        utils.run_guidos_tool("spatcon", tmpdir, args, verbose=verb)
+        engine.run_spatcon(tmpdir, verbose=verb)
 
         # Process Output
         spat_bin = tmpdir / "scoutput"

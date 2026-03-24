@@ -8,6 +8,7 @@ import rasterio
 
 from . import utils
 from . import checks
+from . import engine
 from .results import MSPAResult
 
 
@@ -81,9 +82,6 @@ def mspa(in_tiff,
     out_name = in_name + f'_mspa_{connectivity}_{edge_width}_{trans}_{i_e}'
     info = utils.get_raster_info(in_tiff)
 
-    # Get metadata
-    os_name, arch, is_win = utils.get_os_info()
-
     # Read input Geotif
     with rasterio.open(in_tiff) as src:
         input_data = src.read(1)
@@ -95,22 +93,15 @@ def mspa(in_tiff,
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=False)
 
     try:
-        # Copy input tiff to temp dir
+        # Create temp dir
         tmpdir = utils.setup_run_dir()
-        utils.write_mspa_input(tmpdir, in_tiff, input_data, info['dtype'], info['is_tiled'])
+        
+        # Execute MSPA
+        engine.write_mspa_input(tmpdir, in_tiff, input_data, info['dtype'], info['is_tiled'])
 
         # Execute Binary
-        args = ["-i", "mspa_input.tif",
-               "-o", "mspa_output.tif",
-               "-graphfg", str(connectivity),
-               "-eew", str(edge_width),
-               "-transition", str(trans),
-               "-internal", str(i_e)
-               ]
-        if verb:
-            args.append("-v")
-        utils.run_guidos_tool("mspa", tmpdir, args, verbose=verb)
-
+        engine.run_mspa(tmpdir, in_tiff, connectivity, edge_width, trans, i_e, verb)
+        
         # Read Output
         out_tiff = tmpdir / "mspa_output.tif"
         with warnings.catch_warnings():

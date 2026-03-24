@@ -7,11 +7,14 @@ import rasterio
 import numpy as np
 
 from . import utils
+from . import engine
 from . import checks
 from .results import AccResult
 
 
 ACC_VALUES = [103, 33, 65, 1, 9, 17]
+
+
 
 def acc(
     in_tiff,
@@ -86,7 +89,7 @@ def acc(
 
     try:
         # Get patch size frequencies
-        labeled_array, lab_pxl_freq = utils.labelling_array(input_data, 2)
+        labeled_array, lab_pxl_freq = engine.labelling_array(input_data, 2)
 
         # Create a lookup array for high-speed mapping
         max_id = max(lab_pxl_freq.keys())
