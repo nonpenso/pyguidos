@@ -10,6 +10,7 @@ from . import utils
 from . import checks
 from . import engine
 from .results import MSPAResult
+from . import TEMPL_DIR
 
 
 def mspa(in_tiff,
@@ -345,7 +346,7 @@ def mspa_stats(mspa_tiff, outfile = True, outdir = None, source_tiff=None, mspa_
         }
 
         txt_file = outdir / f'{out_name}.txt'
-        utils.generate_text_report(utils.TEMPL_DIR / 'mspa_templ.txt', txt_file, content)
+        utils.generate_text_report(TEMPL_DIR / 'mspa_templ.txt', txt_file, content)
 
     # Statistic dictionaries
     path_stats_dict = None

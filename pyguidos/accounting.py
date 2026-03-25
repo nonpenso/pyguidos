@@ -10,6 +10,7 @@ from . import utils
 from . import engine
 from . import checks
 from .results import AccResult
+from . import TEMPL_DIR
 
 
 ACC_VALUES = [103, 33, 65, 1, 9, 17]
@@ -118,7 +119,7 @@ def acc(
         thresh_list = ",".join([str(x) for x in thresholds])
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/"
         tag_descr = f"GTB_ACC, <{thresh_list}>, {weblink}"
-        cmap_path = utils.TEMPL_DIR / "acc_colormap.txt"
+        cmap_path = TEMPL_DIR / "acc_colormap.txt"
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, out_array, info['profile'], cmap_path, tag_descr)
 
@@ -327,7 +328,7 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
         }
 
         txt_file = outdir / f'{out_name}.txt'
-        utils.generate_text_report(utils.TEMPL_DIR / 'acc_templ.txt', txt_file, content)
+        utils.generate_text_report(TEMPL_DIR / 'acc_templ.txt', txt_file, content)
 
     # Statistic dictionaries
     path_stats_dict = None
@@ -351,7 +352,7 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
         "output paths" : path_stats_dict,
         "input stats" : input_stats_dict,
         "output stats" : output_stats_dict
-                  }
+        }
 
     return stats_dict
 

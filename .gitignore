@@ -38,6 +38,8 @@ Thumbs.db
 .coverage
 htmlcov/
 
-# pyGuidos runtime working directories
-pyguidos/work/job_*/
+# Local notebook configuration
+.notebook_config
+
+# pyGuidos html docs directory
 docs/_build/

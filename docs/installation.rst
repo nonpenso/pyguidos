@@ -9,6 +9,7 @@ which are installed automatically with pip:
 
 .. list-table::
    :header-rows: 1
+   :widths: 20 15 65
 
    * - Package
      - Minimum Version
@@ -54,7 +55,7 @@ To install the latest development version directly from the repository:
 
 .. code-block:: console
 
-    $ pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos
+    $ pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 
 Editable Installation
 ---------------------
@@ -64,9 +65,29 @@ and install in editable mode:
 
 .. code-block:: console
 
-    $ git clone https://code.europa.eu/jrc-forest/guidos/pyguidos
+    $ git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
     $ cd pyguidos
     $ pip install -e .
+
+Configuration (Execution Workspace)
+-----------------------------------
+
+pyGuidos relies on high-performance C++ binaries. These require a workspace folder with **execution permissions**.
+
+By default, pyGuidos attempts to use:
+1. A ``work/`` folder in your project root (if using a Git clone).
+2. A ``pyguidos_work/`` folder in your user home directory.
+
+.. important::
+   If your system (e.g., a corporate Windows laptop) restricts execution in the Home or AppData folders, you must manually set a "safe" workspace.
+
+Run the built-in setup tool to configure your workspace:
+
+.. code-block:: console
+
+    $ pyguidos-setup
+
+Follow the prompts to provide a path (e.g., ``D:/pyguidos_work``). The tool will test the folder and save the configuration.
 
 Verify Installation
 -------------------
@@ -77,10 +98,7 @@ After installation, verify everything is working correctly:
 
     import pyguidos
     print(pyguidos.__version__)
-
-You should see::
-
-    2.0.0
+    print(f"Workspace: {pg.WORK_DIR}")
 
 Platform Support
 ----------------
@@ -89,14 +107,15 @@ pyGuidos is tested and supported on:
 
 .. list-table::
    :header-rows: 1
+   :widths: 30 70
 
    * - OS
      - Architecture
-   * - Linux
+   * - **Linux**
      - x86_64, ARM64
-   * - macOS
+   * - **macOS**
      - x86_64, ARM64 (Apple Silicon)
-   * - Windows
+   * - **Windows**
      - x86_64
 
 .. note::
@@ -106,27 +125,19 @@ pyGuidos is tested and supported on:
 Troubleshooting
 ---------------
 
+**Execution Blocked Error**
+   If you receive a permission error when running a tool like ``mspa()``, your current ``WORK_DIR`` does not allow binary execution. Run ``pyguidos-setup`` to move the workspace to a non-restricted drive.
+
 **Installation stalls on downloading packages**
+   You may be behind a corporate proxy. Try:
 
-You may be behind a corporate proxy. Try:
+   .. code-block:: console
 
-.. code-block:: console
-
-    $ pip install --proxy http://your-proxy:port pyguidos
-
-**Permission error on Linux**
-
-Use a virtual environment or install with the user flag:
-
-.. code-block:: console
-
-    $ pip install --user pyguidos
+      $ pip install --proxy http://your-proxy:port pyguidos
 
 **Import error after installation**
+   Ensure your ``pip`` matches your active Python version:
 
-Make sure you are using the correct Python environment:
+   .. code-block:: console
 
-.. code-block:: console
-
-    $ which python
-    $ pip show pyguidos
+      $ python -m pip show pyguidos

@@ -10,14 +10,7 @@ import rasterio
 from rasterio.enums import ColorInterp
 from pyproj import CRS as pyprojCRS
 
-
-# --- GLOBAL PATHS ---
-MODULE_ROOT = Path(__file__).resolve().parent
-PROGS_DIR = MODULE_ROOT / "progs"
-TEMPL_DIR = MODULE_ROOT / "templates"
-DATA_DIR = MODULE_ROOT / "data"
-WORK_DIR = MODULE_ROOT / "work"
-
+from . import WORK_DIR, GLOBAL_CONFIG
 
 def setup_run_dir():
     """
@@ -432,3 +425,12 @@ def get_gtb_nodata(tiff_path):
 
     # Priority 2 & 3: non-GTB
     return info["profile"].get("nodata") or 0
+
+
+def reset_workspace():
+    """Deletes the workspace configuration so it can be re-defined on next import."""
+    if GLOBAL_CONFIG.exists():
+        GLOBAL_CONFIG.unlink()
+        print("Configuration removed. Restart your session to re-configure.")
+    else:
+        print("No configuration file found.")

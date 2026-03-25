@@ -11,14 +11,7 @@ from scipy.ndimage import label, generate_binary_structure
 import rasterio
 
 from . import utils
-
-
-# --- GLOBAL PATHS ---
-MODULE_ROOT = Path(__file__).resolve().parent
-PROGS_DIR = MODULE_ROOT / "progs"
-TEMPL_DIR = MODULE_ROOT / "templates"
-DATA_DIR = MODULE_ROOT / "data"
-WORK_DIR = MODULE_ROOT / "work"
+from . import PROGS_DIR
 
 
 def get_os_info():

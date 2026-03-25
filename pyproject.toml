@@ -65,7 +65,6 @@ include = ["pyguidos*"]
 pyguidos = [
     "progs/*",
     "templates/*",
-    "work/",
     "data/*",
 ]
 
@@ -80,4 +79,5 @@ testpaths = [
 ]
 python_files = "test_*.py"
 
-
+[project.scripts]
+pyguidos-setup = "pyguidos.setup_cli:configure_workspace"

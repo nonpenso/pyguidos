@@ -17,7 +17,7 @@ from . import utils
 from . import engine
 from . import checks
 from .results import LandMosResult
-
+from . import TEMPL_DIR
 
 
 def landmos(in_tiff,
@@ -125,13 +125,13 @@ def landmos(in_tiff,
         # Save 103 classes Geotiff
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/"
         tag_descr = f"GTB_LM, <{window_size},{out_colors}>, {weblink}"
-        cmap_path = utils.TEMPL_DIR / f"lm_{out_colors}_colormap.txt"
+        cmap_path = TEMPL_DIR / f"lm_{out_colors}_colormap.txt"
         out_tiff103c = outdir / f"{out_name}_103class_{out_colors}.tif"
         utils.save_output_geotiff(out_tiff103c, data_masked, info['profile'], cmap_path, tag_descr)
 
         # Reclassiafy Geotiff 103 -> 19 classes
         reclass = {}
-        with open(utils.TEMPL_DIR / 'lm_103to19.txt' , 'r') as f:
+        with open(TEMPL_DIR / 'lm_103to19.txt' , 'r') as f:
             for line in f:
                 l = [int(x) for x in line.split(' ')]
                 reclass[l[0]]=l[1]
@@ -143,7 +143,7 @@ def landmos(in_tiff,
         data_19cl = mapping_array[data_masked]
 
         # Save 19 classes Geotiff
-        cmap_path19 = utils.TEMPL_DIR / "lm_19c_colormap.txt"
+        cmap_path19 = TEMPL_DIR / "lm_19c_colormap.txt"
         out_tiff19c = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff19c, data_19cl, info['profile'], cmap_path19, tag_descr)
 
@@ -298,7 +298,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
 
     # Remap to 19 classes and pixel counting
     reclass_map = {}
-    with open(utils.TEMPL_DIR / 'lm_103to19.txt' , 'r') as f:
+    with open(TEMPL_DIR / 'lm_103to19.txt' , 'r') as f:
         for line in f:
             l = [int(x) for x in line.split(' ')]
             reclass_map[l[0]]=l[1]
@@ -631,7 +631,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             "comp_time": f"{utils.running_time(start_time_stat, time.time())}"
         }
         txt_file = outdir / f'{out_name}.txt'
-        utils.generate_text_report(utils.TEMPL_DIR / 'lm_templ.txt', txt_file, content)
+        utils.generate_text_report(TEMPL_DIR / 'lm_templ.txt', txt_file, content)
 
     # Statistic dictionaries
     

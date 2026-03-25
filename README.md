@@ -56,28 +56,61 @@ Requirements
 Installation
 ============
 
-`pyguidos` can be installed directly from its GitLab repository without `/notebooks`:
-
+### 1. Standard Installation
+For general use, install the latest stable version directly via `pip`:
 ```bash
-pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+pip install pyguidos
 ```
 
-To run the examples in the Jupyter notebooks in `/notebooks`, you must clone the entire repository and then install the module in "editable" mode. This is the recommended approach for development and testing.
+### 2. Development Installation
+To install the latest development version directly from the GitLab repository without cloning:
+```bash
+pip install git+[https://code.europa.eu/jrc-forest/guidos/pyguidos.git](https://code.europa.eu/jrc-forest/guidos/pyguidos.git)
+```
+
+### 3. Editable Installation (Recommended for Testing)
+To run the example notebooks or contribute to the source code, you must clone the repository and install it in "editable" mode. This allows changes in the code to be reflected immediately.
 1. Clone the repository:
 ```bash
-git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+git clone [https://code.europa.eu/jrc-forest/guidos/pyguidos.git](https://code.europa.eu/jrc-forest/guidos/pyguidos.git)
 cd pyguidos
 ```
-2. Create and activate a virtual environment (highly recommended):
+2. Create and activate a virtual environment:
 ```bash
-python3 -m venv myvenv
-source myvenv/bin/activate
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
 ```
-3. Install the module in editable mode, including development dependencies (for testing and notebooks):
+3. Install in editable mode with dependencies:
 ```bash
 pip install -e ".[test,notebooks]"
 ```
 This links module's source code directly to your Python environment, so any changes you make are immediately reflected without reinstallation.
+
+---
+
+Configuration
+============
+
+`pyguidos` requires a workspace folder with **execution permissions** to run its internal C++ analytical engine.
+
+* Automatic: By default, it will try to use a `~/pyguidos/work/` folder in the project 
+  root (if using Git) or `~/pyguidos_work` in your home directory.
+* Manual (Required for restricted environments): If your IT policy blocks execution in
+  standard folders, you must configure a proper workspace.
+
+Run the following command in your terminal after installation:
+```bash
+pyguidos-setup
+```
+
+Follow the prompts to provide a path. The setup tool will test the folder for permissions and save the configuration permanently.
+
+:::note
+You can reset or change this path at any time by running `pyguidos-setup` again.
+:::
 
 ---
 
@@ -86,6 +119,9 @@ Usage Examples
 
 ```python
 import pyguidos as pg
+
+# Check where the engine is running and saving data
+print(f"Working in: {pg.WORK_DIR}")
 
 # Morphological Spatial Pattern Analysis
 result = pg.mspa(

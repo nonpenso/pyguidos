@@ -12,6 +12,7 @@ from . import utils
 from . import checks
 from . import engine
 from .results import FragResult
+from . import TEMPL_DIR
 
 
 def frag(
@@ -125,7 +126,7 @@ def frag(
         # Save Final Geotiff with Palette and Tags
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/"
         tag_descr = f"GTB_FOS, <Binary,-1,8,{method}_5,{info['resX']},{window_size}>, {weblink}"
-        cmap_path = utils.TEMPL_DIR / "frag_colormap.txt"
+        cmap_path = TEMPL_DIR / "frag_colormap.txt"
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, data_masked, info['profile'], cmap_path, tag_descr)
 
@@ -277,7 +278,7 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
         frag_pxl_prop = [frag_pxl_freq[i]/fgrnd * 100 for i in pixel_values]
 
         # Create the colormap
-        cmap_path = utils.TEMPL_DIR / "frag_colormap.txt"
+        cmap_path = TEMPL_DIR / "frag_colormap.txt"
         colors = {}
         with open(cmap_path, 'r') as f:
             for line in f:
@@ -345,7 +346,7 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
         }
 
         txt_file = outdir / f'{out_name}.txt'
-        utils.generate_text_report(utils.TEMPL_DIR / 'frag_templ.txt', txt_file, content)
+        utils.generate_text_report(TEMPL_DIR / 'frag_templ.txt', txt_file, content)
 
     # Statistic dictionaries
     path_stats_dict = None

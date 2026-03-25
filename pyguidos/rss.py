@@ -8,6 +8,7 @@ from . import utils
 from . import engine
 from . import checks
 from .results import RssResult
+from . import TEMPL_DIR
 
 
 def rss(
@@ -127,7 +128,7 @@ def rss(
         }
 
         txt_file = outdir / f'{out_name}.txt'
-        utils.generate_text_report(utils.TEMPL_DIR / 'rss_templ.txt', txt_file, content)
+        utils.generate_text_report(TEMPL_DIR / 'rss_templ.txt', txt_file, content)
 
     # Statistic dictionaries
     path_stats_dict = None
