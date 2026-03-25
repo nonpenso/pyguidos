@@ -41,5 +41,7 @@ htmlcov/
 # Local notebook configuration
 .notebook_config
 
-# pyGuidos html docs directory
+# Module workspace and html docs
+work/
+pyguidos_work/
 docs/_build/
