@@ -114,6 +114,26 @@ You can reset or change this path at any time by running `pyguidos-setup` again.
 
 ---
 
+Quick Start
+==========
+
+Once installed, you can verify your setup and explore the available tools directly from your Python console or Jupyter Notebook.
+
+```python
+import pyguidos as pg
+
+# List all available analytical tools and their descriptions
+pg.info()
+
+# Get detailed documentation and methodology links for a specific tool
+pg.info('mspa')
+
+# Get full technical specification of a function
+help(pg.mspa)
+```
+
+---
+
 Usage Examples
 ==============
 
@@ -127,7 +147,9 @@ print(f"Working in: {pg.WORK_DIR}")
 result = pg.mspa(
     in_tiff="my_map.tif",
     edge_width=1,
-    connectivity=8
+    connectivity=8,
+    transition=True,
+    int_ext=True
 )
 print(result.stats)
 
@@ -176,7 +198,16 @@ software and this package:
 > Vogt P. and Riitters K. (2017). GuidosToolbox: universal digital image object analysis. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: [10.1080/22797254.2017.1330650](https://doi.org/10.1080/22797254.2017.1330650)
 
 **pyGuidos:**
-> Caudullo G. and Vogt P. (2026). pyGuidos: Python interface to GuidosToolbox. In press.
+> Caudullo G. and Vogt P. (2026). PyGuidos, A cross-platform Python 
+interface to GuidosToolbox for landscape pattern analysis. In press.
+
+### Interactive Citation
+You can get the plain-text citations directly in your Python console:
+
+```python
+import pyguidos as pg
+pg.citation()
+```
 
 ---
 
@@ -219,12 +250,5 @@ License
 This project is licensed under the
 [European Union Public Licence v1.2 (EUPL-1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12).
 See the [LICENSE](LICENSE) file for details.
-
----
-
-Acknowledgements
-================
-
-pyGuidos is built on top of the GuidosToolbox binaries developed at the European Commission Joint Research Centre. We acknowledge all contributors to the GTB project and the open source Python ecosystem that makes this work possible.
 
 

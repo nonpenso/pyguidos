@@ -12,6 +12,22 @@ describes the expected pixel value conventions and the GTB output format.
 Available Tools
 ---------------
 
+The easiest way to explore the available tools and access their 
+scientific documentation is to use the interactive ``info()`` function:
+
+.. code-block:: python
+
+    import pyguidos as pg
+
+    # List all available analytical tools
+    pg.info()
+
+    # Get detailed links and usage for a specific tool
+    pg.info('mspa')
+    
+    # Get full technical specification of a function
+    help(pg.mspa)
+
 .. list-table::
    :header-rows: 1
 
@@ -103,6 +119,10 @@ Each analysis function returns a result dataclass with two fields:
 
     # Access output array (requires return_array=True)
     print(result.array)
+
+    # Access a specific output path
+    tif_path = result.stats['output paths']['path tif']
+    print(f"Result saved at: {tif_path}")
 
 
 Standalone Statistics

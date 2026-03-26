@@ -2,6 +2,7 @@ from pathlib import Path
 import subprocess
 import os
 import sys
+import inspect
 
 # Internal paths
 MODULE_ROOT = Path(__file__).resolve().parent
@@ -14,7 +15,7 @@ GLOBAL_CONFIG = Path.home() / ".pyguidos_config"
 
 # Package metadata
 __version__ = "2.0.0"
-__author__ = "Caudullo & Vogt, European Commission, Joint Research Centre"
+__author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 
 # Workspace discovery
@@ -108,6 +109,7 @@ from .accounting import acc, acc_stats
 from .rss import rss
 from .extract_by_polygon import extract_by_polygon
 from .results import MSPAResult, FragResult, LandMosResult, AccResult, RssResult
+from .utils import citation
 
 
 # Exported names
@@ -119,5 +121,77 @@ __all__ = ["mspa", "mspa_stats",
            "extract_by_polygon", 
            "MSPAResult", "FragResult", 
            "LandMosResult", "AccResult",
-           "RssResult"
+           "RssResult", 
+           "citation", "info"
            ]
+
+
+def info(tool: str = None):
+    """
+    Displays quick-help and JRC documentation links for pyguidos tools.
+    
+    Usage:
+        pg.info()           # Lists all available tools
+        pg.info('mspa')     # Shows details and documentation links for MSPA
+    """
+    registry = {
+        "mspa": {
+            "title": "Morphological Spatial Pattern Analysis (MSPA)",
+            "desc": "Classifies binary maps into mutually exclusive morphological classes "
+                    "(Core, Edge, Islet, Loop, Perforation, Branch).",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/mspa.html",
+            "sheet": "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"
+        },
+        "frag": {
+            "title": "Fragmentation",
+            "desc": "Calculates the Fragmentation with Fixed Observation Scale (FOS) approach.",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/fragmentation.html",
+            "sheet": "https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf"
+        },
+        "landmos": {
+            "title": "Landscape Mosaic",
+            "desc": "Tri-modal landscape classification (Agriculture, Natural, Developed).",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/landmos.html",
+            "sheet": "https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Pattern-LM.pdf"
+        },
+        "acc": {
+            "title": "Accounting",
+            "desc": "Foreground patch size analysis.",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/accounting.html",
+            "sheet": "https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Objects-Accounting.pdf"
+        },
+        "rss": {
+            "title": "Restoration Status Summary",
+            "desc": "Provide patch-based connectivity indices for a binary raster map.",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/rss.html",
+            "sheet": "https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-RestorationPlanner.pdf"
+        }
+    }
+
+    if not tool:
+        print("\n" + "═"*60)
+        print(" pyguidos: Available Analytical Tools")
+        print("═"*60)
+        for name, data in registry.items():
+            print(f" • {name:8} : {data['title']}")
+        print("\nType pg.info('tool_name') for detailed links.")
+        print("═"*60 + "\n")
+        return
+
+    tool = tool.lower()
+    if tool in registry:
+        t = registry[tool]
+        # Dynamically get the function object from the module
+        func = globals().get(tool) 
+        
+        print(f"\n{'─'*10} {t['title'].upper()} {'─'*10}")
+        print(f"Description:  {t['desc']}")
+        print(f"User Guide:   {t['guide']}")
+        print(f"Method Sheet: {t['sheet']}")
+        
+        if func:
+            # This shows the exact arguments: e.g., mspa(in_tiff, foreground=2, ...)
+            signature = inspect.signature(func)
+            print(f"Usage:        pg.{tool}{signature}")
+            
+        print(f"\nFull usage: help(pg.{tool})\n")

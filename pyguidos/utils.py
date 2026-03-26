@@ -434,3 +434,19 @@ def reset_workspace():
         print("Configuration removed. Restart your session to re-configure.")
     else:
         print("No configuration file found.")
+
+
+def citation():
+    """Prints the recommended scientific citations for pyguidos."""
+    text = """
+============================================================
+RECOMENDED CITATIONS FOR PYGUIDOS
+============================================================
+
+Caudullo G., Vogt P., 2026. PyGuidos, A cross-platform Python 
+interface to GuidosToolbox for landscape pattern analysis. 
+JOSS XX(XX), XXXX. https://doi.org/joss.XXXXXX
+
+============================================================
+    """
+    print(text)

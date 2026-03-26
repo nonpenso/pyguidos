@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Caudullo"
+    given-names: "Giovanni"
+    affiliation: "Arcadia SIT s.r.l."
+  - family-names: "Vogt"
+    given-names: "Peter"
+    affiliation: "European Commission, Joint Research Centre"
+title: "pyguidos: A Python interface for GuidosToolbox analytical engines"
+version: 2.0.0
+date-released: 2026-03-26
+url: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
+repository-code: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
+abstract: >-
+  pyGuidos is a Python interface to GuidosToolbox (GTB), a scientific 
+  free software developed at the European Commission Joint Research 
+  Centre for the spatial pattent analysis of raster images.
+  pyGuidos provides programmatic access to the GTB analytical tools, 
+  enabling reproducible landscape analysis workflows in Python scripts, 
+  Jupyter notebooks, and automated pipelines.
+keywords:
+  - MSPA
+  - GuidosToolbox
+  - Landscape Ecology
+  - Pattern analysis
+  - Forest Monitoring
+  - Remote Sensing
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Caudullo"
+      given-names: "Giovanni"
+    - family-names: "Vogt"
+      given-names: "Peter"
+  title: "pyguidos"
+  journal: "JOSS"
+  year: 2026
+  volume: X
+  pages: X-X
+  doi: "10.1016/XXXX"
