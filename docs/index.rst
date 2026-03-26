@@ -1,18 +1,18 @@
 pyGuidos
 ========
 
-.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg
-   :target: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/commits/main
+.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/pipeline.svg?ignore_skipped=true
+   :target: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines
    :alt: Pipeline Status
 
-.. image:: https://img.shields.io/badge/docs-latest-brightgreen.svg
-   :target: https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/
-   :alt: Documentation Status
+.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/coverage.svg?job=run_tests
+   :target: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/commits/develop-v2
+   :alt: Coverage Status
 
-.. image:: https://img.shields.io/badge/version-2.0.0-blue.svg
+.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/custom.svg?key_text=version&value_text=2.0.0&value_color=blue
    :alt: Version 2.0.0
 
-.. image:: https://img.shields.io/badge/license-EUPL--1.2-orange.svg
+.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/custom.svg?key_text=license&value_text=EUPL--1.2&value_color=orange
    :target: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
    :alt: License
 

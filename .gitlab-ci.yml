@@ -1,18 +1,42 @@
 image: python:3.11-slim
 
+stages:
+  - test
+  - deploy
+
+# Global cache to speed up pip installs
+cache:
+  key: pip-cache
+  paths:
+    - .pip-cache/
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
+
+# 1. Run Tests and calculate coverage
+run_tests:
+  stage: test
+  tags:
+    - shared-docker
+  script:
+    - pip install --upgrade pip
+    - pip install pytest pytest-cov . 
+    - pytest --cov=pyguidos tests/ --cov-report term
+  # This regex tells GitLab how to find the percentage in the terminal output
+  coverage: '/(?i)total.*? (100(?:\.0+)?%|[1-9]?\d(?:\.\d+)?%)/'
+  only:
+    - develop-v2
+
+# 2. Build and Deploy Documentation (GitLab Pages)
 pages:
   stage: deploy
   tags:
     - shared-docker
-  cache:
-    key: pip-cache
-    paths:
-      - .pip-cache/
-  variables:
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
+  dependencies:
+    - run_tests
   script:
     - pip install --upgrade pip
-    - pip install sphinx pydata-sphinx-theme
+    - pip install sphinx pydata-sphinx-theme .
     - sphinx-build -b html docs public
   artifacts:
     paths:
