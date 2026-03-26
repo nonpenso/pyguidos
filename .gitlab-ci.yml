@@ -19,6 +19,7 @@ run_tests:
   tags:
     - shared-docker
   script:
+    - apt-get update && apt-get install -y libexpat1
     - pip install --upgrade pip
     - pip install pytest pytest-cov . 
     - pytest --cov=pyguidos tests/ --cov-report term
@@ -35,6 +36,7 @@ pages:
   dependencies:
     - run_tests
   script:
+    - apt-get update && apt-get install -y libexpat1
     - pip install --upgrade pip
     - pip install sphinx pydata-sphinx-theme .
     - sphinx-build -b html docs public
