@@ -40,8 +40,8 @@ and the underlying scientific methodology:
 
 .. important::
    **Software Implementation**
-     Caudullo G. and Vogt P. (2026). *pyGuidos: A cross-platform Python 
-interface to GuidosToolbox for landscape pattern analysis*. In press.
+     Caudullo G. and Vogt P. (2026). *pyGuidos: A cross-platform Python interface to 
+     GuidosToolbox for landscape pattern analysis*. In press.
 
    **Methodology (GTB)**
      Vogt P. and Riitters K. (2017). *GuidosToolbox: universal digital image object analysis*. 
