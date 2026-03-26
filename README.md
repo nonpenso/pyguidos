@@ -3,7 +3,7 @@
 [![pipeline status](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/pipeline.svg?ignore_skipped=true)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines)
 [![coverage report](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/coverage.svg?job=run_tests)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/commits/develop-v2)
 [![docs status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/)
-![version](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/custom.svg?key_text=version&value_text=2.0.0&value_color=blue)
+![version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 [![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
 **Python interface to GuidosToolbox (GTB) for spatial pattern analysis**
