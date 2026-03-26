@@ -3,25 +3,23 @@ import numpy as np
 import rasterio
 from pyguidos import mspa
 
-def test_mspa_binary_execution(tmp_path):
+def test_mspa_integration_run(tmp_path):
     """
-    Creates a valid GTB binary raster and runs the MSPA binary.
-    Input: 1=Background, 2=Foreground, 0=Missing
+    Test the full mspa() workflow with a valid GTB binary raster.
+    Values: 1 (Background), 2 (Foreground), 0 (Optional Missing)
     """
-    input_tif = tmp_path / "input_mspa.tif"
+    # 1. Prepare the dummy file path in a temporary directory
+    input_tif = tmp_path / "test_input_mspa.tif"
     
-    # 1. Create a 10x10 array
-    # Fill with 1 (Background)
+    # 2. Create a 10x10 uint8 array that follows your requirements
+    # Start with all 1 (Background)
     data = np.ones((10, 10), dtype=np.uint8)
-    
-    # Add a 4x4 block of 2 (Foreground) in the center
+    # Create a 4x4 square of 2 (Foreground) in the middle
     data[3:7, 3:7] = 2 
-    
-    # Optional: Add some 0 (Missing) at the corners
+    # Add a single 0 (Missing) to test that it's accepted
     data[0, 0] = 0
-    data[9, 9] = 0
 
-    # 2. Write to GeoTIFF
+    # 3. Write the GeoTIFF with 1 band (mandatory for your check)
     with rasterio.open(
         input_tif, 'w', driver='GTiff',
         height=10, width=10, count=1, dtype='uint8',
@@ -30,25 +28,32 @@ def test_mspa_binary_execution(tmp_path):
     ) as dst:
         dst.write(data, 1)
 
-    # 3. Execute the MSPA procedure
+    # 4. Call the mspa function
     try:
-        # Run with standard parameters
-        result = mspa.mspa(str(input_tif), wsize=3, edge_width=1)
-        
-        # 4. Assertions to verify the procedure worked
+        # We set stat_files=False to avoid cluttering the tmp directory
+        # We set return_array=True to verify the output data
+        result = mspa.mspa(
+            str(input_tif), 
+            edge_width=1, 
+            connectivity=8, 
+            stat_files=False, 
+            return_array=True
+        )
+
+        # 5. Verify the Result Object (MSPAResult)
         assert result.array is not None
         assert result.array.shape == (10, 10)
         
-        # MSPA classes range from 1 to 100+ (Core, Edge, Perforated, etc.)
-        # We check if the foreground (2) was actually processed into MSPA classes
-        assert np.max(result.array) > 2 
+        # MSPA categories start above 2, so the max value should be higher than input
+        assert np.max(result.array) > 2
         
-        # Check that background (1) remained background (rendered as 129 usually)
-        # or check the stats dictionary
-        assert "output path" in result.stats
-        print("MSPA integration test passed successfully!")
+        # Verify foreground/background counts are in the stats dict
+        assert "foreground pxl" in result.stats
+        assert result.stats["foreground pxl"] == 16  # 4x4 block
 
     except FileNotFoundError:
-        pytest.skip("MSPA binary not found in the search path. Skipping.")
+        pytest.skip("MSPA binary not found. Is it in the progs/linux folder?")
     except SystemExit as e:
-        pytest.fail(f"MSPA exited with an error. Check if the binary is compatible with this OS: {e}")
+        pytest.fail(f"MSPA exited prematurely. Check input validation: {e}")
+    except Exception as e:
+        pytest.fail(f"MSPA integration test failed: {e}")
