@@ -65,14 +65,14 @@ pip install pyguidos
 ### 2. Development Installation
 To install the latest development version directly from the GitLab repository without cloning:
 ```bash
-pip install git+[https://code.europa.eu/jrc-forest/guidos/pyguidos.git](https://code.europa.eu/jrc-forest/guidos/pyguidos.git)
+pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 ```
 
 ### 3. Editable Installation (Recommended for Testing)
 To run the example notebooks or contribute to the source code, you must clone the repository and install it in "editable" mode. This allows changes in the code to be reflected immediately.
 1. Clone the repository:
 ```bash
-git clone [https://code.europa.eu/jrc-forest/guidos/pyguidos.git](https://code.europa.eu/jrc-forest/guidos/pyguidos.git)
+git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 cd pyguidos
 ```
 2. Create and activate a virtual environment:
