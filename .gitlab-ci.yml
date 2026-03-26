@@ -19,10 +19,10 @@ run_tests:
   tags:
     - shared-docker
   script:
-    - apt-get update && apt-get install -y libexpat1
+    - apt-get update && apt-get install -y libexpat1 libgomp1
     - pip install --upgrade pip
     - pip install pytest pytest-cov . 
-    - pytest --cov=pyguidos tests/ --cov-report term
+    - pytest --cov=pyguidos tests/ --cov-report term-missing
   # This regex tells GitLab how to find the percentage in the terminal output
   coverage: '/(?i)total.*? (100(?:\.0+)?%|[1-9]?\d(?:\.\d+)?%)/'
   only:
