@@ -3,11 +3,16 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 project = "pyGuidos"
-copyright = "European Union, 2025, Giovanni Caudullo, Peter Vogt"
+copyright = "European Union, 2026, Giovanni Caudullo, Peter Vogt"
 author = "Giovanni Caudullo, Peter Vogt"
 release = "2.0.0"
 
-extensions = []
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.githubpages",
+]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
@@ -34,4 +39,9 @@ html_theme_options = {
             "icon": "fa-brands fa-gitlab",
         },
     ],
+    "show_prev_next": True,
+    "navbar_align": "left",    
+    "footer_start": ["copyright"],
+    "footer_end": ["theme-version"],
+    "secondary_sidebar_items": ["page-toc", "edit-this-page"], 
 }

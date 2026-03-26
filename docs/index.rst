@@ -55,6 +55,18 @@ Authors
 * **Giovanni Caudullo** - `giovanni.caudullo@ext.ec.europa.eu <mailto:giovanni.caudullo@ext.ec.europa.eu>`_
 * **Peter Vogt** - `peter.vogt@ec.europa.eu <mailto:peter.vogt@ec.europa.eu>`_
 
+
+License
+-------
+
+This project is licensed under the **European Union Public Licence (EUPL-1.2)**. 
+The EUPL is a modern, copyleft free software license, providing a legal framework 
+compatible with the laws of the European Union Member States.
+
+For more details, see the `official EUPL page <https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12>`_.
+
+
+
 .. toctree::
    :maxdepth: 2
    :hidden:
