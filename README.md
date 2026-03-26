@@ -108,9 +108,7 @@ pyguidos-setup
 
 Follow the prompts to provide a path. The setup tool will test the folder for permissions and save the configuration permanently.
 
-:::note
-You can reset or change this path at any time by running `pyguidos-setup` again.
-:::
+**NOTE**: You can reset or change this path at any time by running `pyguidos-setup` again.
 
 ---
 

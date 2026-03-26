@@ -1,34 +1,64 @@
 pyGuidos
 ========
 
-**pyGuidos** is a Python interface to
-`GuidosToolbox <https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/>`_ (GTB), a scientific free software developed at the European Commission Joint Research Centre (JRC) for the spatial pattent analysis of raster images.
+**pyGuidos** is a Python interface to `GuidosToolbox <https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/>`_ (GTB), 
+a scientific software suite developed at the European Commission Joint Research Centre (JRC) for the 
+spatial pattern analysis of raster images.
 
-pyGuidos provides programmatic access to the GTB analytical tools, enabling reproducible landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
+.. image:: https://img.shields.io/badge/Version-2.0.0-blue.svg
+   :alt: Version 2.0.0
 
-**This document describes pyGuidos version 2.0.0**
+pyGuidos provides programmatic access to GTB analytical tools, enabling reproducible 
+landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
+
+.. note::
+   This documentation describes **pyGuidos version 2.0.0**. For older versions, 
+   please refer to the legacy documentation branch.
+
+
+Getting Started
+---------------
+
+If you are new to pyGuidos, we recommend following these steps:
+
+1. **Installation**: Follow the :doc:`installation` guide to set up the library and the GTB engines.
+2. **Interactive Help**: Use the built-in helper to explore available tools:
+
+   .. code-block:: python
+
+      import pyguidos as pg
+      pg.info()
+
+3. **User Guide**: Browse the :doc:`usage/index` for detailed examples of MSPA, Fragmentation, and other analysis tools.
 
 
 Citation
 --------
 
-If you use **pyGuidos** in your research, please cite both the **GuidosToolbox**
-software and this package:
+If you use **pyGuidos** in your research, please cite both the software implementation 
+and the underlying scientific methodology:
 
-- Caudullo G. and Vogt P. (2026). pyGuidos: Python interface to GuidosToolbox. In press.
+.. important::
+   **Software Implementation**
+     Caudullo G. and Vogt P. (2026). *pyGuidos: A cross-platform Python 
+interface to GuidosToolbox for landscape pattern analysis*. In press.
 
-- Vogt P. and Riitters K. (2017). GuidosToolbox: universal digital image object analysis. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: `10.1080/22797254.2017.1330650 <https://doi.org/10.1080/22797254.2017.1330650>`_
+   **Methodology (GTB)**
+     Vogt P. and Riitters K. (2017). *GuidosToolbox: universal digital image object analysis*. 
+     European Journal of Remote Sensing, 50, 1, pp. 352-361. 
+     doi: `10.1080/22797254.2017.1330650 <https://doi.org/10.1080/22797254.2017.1330650>`_
 
 
 Authors
 -------
 
-- Giovanni Caudullo -- giovanni.caudullo@ext.ec.europa.eu
-- Peter Vogt -- peter.vogt@ec.europa.eu
-
+* **Giovanni Caudullo** - `giovanni.caudullo@ext.ec.europa.eu <mailto:giovanni.caudullo@ext.ec.europa.eu>`_
+* **Peter Vogt** - `peter.vogt@ec.europa.eu <mailto:peter.vogt@ec.europa.eu>`_
 
 .. toctree::
+   :maxdepth: 2
    :hidden:
+   :caption: Contents:
 
    installation
    usage/index
