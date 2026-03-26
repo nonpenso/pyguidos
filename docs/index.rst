@@ -1,12 +1,24 @@
 pyGuidos
 ========
 
+.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg
+   :target: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/commits/main
+   :alt: Pipeline Status
+
+.. image:: https://img.shields.io/badge/docs-latest-brightgreen.svg
+   :target: https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/
+   :alt: Documentation Status
+
+.. image:: https://img.shields.io/badge/version-2.0.0-blue.svg
+   :alt: Version 2.0.0
+
+.. image:: https://img.shields.io/badge/license-EUPL--1.2-orange.svg
+   :target: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+   :alt: License
+
 **pyGuidos** is a Python interface to `GuidosToolbox <https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/>`_ (GTB), 
 a scientific software suite developed at the European Commission Joint Research Centre (JRC) for the 
 spatial pattern analysis of raster images.
-
-.. image:: https://img.shields.io/badge/Version-2.0.0-blue.svg
-   :alt: Version 2.0.0
 
 pyGuidos provides programmatic access to GTB analytical tools, enabling reproducible 
 landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.

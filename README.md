@@ -1,7 +1,11 @@
-
 # pyguidos
 
-*Python interface to GuidosToolbox (GTB) for spatial pattern analysis**
+[![pipeline status](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/commits/main)
+[![docs status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/)
+![version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)
+
+**Python interface to GuidosToolbox (GTB) for spatial pattern analysis**
 
 
 Overview
@@ -13,7 +17,7 @@ Overview
 * **`/docs`**: Documentation files.
 * **`/notebooks`**: Jupyter notebooks to use the module and visualise results.
 * **`/pyguidos`**: script repository.
-* **`/tests`**: Unit and integration tests for the `pyguidos` module.
+* **`/tests`**: Unit and integration tests for analytical tools, input validation (checks), and utility functions.
 
 ---
 
