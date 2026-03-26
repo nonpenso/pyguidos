@@ -32,7 +32,7 @@ def test_mspa_integration_run(tmp_path):
     try:
         # We set stat_files=False to avoid cluttering the tmp directory
         # We set return_array=True to verify the output data
-        result = mspa.mspa(
+        result = mspa(
             str(input_tif), 
             edge_width=1, 
             connectivity=8, 
