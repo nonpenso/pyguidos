@@ -42,14 +42,14 @@ def test_mspa_integration_run(tmp_path):
 
         # 5. Verify the Result Object (MSPAResult)
         assert result.array is not None
-        assert result.array.shape == (10, 10)
+        assert result.array.shape == (1, 10, 10)
         
         # MSPA categories start above 2, so the max value should be higher than input
         assert np.max(result.array) > 2
         
         # Verify foreground/background counts are in the stats dict
-        assert "foreground pxl" in result.stats
-        assert result.stats["foreground pxl"] == 16  # 4x4 block
+        assert "foreground pxl" in result.stats["input stats"]
+        assert result.stats["input stats"]["foreground pxl"] == 16 # 4x4 block
 
     except FileNotFoundError:
         pytest.skip("MSPA binary not found. Is it in the progs/linux folder?")
