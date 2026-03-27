@@ -2,9 +2,10 @@ import pytest
 from pathlib import Path
 import os
 from unittest.mock import patch
+from unittest.mock import MagicMock
 from pyguidos import _test_execution, info, GLOBAL_CONFIG
 from pyguidos.setup_cli import configure_workspace
-
+import pyguidos.setup_cli as cli
 
 def test_test_execution_success(tmp_path):
     """Verifies that _test_execution returns True for a valid writable/executable dir."""
@@ -59,3 +60,69 @@ def test_full_setup_flow(tmp_path):
             setup_cli.main()
         except Exception:
              pass
+
+def test_configure_workspace_failure_linux(monkeypatch, capsys):
+    """Hits the Linux-specific failure message (the red 'else' block)."""
+    # 1. Force os.name to NOT be Windows
+    monkeypatch.setattr("os.name", "posix")
+    # 2. Force input to be empty (hits the 'else' branch of user_input)
+    monkeypatch.setattr("builtins.input", lambda _: "")
+    # 3. Force the execution test to fail
+    monkeypatch.setattr("pyguidos.setup_cli._test_execution", lambda x: False)
+    
+    configure_workspace()
+    
+    captured = capsys.readouterr()
+    assert "FAILED: Execution test failed" in captured.out
+    assert "noexec mount" in captured.out  # Verifies the Linux suggestion line
+
+
+def test_configure_workspace_failure_windows_safe(monkeypatch, capsys):
+    """Hits Windows-specific lines without breaking the global os.name."""
+    
+    # 1. Provide a dummy path string for input
+    monkeypatch.setattr("builtins.input", lambda _: "D:/restricted_path")
+    
+    # 2. Force the execution check to fail
+    monkeypatch.setattr(cli, "_test_execution", lambda x: False)
+    
+    # 3. CRITICAL: Only mock 'os' inside the setup_cli module
+    # This prevents pytest from seeing 'os.name' as 'nt' globally
+    class MockOs:
+        name = 'nt'
+        sep = '\\'
+    monkeypatch.setattr(cli, "os", MockOs)
+
+    # 4. Run the function
+    cli.configure_workspace()
+    
+    captured = capsys.readouterr()
+    
+    # 5. Verify the Windows-only suggestion was printed
+    assert "non-system drive" in captured.out
+    assert "Windows Explorer" in captured.out
+
+
+
+def test_configure_workspace_exception(monkeypatch, tmp_path, capsys):
+    """Hits the 'except Exception' block by replacing GLOBAL_CONFIG with a Mock."""
+    
+    # 1. Setup mocks for input and execution check
+    monkeypatch.setattr("builtins.input", lambda _: str(tmp_path))
+    monkeypatch.setattr(cli, "_test_execution", lambda x: True)
+    
+    # 2. Create a Mock object to replace GLOBAL_CONFIG
+    mock_config = MagicMock()
+    # Force write_text to raise an error when called
+    mock_config.write_text.side_effect = Exception("Simulated disk error")
+    
+    # 3. Replace the variable in the module
+    monkeypatch.setattr(cli, "GLOBAL_CONFIG", mock_config)
+    
+    # 4. Run the function
+    cli.configure_workspace()
+    
+    # 5. Check output
+    captured = capsys.readouterr()
+    assert "ERROR: Could not save config file" in captured.out
+    assert "Simulated disk error" in captured.out

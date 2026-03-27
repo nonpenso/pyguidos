@@ -438,7 +438,7 @@ def reset_workspace():
 
 def citation():
     """Prints the recommended scientific citations for pyguidos."""
-    text = """
+    cite_text = """
 ============================================================
 RECOMENDED CITATIONS FOR PYGUIDOS
 ============================================================
@@ -449,4 +449,5 @@ JOSS XX(XX), XXXX. https://doi.org/joss.XXXXXX
 
 ============================================================
     """
-    print(text)
+    print(cite_text)
+    return cite_text

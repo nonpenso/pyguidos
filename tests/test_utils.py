@@ -108,3 +108,33 @@ class TestGetToolParameters:
         assert utils.get_tool_parameters("") is None
         assert utils.get_tool_parameters(None) is None
         assert utils.get_tool_parameters("--") is None
+
+# =============================================================================
+
+def test_utils_housekeeping(tmp_path):
+    from pyguidos import utils
+    
+    # 1. Test citation
+    cite = utils.citation()
+    assert isinstance(cite, str)
+    assert "Vogt" in cite  # Check that it actually contains expected info
+    
+def test_reset_workspace(tmp_path, monkeypatch):
+    from pyguidos import utils
+    from pathlib import Path
+
+    # 1. Create a fake config file location
+    fake_config = tmp_path / ".pyguidos_config"
+    
+    # 2. Force the utils module to use our fake path instead of the real one
+    monkeypatch.setattr(utils, "GLOBAL_CONFIG", fake_config)
+
+    # Scenario A: File exists, should be deleted
+    fake_config.write_text("user_path=/home/test")
+    assert fake_config.exists()
+    
+    utils.reset_workspace()  # No arguments needed now!
+    assert not fake_config.exists()
+
+    # Scenario B: File doesn't exist, should just print "No configuration file found"
+    utils.reset_workspace()
