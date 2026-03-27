@@ -27,9 +27,9 @@ run_tests:
   coverage: '/(?i)total.*? (100(?:\.0+)?%|[1-9]?\d(?:\.\d+)?%)/'
   artifacts:
     when: always
-  paths:
-      - htmlcov/
-  expire_in: 1 week
+    paths:
+       - htmlcov/
+    expire_in: 1 week
   only:
     - develop-v2
 
