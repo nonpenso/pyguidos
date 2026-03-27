@@ -117,9 +117,10 @@ def frag(
         out_data_int = np.floor(out_data * 100 + 0.5).astype(np.uint8, casting='unsafe')
 
         # Mapping logic (NoData, Background, Special codes)
+        choices = np.array([102, 101, 105, 106], dtype=np.uint8)
         data_masked = np.select(
             [input_data == 0, input_data == 1, input_data == 3, input_data == 4],
-            [102, 101, 105, 106],
+            choices,
             default=out_data_int
         ).astype(np.uint8, casting='unsafe')
 

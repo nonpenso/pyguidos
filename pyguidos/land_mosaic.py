@@ -120,7 +120,7 @@ def landmos(in_tiff,
         # Process Output
         spat_bin = tmpdir / "scoutput"
         spat_data = np.fromfile(spat_bin, dtype=np.uint8).reshape((1, info['rows'], info['cols']))
-        data_masked = np.select([input_data == 0], [0], default=spat_data)
+        data_masked = np.select([input_data == 0], [np.uint8(0)], default=spat_data)
 
         # Save 103 classes Geotiff
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/"

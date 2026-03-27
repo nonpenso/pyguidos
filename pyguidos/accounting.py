@@ -109,9 +109,10 @@ def acc(
         reclass_array = reclass_array.astype(np.uint8, casting='unsafe')
 
         # Mapping logic (NoData, Special codes)
+        choices = np.array([129, 105, 176], dtype=np.uint8)
         out_array = np.select(
             [input_data == 0, input_data == 3, input_data == 4],
-            [129, 105, 176],
+            choices,
             default=reclass_array
         ).astype(np.uint8, casting='unsafe')
 
