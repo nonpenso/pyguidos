@@ -36,7 +36,7 @@ Thumbs.db
 
 # Test coverage output
 .coverage
-htmlcov/
+docs/coverage/
 
 # Local notebook configuration
 .notebook_config

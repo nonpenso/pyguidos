@@ -6,7 +6,7 @@ pyGuidos
    :alt: Pipeline Status
 
 .. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/coverage.svg?job=run_tests
-   :target: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/commits/develop-v2
+   :target: https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html
    :alt: Coverage Status
 
 .. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/custom.svg?key_text=version&value_text=2.0.0&value_color=blue

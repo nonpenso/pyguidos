@@ -28,7 +28,7 @@ run_tests:
   artifacts:
     when: always
     paths:
-       - htmlcov/
+       - docs/coverage/
     expire_in: 1 week
   only:
     - develop-v2
@@ -45,6 +45,7 @@ pages:
     - pip install --upgrade pip
     - pip install sphinx pydata-sphinx-theme .
     - sphinx-build -b html docs public
+    - cp -r docs/coverage public/
   artifacts:
     paths:
       - public
