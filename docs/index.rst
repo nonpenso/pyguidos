@@ -9,10 +9,10 @@ pyGuidos
    :target: https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html
    :alt: Coverage Status
 
-.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/custom.svg?key_text=version&value_text=2.0.0&value_color=blue
+.. image:: https://img.shields.io/badge/version-2.0.0-blue
    :alt: Version 2.0.0
 
-.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/custom.svg?key_text=license&value_text=EUPL--1.2&value_color=orange
+.. image:: https://img.shields.io/badge/license-EUPL--1.2-orange
    :target: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
    :alt: License
 
