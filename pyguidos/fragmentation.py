@@ -114,14 +114,14 @@ def frag(
         # Process Output
         spat_bin = tmpdir / "scoutput"
         out_data = np.fromfile(spat_bin, dtype=np.float32).reshape(1, info['rows'], info['cols'])
-        out_data_int = np.floor(out_data * 100 + 0.5).astype(np.uint8)
+        out_data_int = np.floor(out_data * 100 + 0.5).astype(np.uint8, casting='unsafe')
 
         # Mapping logic (NoData, Background, Special codes)
         data_masked = np.select(
             [input_data == 0, input_data == 1, input_data == 3, input_data == 4],
             [102, 101, 105, 106],
             default=out_data_int
-        ).astype(np.uint8)
+        ).astype(np.uint8, casting='unsafe')
 
         # Save Final Geotiff with Palette and Tags
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/"

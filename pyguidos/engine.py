@@ -275,7 +275,7 @@ def write_mspa_input(out_path, source_path, data_array, dtype, is_tiled):
             blockysize=None
         )
         with rasterio.open(target_path, 'w', **profile) as dst:
-            dst.write(data_array.astype(np.uint8), 1)
+            dst.write(data_array.astype(np.uint8, casting='unsafe'), 1)
 
     return target_path
 
@@ -301,7 +301,7 @@ def write_spatcon_input(out_path, data_array):
     target_path = out_path / "scinput"
 
     if data_array.dtype != np.uint8:
-        data_array = data_array.astype(np.uint8)
+        data_array = data_array.astype(np.uint8, casting='unsafe')
     data_array.tofile(target_path)
 
     return target_path

@@ -106,14 +106,14 @@ def acc(
 
         # Reclassification
         reclass_array = lookup[labeled_array.astype(np.int32)]
-        reclass_array = reclass_array.astype(np.uint8)
+        reclass_array = reclass_array.astype(np.uint8, casting='unsafe')
 
         # Mapping logic (NoData, Special codes)
         out_array = np.select(
             [input_data == 0, input_data == 3, input_data == 4],
             [129, 105, 176],
             default=reclass_array
-        ).astype(np.uint8)
+        ).astype(np.uint8, casting='unsafe')
 
         # Save Final Geotiff with Palette and Tags
         thresh_list = ",".join([str(x) for x in thresholds])
