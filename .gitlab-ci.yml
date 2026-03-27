@@ -22,14 +22,9 @@ run_tests:
     - apt-get update && apt-get install -y libexpat1 libgomp1
     - pip install --upgrade pip
     - pip install pytest pytest-cov . 
-    - ppytest --cov=pyguidos tests/ --cov-report term-missing --cov-report html
+    - ppytest --cov=pyguidos tests/ --cov-report term-missing
   # This regex tells GitLab how to find the percentage in the terminal output
   coverage: '/(?i)total.*? (100(?:\.0+)?%|[1-9]?\d(?:\.\d+)?%)/'
-  artifacts:
-    when: always
-    paths:
-       - htmlcov/  
-    expire_in: 1 week
   only:
     - develop-v2
 
