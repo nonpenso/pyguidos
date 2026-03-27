@@ -111,7 +111,7 @@ def acc(
         # Mapping logic (NoData, Special codes)
         out_array = np.select(
             [input_data == 0, input_data == 3, input_data == 4],
-            [129, 130, 131],
+            [129, 105, 176],
             default=reclass_array
         ).astype(np.uint8)
 
@@ -125,7 +125,7 @@ def acc(
 
         # Statistics and Reporting
         if statists:
-            acc_pxl_freq = utils.get_pxl_freq(reclass_array)
+            acc_pxl_freq = utils.get_pxl_freq(out_array)
             stats_dict = acc_stats(acc_tiff = out_tiff,
                                    outfile = stat_files,
                                    outdir = outdir,
@@ -237,7 +237,7 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
         if 'acc_data' not in dir():
             with rasterio.open(acc_tiff) as src:
                 acc_data = src.read(1)
-        _, lab_pxl_freq = utils.labelling_array(acc_data, ACC_VALUES)
+        _, lab_pxl_freq = engine.labelling_array(acc_data, ACC_VALUES)
 
     # Counting pixel per ACC class
     bgrnd = acc_pxl_freq[0]

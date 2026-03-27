@@ -162,6 +162,9 @@ def run_mspa(run_dir, in_tiff, connectivity, edge_width, transition, internal,
         if e.stderr: print(f"STDERR: {e.stderr.strip()}")
         # Stop the script here
         sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"ERROR: Binary not found or not executable: {e}")
+        sys.exit(1) # This ensures the test passes and the user gets a clean exit
 
     return result
 
@@ -223,6 +226,9 @@ def run_spatcon(run_dir, verbose=False):
         print(f"ERROR: Spatcon failed. Exit code: {e.returncode}")
         if e.stdout: print(f"STDOUT: {e.stdout.strip()}")
         if e.stderr: print(f"STDERR: {e.stderr.strip()}")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"ERROR: Spatcon binary not found or not executable: {e}")
         sys.exit(1)
 
     return result

@@ -1,0 +1,81 @@
+import pytest
+import numpy as np
+import rasterio
+from pyguidos import frag, frag_stats
+
+@pytest.fixture(scope="module")
+def frag_result(tmp_path_factory):
+    """
+    Fixture that runs Fragmentation once with all optional pixel values:
+    0 (Missing), 1 (BG), 2 (FG), 3 (Spec BG 1), 4 (Spec BG 2).
+    """
+    tmp_dir = tmp_path_factory.mktemp("frag_data_extended")
+    input_tif = tmp_dir / "input_frag_extended.tif"
+    
+    # 1. Create 11x11 dummy data
+    # Start with Background (1)
+    data = np.ones((11, 11), dtype=np.uint8)
+    
+    # Add Foreground (2) patch
+    data[3:8, 3:8] = 2 
+    
+    # Add Optional/Special values
+    data[0, 0] = 0   # Missing/NoData
+    data[0, 1] = 3   # Special Background 1
+    data[0, 2] = 4   # Special Background 2
+    
+    # 2. Write GeoTIFF with georeferencing to avoid warnings
+    from rasterio.transform import from_origin
+    with rasterio.open(
+        input_tif, 'w', driver='GTiff',
+        height=11, width=11, count=1, dtype='uint8',
+        crs='EPSG:3035',
+        transform=from_origin(0, 11, 1, 1)
+    ) as dst:
+        dst.write(data, 1)
+
+    # 3. Run Fragmentation
+    return frag(
+        str(input_tif), 
+        method='FAD', 
+        window_size=3, 
+        return_array=True, 
+        stat_files=True
+    )
+
+def test_frag_mapping_values(frag_result):
+    """
+    Verifies that the mapping logic correctly translated 
+    special input values to their fragmentation output codes.
+    """
+    # frag() maps input 0 -> 102, 3 -> 105, 4 -> 106
+    output_array = frag_result.array[0] # Get 2D band
+    
+    assert output_array[0, 0] == 102  # Input 0 was mapped to 102
+    assert output_array[0, 1] == 105  # Input 3 was mapped to 105
+    assert output_array[0, 2] == 106  # Input 4 was mapped to 106
+
+def test_frag_special_stats(frag_result):
+    """
+    Verifies that frag_stats correctly counted the special pixels.
+    """
+    input_stats = frag_result.stats["input stats"]
+    
+    assert input_stats["missing pxl"] == 1
+    assert input_stats["backgr3 pxl"] == 1
+    assert input_stats["backgr4 pxl"] == 1
+    
+    # Verify these appear in the output stats dictionary too
+    assert "fad_av" in frag_result.stats["output stats"]
+
+def test_frag_stats_standalone_files(frag_result):
+    """Verifies standalone file generation."""
+    from pathlib import Path
+    output_tif_path = frag_result.stats["output paths"]["path tif"]
+    
+    stats = frag_stats(output_tif_path, outfile=True)
+    
+    base_path = Path(output_tif_path).with_suffix('')
+    assert Path(str(base_path) + ".txt").exists()
+    assert Path(str(base_path) + ".csv").exists()
+    assert Path(str(base_path) + ".png").exists()
