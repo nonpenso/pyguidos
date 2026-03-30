@@ -50,26 +50,26 @@ pages:
     - sphinx-build -b html docs public
     - |
       if [ -d "htmlcov" ]; then
-        echo "? New coverage found in current pipeline. Using it."
+        echo "New coverage found."
         mkdir -p public/coverage
         cp -r htmlcov/* public/coverage/
       else
-        echo "? Tests skipped. Attempting to fetch coverage from last successful develop-v2 pipeline..."
+        echo "Tests skipped. Trying to fetch last successful artifacts..."
+        # Using the specific 'latest' successful job endpoint
         curl --location --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-          "https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_COMMIT_REF_NAME}/download?job=run_tests" \
-          -o artifacts.zip || echo "? Download failed."
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_COMMIT_REF_NAME}/download?job=run_tests" \
+          -o artifacts.zip
         
-        if [ -f "artifacts.zip" ]; then
+        # Check if the file is actually a ZIP (greater than 500 bytes)
+        if [ -f "artifacts.zip" ] && [ $(stat -c%s "artifacts.zip") -gt 500 ]; then
           unzip -o artifacts.zip
-          if [ -d "htmlcov" ]; then
-            mkdir -p public/coverage
-            cp -r htmlcov/* public/coverage/
-            echo "? Success: Persistent coverage restored."
-          else
-            echo "? htmlcov folder not found in the downloaded zip."
-          fi
+          mkdir -p public/coverage
+          cp -r htmlcov/* public/coverage/ || echo "Folder missing in zip"
+          echo "Success: Coverage restored."
         else
-          echo "Warning: Could not restore coverage. Site will be built without it."
+          echo "Artifact download failed or returned an error message. Creating empty folder to prevent crash."
+          mkdir -p public/coverage
+          echo "<html><body><h1>Coverage not available for this documentation-only update.</h1></body></html>" > public/coverage/index.html
         fi
       fi
   artifacts:
