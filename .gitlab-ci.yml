@@ -48,7 +48,28 @@ pages:
     - pip install --upgrade pip
     - pip install sphinx pydata-sphinx-theme .
     - sphinx-build -b html docs public
-    - cp -r htmlcov public/coverage
+    - |
+      if [ -d "htmlcov" ]; then
+        echo "New coverage found in current pipeline. Using it."
+        mkdir -p public/coverage
+        cp -r htmlcov/* public/coverage/
+      else
+        echo "Tests skipped. Attempting to fetch coverage from last successful develop-v2 pipeline..."
+        # This curl command fetches the artifacts from the last successful 'run_tests' job on this branch
+        # ${CI_PROJECT_ID} and ${CI_COMMIT_REF_NAME} are built-in GitLab variables
+        curl --location --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+          "https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_COMMIT_REF_NAME}/download?job=run_tests" \
+          -o artifacts.zip || echo "No previous artifacts found."
+        
+        if [ -f "artifacts.zip" ]; then
+          unzip -o artifacts.zip
+          mkdir -p public/coverage
+          cp -r htmlcov/* public/coverage/
+          echo "Successfully restored persistent coverage."
+        else
+          echo "Warning: Could not restore coverage. Site will be built without it."
+        fi
+      fi
   artifacts:
     paths:
       - public
