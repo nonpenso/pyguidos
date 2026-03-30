@@ -71,8 +71,7 @@ are planned for future 2.x releases.
   `jrc-forest.pages.code.europa.eu/guidos/pyguidos/
   <https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/>`_.
 - Four example Jupyter notebooks using Copernicus Land Cover data over Corsica.
-- 134 unit tests across ``test_checks.py``, ``test_utils.py``,
-  ``test_results.py``; all pure Python, no GeoTIFF files or binaries required.
+- 94% of tested statements through 14 scripts in pure Python, no GeoTIFF files or binaries required.
 - Standard pip packaging via ``pyproject.toml``, ``MANIFEST.in``, ``README.md``.
 
 **Changed**
