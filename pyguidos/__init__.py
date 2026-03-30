@@ -17,7 +17,6 @@ GLOBAL_CONFIG = Path.home() / ".pyguidos_config"
 __version__ = "2.0.0"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
-
 # Workspace discovery
 def _test_execution(path: Path) -> bool:
     """Tests if a directory allows writing and executing files."""
@@ -99,7 +98,6 @@ def get_workspace():
 
 # This runs once when 'import pyguidos' is called
 WORK_DIR = get_workspace()
-
 
 # Import Tools and Results
 from .mspa import mspa, mspa_stats
