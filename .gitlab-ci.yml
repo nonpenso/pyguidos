@@ -44,7 +44,7 @@ pages:
   dependencies:
     - run_tests
   script:
-    - apt-get update && apt-get install -y libexpat1
+    - apt-get update && apt-get install -y curl unzip libexpat1
     - pip install --upgrade pip
     - pip install sphinx pydata-sphinx-theme .
     - sphinx-build -b html docs public
