@@ -1,5 +1,5 @@
 
-# pyguidos
+# pyguidos v.1
 
 *Python module to access GuidosToolbox Workbench (GWB)*
 
@@ -7,7 +7,7 @@
 Overview
 ========
 
-``pyguidos`` is a Python module that provides convenient wrappers for GuidosToolbox Workbench (GWB). It simplifies the execution of GWB executables by encapsulating their required input parameters and handling output. This module is designed for researchers and practitioners working with spatial data, particularly GeoTIFF files for tasks such as restoration status summary, morphological spatial pattern analysis, fragmentation analysis, and more.
+``pyguidos`` v.1 is a Python module that provides convenient wrappers for GuidosToolbox Workbench (GWB). It simplifies the execution of GWB executables by encapsulating their required input parameters and handling output. This module is designed for researchers and practitioners working with spatial data, particularly GeoTIFF files for tasks such as restoration status summary, morphological spatial pattern analysis, fragmentation analysis, and more.
 
 This module acts as a bridge, allowing Python users to integrate powerful GWB functionalities into their workflows seamlessly, without directly interacting with the command-line interfaces of the original GWB tools.
 
@@ -40,7 +40,7 @@ All functions handle parameter file generation, command-line execution, and basi
 Prerequisites
 =============
 
-Before using `pyguidos`, you *must* have the GWB installed and accessible in your Linux system's `PATH` environment variable. This module does not include the GWB executables themselves.
+Before using `pyguidos` v.1, you *must* have the GWB installed and accessible in your Linux system's `PATH` environment variable. This module does not include the GWB executables themselves.
 
 - Installation instructions: https://ies-ows.jrc.ec.europa.eu/gtb/GWB/GWB_Installation.pdf
 
@@ -48,16 +48,18 @@ Before using `pyguidos`, you *must* have the GWB installed and accessible in you
 Installation
 ============
 
+### 1. Installation from GitLab
 `pyguidos` can be installed directly from its GitLab repository without `/data` and `/notebooks`:
 
 ```bash
-pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git@v1.0.0
 ```
 
+### 2. Development installation
 To run the examples in the Jupyter notebooks in `/notebooks` (which rely on the files on in the `/data` directory), you must clone the entire repository and then install the module in "editable" mode. This is the recommended approach for development and testing.
 1. Clone the repository:
 ```bash
-git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+git clone --branch v1.0.0 --depth 1 https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 cd pyguidos
 ```
 2. Create and activate a virtual environment (highly recommended):
