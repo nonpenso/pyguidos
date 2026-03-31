@@ -6,13 +6,13 @@
 ![version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 [![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
-**Python interface to GuidosToolbox (GTB) for spatial pattern analysis**
+**A Python interface to the main GuidosToolbox (GTB) modules for spatial pattern analysis**
 
 
 Overview
 ========
 
-``pyguidos`` is a Python interface to [GuidosToolbox](https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/) (GTB), a scientific software package for pattern spatial analysis of raster images. This Python module provides programmatic access to the core GTB analytical tools, enabling reproducible landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
+``pyguidos`` is a Python interface to the main [GuidosToolbox](https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/) (GTB) modules, a scientific software package for pattern spatial analysis of raster images. This Python module provides programmatic access to the core GTB analytical tools, enabling reproducible landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 ### Repository Contents
 * **`/docs`**: Documentation files.
@@ -22,8 +22,8 @@ Overview
 
 ---
 
-Tools
-=====
+Modules
+=======
 
 | Function | Description |
 |---|---|
