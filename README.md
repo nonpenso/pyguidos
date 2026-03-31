@@ -1,8 +1,8 @@
 
 # pyguidos
 
-[![pipeline status](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/pipeline.svg?ignore_skipped=true)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines)
-[![coverage report](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/coverage.svg?job=run_tests)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html)
+[![pipeline status](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg?ignore_skipped=true)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines)
+[![coverage report](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/coverage.svg?job=run_tests)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html)
 [![docs status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/)
 ![version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 [![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)

@@ -1,11 +1,11 @@
 pyGuidos
 ========
 
-.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/pipeline.svg?ignore_skipped=true
+.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg?ignore_skipped=true
    :target: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines
    :alt: Pipeline Status
 
-.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/coverage.svg?job=run_tests
+.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/coverage.svg?job=run_tests
    :target: https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html
    :alt: Coverage Status
 
