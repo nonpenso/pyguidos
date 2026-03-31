@@ -71,11 +71,11 @@ def rss(
     labeled_array, lab_pxl_freq = engine.labelling_array(input_data, 2)
 
     # Counting pixel per input class
-    fgrnd = input_pxl_freq[2]
-    bgrnd = input_pxl_freq[1]
-    bgr3 = input_pxl_freq[3]
-    bgr4 = input_pxl_freq[4]
-    ndata =  input_pxl_freq[0]
+    fgrnd = input_pxl_freq.get(2, 0)
+    bgrnd = input_pxl_freq.get(1, 0)
+    bgr3 = input_pxl_freq.get(3, 0)
+    bgr4 = input_pxl_freq.get(4, 0)
+    ndata = input_pxl_freq.get(0, 0)
 
     # Counting output pixels per patch
     patch_sizes = [count for pid, count in lab_pxl_freq.items() if pid > 0]
@@ -162,7 +162,7 @@ def rss(
 
     # Completed
     if verb:
-        print(f"\nFragmentation completed in {utils.running_time(start_time, time.time())}")
+        print(f"\RSS completed in {utils.running_time(start_time, time.time())}")
 
     return RssResult(stats=stats_dict)
 

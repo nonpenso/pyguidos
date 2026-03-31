@@ -110,20 +110,6 @@ from .results import MSPAResult, FragResult, LandMosResult, AccResult, RssResult
 from .utils import citation
 
 
-# Exported names
-__all__ = ["mspa", "mspa_stats", 
-           "frag", "frag_stats",
-           "landmos", "landmos_stats",
-           "acc", "acc_stats",
-           "rss", 
-           "extract_by_polygon", 
-           "MSPAResult", "FragResult", 
-           "LandMosResult", "AccResult",
-           "RssResult", 
-           "citation", "info"
-           ]
-
-
 def info(tool: str = None):
     """
     Displays quick-help and JRC documentation links for pyguidos tools.
@@ -193,3 +179,16 @@ def info(tool: str = None):
             print(f"Usage:        pg.{tool}{signature}")
             
         print(f"\nFull usage: help(pg.{tool})\n")
+
+# Exported names
+__all__ = ["mspa", "mspa_stats", 
+           "frag", "frag_stats",
+           "landmos", "landmos_stats",
+           "acc", "acc_stats",
+           "rss", 
+           "extract_by_polygon", 
+           "MSPAResult", "FragResult", 
+           "LandMosResult", "AccResult",
+           "RssResult", 
+           "citation", "info"
+           ]
