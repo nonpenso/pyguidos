@@ -41,7 +41,7 @@ Documentation
 =============
 
 Full API documentation is available at https://jrc-forest.pages.code.europa.eu/guidos/pyguidos.
->>>>>>> develop-v2
+
 
 ---
 
@@ -63,21 +63,23 @@ Requirements
 Installation
 ============
 
-### 1. Standard Installation
+### 1. Standard Installation (not yet available)
 For general use, install the latest stable version directly via `pip`:
 ```bash
 pip install pyguidos
 ```
 
 ### 2. Development installation
-To run the examples in the Jupyter notebooks in `/notebooks` (which rely on the files on in the `/data` directory), you must clone the entire repository and then install the module in "editable" mode. This is the recommended approach for development and testing.
+To install the latest development version directly from the GitLab repository without cloning:
+```bash
+pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+```
 
 ### 3. Editable Installation (Recommended for Testing)
 To run the example notebooks or contribute to the source code, you must clone the repository and install it in "editable" mode. This allows changes in the code to be reflected immediately.
->>>>>>> develop-v2
 1. Clone the repository:
 ```bash
-git clone --branch v1.0.0 --depth 1 https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 cd pyguidos
 ```
 2. Create and activate a virtual environment:
@@ -95,6 +97,7 @@ pip install -e ".[test,notebooks]"
 This links module's source code directly to your Python environment, so any changes you make are immediately reflected without reinstallation.
 
 ---
+
 
 Configuration
 ============
