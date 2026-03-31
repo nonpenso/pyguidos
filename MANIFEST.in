@@ -1,14 +1,27 @@
 # MANIFEST.in
 
-# Include README and pyproject.toml at the root level
+# Include package metadata files
 include README.md
+include LICENSE
 include pyproject.toml
 
-# Recursively include all files in the 'data/' directory
-recursive-include data *
+# Include binary executables
+recursive-include pyguidos/progs *
 
-# Recursively include all files in the 'examples/' directory
-recursive-include examples *
+# Include template files
+recursive-include pyguidos/templates *
 
-# Recursively include all files in the 'notebooks/' directory
+# Include example data
+recursive-include pyguidos/data *
+
+# Include notebooks (for source distribution, not installed with pip)
 recursive-include notebooks *
+
+# Include tests (for source distribution, not installed with pip)
+recursive-include tests *
+
+# Exclude runtime and cache artifacts
+recursive-exclude * __pycache__
+recursive-exclude * *.py[cod]
+recursive-exclude * .DS_Store
+recursive-exclude * *.egg-info

@@ -1,113 +1,257 @@
 
-# pyguidos v.1
+# pyguidos
 
-*Python module to access GuidosToolbox Workbench (GWB)*
+[![pipeline status](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/pipeline.svg?ignore_skipped=true)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines)
+[![coverage report](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/develop-v2/coverage.svg?job=run_tests)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html)
+[![docs status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/)
+![version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+[![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
+
+**A Python interface to the main GuidosToolbox (GTB) modules for spatial pattern analysis**
 
 
 Overview
 ========
 
-``pyguidos`` v.1 is a Python module that provides convenient wrappers for GuidosToolbox Workbench (GWB). It simplifies the execution of GWB executables by encapsulating their required input parameters and handling output. This module is designed for researchers and practitioners working with spatial data, particularly GeoTIFF files for tasks such as restoration status summary, morphological spatial pattern analysis, fragmentation analysis, and more.
-
-This module acts as a bridge, allowing Python users to integrate powerful GWB functionalities into their workflows seamlessly, without directly interacting with the command-line interfaces of the original GWB tools.
+``pyguidos`` is a Python interface to the main [GuidosToolbox](https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/) (GTB) modules, a scientific software package for pattern spatial analysis of raster images. This Python module provides programmatic access to the core GTB analytical tools, enabling reproducible landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 ### Repository Contents
-* **`/data`**: source data to use in the notebook examples.
-* **`/notebooks`**: Jupyter notebooks to use the modules and visualise results.
+* **`/docs`**: Documentation files.
+* **`/notebooks`**: Jupyter notebooks to use the module and visualise results.
 * **`/pyguidos`**: script repository.
-* **`/tests`**: Unit and integration tests for the `pyguidos` module.
+* **`/tests`**: Unit and integration tests for analytical tools, input validation (checks), and utility functions.
 
+---
 
-Features
-========
+Modules
+=======
 
-`pyguidos` currently wraps the following GWB modules:
-* **`gwb_acc`**: Accounting analysis (object identification and thresholding).
-* **`gwb_frag`**: Fragmentation analysis with various methods (FAD, FED, FAC).
-* **`gwb_mspa`**: Morphological Spatial Pattern Analysis.
-* **`gwb_rss`**: Restoration Status Summary analysis.
-* **`gwb_dist`**: Euclidean Distance analysis, optionally with Hypsometric Curve.
-* **`gwb_lm`**: Landscape Mosaic analysis (19-class and 103-class versions).
-* **`gwb_parc`**: Parcellation analysis for landcover classification.
-* **`gwb_rec`**: Recoding of categorical class values in TIFF maps.
-* **`gwb_sc`**: Spatial Convolution (SpatCon) for various landscape metrics.
-* **`gwb_gsc`**: Gray Spatial Convolution (GraySpatCon) for grayscale image metrics.
-* **`gwb_spa`**: Simplified Spatial Pattern Analysis.
+| Function | Description |
+|---|---|
+| `mspa()` | Morphological Spatial Pattern Analysis |
+| `frag()` | Fragmentation analysis |
+| `landmos()` | Landscape Mosaic |
+| `acc()` | Foreground Patch Size Accounting |
+| `rss()` | Restoration Status Summary |
+| `extract_by_polygon()` | Extract raster by polygon features |
 
-All functions handle parameter file generation, command-line execution, and basic error reporting, streamlining the use of the underlying GWB executables.
+---
 
-
-Prerequisites
+Documentation
 =============
 
-Before using `pyguidos` v.1, you *must* have the GWB installed and accessible in your Linux system's `PATH` environment variable. This module does not include the GWB executables themselves.
+Full API documentation is available at https://jrc-forest.pages.code.europa.eu/guidos/pyguidos.
+>>>>>>> develop-v2
 
-- Installation instructions: https://ies-ows.jrc.ec.europa.eu/gtb/GWB/GWB_Installation.pdf
+---
 
+Requirements
+============
+
+- Python >= 3.8
+- numpy
+- rasterio
+- scipy
+- matplotlib
+- fiona
+- shapely
+- pyproj
+- python-ternary
+
+---
 
 Installation
 ============
 
-### 1. Installation from GitLab
-`pyguidos` can be installed directly from its GitLab repository without `/data` and `/notebooks`:
-
+### 1. Standard Installation
+For general use, install the latest stable version directly via `pip`:
 ```bash
-pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git@v1.0.0
+pip install pyguidos
 ```
 
 ### 2. Development installation
 To run the examples in the Jupyter notebooks in `/notebooks` (which rely on the files on in the `/data` directory), you must clone the entire repository and then install the module in "editable" mode. This is the recommended approach for development and testing.
+
+### 3. Editable Installation (Recommended for Testing)
+To run the example notebooks or contribute to the source code, you must clone the repository and install it in "editable" mode. This allows changes in the code to be reflected immediately.
+>>>>>>> develop-v2
 1. Clone the repository:
 ```bash
 git clone --branch v1.0.0 --depth 1 https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 cd pyguidos
 ```
-2. Create and activate a virtual environment (highly recommended):
+2. Create and activate a virtual environment:
 ```bash
-python3 -m venv myvenv
-source myvenv/bin/activate
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
 ```
-3. Install the module in editable mode, including development dependencies (for testing and notebooks):
+3. Install in editable mode with dependencies:
 ```bash
 pip install -e ".[test,notebooks]"
 ```
 This links module's source code directly to your Python environment, so any changes you make are immediately reflected without reinstallation.
 
+---
+
+Configuration
+============
+
+`pyguidos` requires a workspace folder with **execution permissions** to run its internal C++ analytical engine.
+
+* Automatic: By default, it will try to use a `~/pyguidos/work/` folder in the project 
+  root (if using Git) or `~/pyguidos_work` in your home directory.
+* Manual (Required for restricted environments): If your IT policy blocks execution in
+  standard folders, you must configure a proper workspace.
+
+Run the following command in your terminal after installation:
+```bash
+pyguidos-setup
+```
+
+Follow the prompts to provide a path. The setup tool will test the folder for permissions and save the configuration permanently.
+
+**NOTE**: You can reset or change this path at any time by running `pyguidos-setup` again.
+
+---
+
+Quick Start
+==========
+
+Once installed, you can verify your setup and explore the available tools directly from your Python console or Jupyter Notebook.
+
+```python
+import pyguidos as pg
+
+# List all available analytical tools and their descriptions
+pg.info()
+
+# Get detailed documentation and methodology links for a specific tool
+pg.info('mspa')
+
+# Get full technical specification of a function
+help(pg.mspa)
+```
+
+---
 
 Usage Examples
 ==============
-To use the functions, you first need to import them. For instance, to use ``gwb_mspa``:
+
 ```python
-from pyguidos import gwb_mspa
-from pathlib import Path
+import pyguidos as pg
 
-# Define input and output directories
-input_data_dir = Path("/path/to/your/input_geotiffs") # <<< REPLACE with your actual input data directory
-output_results_dir = Path("/path/to/your/output_folder") # <<< REPLACE with your desired output directory (must be empty)
+# Check where the engine is running and saving data
+print(f"Working in: {pg.WORK_DIR}")
 
-# Example: Run GWB_MSPA with default settings
-print("Running GWB_MSPA...")
-gwb_mspa(
-    input_dir=input_data_dir,
-    output_dir=output_results_dir,
-    conn_8=True,       # 8-connectivity
-    edge_width=1,      # Default edge width
-    transition=True,   # Show transition pixels
-    int_ext=True,      # Distinguish internal/external features
-    disk=False,        # Do not save temporary maps on disk (faster processing)
-    stats=True         # Generate summary statistics
+# Morphological Spatial Pattern Analysis
+result = pg.mspa(
+    in_tiff="my_map.tif",
+    edge_width=1,
+    connectivity=8,
+    transition=True,
+    int_ext=True
 )
-print("GWB_MSPA processing complete (check output_results_dir for results).")
+print(result.stats)
 
-# You can similarly call other functions like gwb_rss, gwb_acc, etc.
-# Refer to the function signatures in the source code or the GWB documentation for parameters.
+# Fragmentation analysis
+result = pg.frag(
+    in_tiff="my_map.tif",
+    method="FAD",
+    window_size=27
+)
+
+# Landscape Mosaic
+result = pg.landmos(
+    in_tiff="my_landcover.tif",
+    window_size=33
+)
+
+# Foreground Patch Size Accounting
+result = pg.acc(
+    in_tiff="my_map.tif",
+    thresholds=[10, 100, 1000, 10000]
+)
+
+# Raster Spatial Statistics
+result = pg.rss(in_tiff="my_map.tif")
+
+# Extract raster by polygon
+pg.extract_by_polygon(
+    shapefile_path="regions.shp",
+    geotiff_path="my_map.tif",
+    output_dir="output/",
+    id_field="NAME"
+)
 ```
 
+Example data and Jupyter notebooks with worked examples are available in the [project repository](https://code.europa.eu/jrc-forest/guidos/pyguidos).
 
-Notebooks
-=========
-The `/notebooks` directory contains Jupyter notebooks with detailed examples demonstrating how to use `pyguidos` functions, visualize results, and interact with the provided sample data in the `/data` directory.
+---
 
-If you have already followed the "Installation" steps above to clone the repository and installed in editable mode (e.g., `pip install -e ".[test,notebooks]"`), you already have all necessary packages for the notebooks (e.g., jupyterlab, rasterio, matplotlib) installed. You can simply activate your virtual environment and run Jupyter.
+Citation
+========
+
+If you use pyGuidos in your research, please cite both the GuidosToolbox
+software and this package:
+
+**GuidosToolbox:**
+> Vogt P. and Riitters K. (2017). GuidosToolbox: universal digital image object analysis. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: [10.1080/22797254.2017.1330650](https://doi.org/10.1080/22797254.2017.1330650)
+
+**pyGuidos:**
+> Caudullo G. and Vogt P. (2026). PyGuidos, A cross-platform Python 
+interface to GuidosToolbox for landscape pattern analysis. In press.
+
+### Interactive Citation
+You can get the plain-text citations directly in your Python console:
+
+```python
+import pyguidos as pg
+pg.citation()
+```
+
+---
+
+Contributing
+============
+
+Contributions are welcome. Please follow these steps:
+
+1. Fork the repository on [GitLab](https://code.europa.eu/jrc-forest/guidos/pyguidos)
+2. Create a new branch for your feature or fix:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. Make your changes and ensure existing tests pass:
+   ```bash
+   pytest tests/
+   ```
+4. Submit a merge request with a clear description of the changes and
+   their motivation.
+
+Please open an issue before starting work on significant changes, to allow discussion of the approach.
+
+For bug reports, please include the pyGuidos version, Python version, operating system, and a minimal reproducible example.
+
+---
+
+Authors
+=======
+
+- **Giovanni Caudullo** -- giovanni.caudullo@ext.ec.europa.eu
+- **Peter Vogt** -- peter.vogt@ec.europa.eu
+
+European Commission, Joint Research Centre (JRC)
+
+---
+
+License
+=======
+
+This project is licensed under the
+[European Union Public Licence v1.2 (EUPL-1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12).
+See the [LICENSE](LICENSE) file for details.
 
 

@@ -1,0 +1,84 @@
+MORPHOLOGICAL SPATIAL PATTERN ANALYSIS (MSPA)
+
+================================================================================
+INPUT FILE
+================================================================================
+Input image: {input_file}
+EPSG: {epsg_code}
+Unit: {unit_type}
+Pixel size (x,y): {resolx}, {resoly} {unit_type}
+Rows: {rows_val}
+Columns: {cols_val}
+Total pixels: {tot_pxl}
+Foreground [pixel=2]: {foreg_pxl}
+Background [pixel=1]: {backg_pxl}
+Missing/Nodata [pixel=0]: {miss_pxl}
+
+================================================================================
+PARAMETRES
+================================================================================
+Foreground connectivity: {connect}
+Edge width: {edge_w}
+Transition: {trans}
+IntExt: {InEx}
+
+================================================================================
+RESULTS
+================================================================================
+Output image: {output_file}
+
+---------------------------------------------------------------------------------
+MSPA CLASS      PXL VALUE  PXL NUMBER 
+   External
+Core            17         {cor_e_val}
+Edge            3          {edg_e_val}
+Perforation     5          {prf_e_val}
+Islet           9          {isl_e_val}
+Branch          1          {bch_e_val}
+Loop            65         {loo_e_val}
+Loop in Edge    67         {loE_e_val}
+Loop in Perf.   69         {loP_e_val}
+Bridge          33         {brg_e_val}
+Bridge in Edge  35         {brE_e_val}
+Bridge in Perf. 37         {brP_e_val}
+
+    Internal
+Core            117        {cor_i_val} 
+Edge            103        {edg_i_val}
+Perforation     105        {prf_i_val}
+Islet           109        {isl_i_val}
+Branch          101        {bch_i_val}
+Loop            165        {loo_i_val}
+Loop in Edge    167        {loE_i_val}
+Loop in Perf.   169        {loP_i_val}
+Bridge          133        {brg_i_val}
+Bridge in Edge  135        {brE_i_val}
+Bridge in Perf. 137        {brP_i_val}
+
+    Background
+Background      0          {bgr_val}
+Border-Opening  220        {brd_opn_val}
+Core-Opening    100        {cor_opn_val}
+Missing data    129        {ndata_val}
+
+
+Frequency of the 7 aggregated classes in Foreground area
+---------------------------------------------------------------------------------
+    MSPA CLASS     FOREGR.[%]
+    Core          {cor_Frel}
+    Edge          {edg_Frel}
+    Perforation   {prf_Frel}
+    Islet         {isl_Frel}
+    Branch        {bch_Frel}
+    Loop          {loo_Frel}
+    Bridge        {brg_Frel}
+
+Integral Foreground: {int_frgr}
+Porosity [%]: {poros_val}
+
+Computational time: {comp_time}
+
+================================================================================
+Online guides:
+https://ies-ows.jrc.ec.europa.eu/gtb/GTB/MSPA_Guide.pdf
+https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Pattern-Morphology.pdf

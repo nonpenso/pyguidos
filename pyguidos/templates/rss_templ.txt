@@ -1,0 +1,43 @@
+RESTORATION STATUS SUMMARY (RSS)
+
+================================================================================
+INPUT FILE
+================================================================================
+Input image: {input_file}
+EPSG: {epsg_code}
+Unit: {unit_type}
+Pixel size (x,y): {resolx}, {resoly} {unit_type}
+Rows: {rows_val}
+Columns: {cols_val}
+Total pixels: {tot_pxl}
+Foreground [pixel=2]: {foreg_pxl}
+Background [pixel=1]: {backg_pxl}
+Missing/Nodata [pixel=0]: {miss_pxl}
+Special background [pixel=3]: {spec3_pxl}
+Special background [pixel=4]: {spec4_pxl}
+
+================================================================================
+RESULTS
+================================================================================
+Output image: {output_file}
+
+Total number of patches: {tot_pch}
+Average patch size [pixel]: {avg_pch}
+Median patch size [pixel]: {med_pch} 
+Largest patch [pixel]: {lar_pch}
+
+Network status indices:
+---------------------------------------------------------------------------------
+INDEX NAME                 CODE      UNIT    VALUE
+Criticial New Object Area  CNOA      pixel   {CNOA_val}
+Equivalent Connected Area  ECA       pixel   {ECA_val} 
+Reference Area Coverage    RAC       %       {RAC_val} 
+Coherence                  COH       %       {COH_val} 
+Restoration potential      REST_POT  %       {RPOT_val}
+
+
+Computational time: {comp_time}
+
+================================================================================
+Online guide:
+https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-RestorationPlanner.pdf
