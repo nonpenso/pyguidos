@@ -32,6 +32,7 @@ run_tests:
   only:
     refs:
        - develop-v2
+       - main
     changes:
        - "pyguidos/**/*"
        - "tests/**/*"
@@ -77,3 +78,4 @@ pages:
       - public
   only:
     - develop-v2
+    - main
