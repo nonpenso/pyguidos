@@ -39,35 +39,41 @@ which are installed automatically with pip:
      - 1.0
      - Ternary diagram rendering
 
-Standard Installation
----------------------
+Installation
+------------
 
-Install the latest stable release from PyPI:
+**Standard Installation (not yet available)**
 
-.. code-block:: console
+   Install the latest stable release from PyPI:
 
-    $ pip install pyguidos
+   .. code-block:: console
 
-Development Installation
-------------------------
+       $ pip install pyguidos
 
-To install the latest development version directly from the repository:
+**Git Installation**
 
-.. code-block:: console
+   To install the latest development version directly from the repository:
 
-    $ pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+   .. code-block:: console
 
-Editable Installation
----------------------
+       $ pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 
-If you want to contribute or modify the source code, clone the repository
-and install in editable mode:
+**Git Editable Installation**
 
-.. code-block:: console
+   If you want to use the notebooks and contribute or modify the source code, clone the repository
+   and install in editable mode:
 
-    $ git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
-    $ cd pyguidos
-    $ pip install -e .
+   .. code-block:: console
+
+       $ git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
+       $ cd pyguidos
+       $ pip install -e .
+
+   To use the notebooks:
+   .. code-block:: console
+
+       $ cd notebooks
+       $ jupyter notebook
 
 Configuration (Execution Workspace)
 -----------------------------------

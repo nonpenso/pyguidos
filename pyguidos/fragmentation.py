@@ -39,7 +39,7 @@ def frag(
         Optional: 3 = Background class 2, 4 = Background class 3.
     method : str
         Fragmentation method. Must be 'FAD' (Forest Area Density) or
-        'FOS' (Forest Overall Status).
+        'FAC' (Foreground Area Clustering).
     window_size : int
         Size of the moving window in pixels. Must be an odd integer >= 3.
     outdir : str or Path, optional

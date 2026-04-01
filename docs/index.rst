@@ -16,7 +16,7 @@ pyGuidos
    :target: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
    :alt: License
 
-**pyGuidos** is a Python interface to `GuidosToolbox <https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/>`_ (GTB), 
+**pyGuidos** is a Python interface to the main modules of `GuidosToolbox <https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/>`_ (GTB), 
 a scientific software suite developed at the European Commission Joint Research Centre (JRC) for the 
 spatial pattern analysis of raster images.
 

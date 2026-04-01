@@ -1,5 +1,5 @@
-MSPA
-====
+Morphology (MSPA)
+=================
 
 Morphological Spatial Pattern Analysis (MSPA) is a multi-scale image
 processing approach that classifies the pixels of a binary foreground/background

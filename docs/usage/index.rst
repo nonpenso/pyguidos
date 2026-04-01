@@ -34,7 +34,7 @@ scientific documentation is to use the interactive ``info()`` function:
    * - Function
      - Description
      - Output Files
-   * - :doc:`mspa`
+   * - :doc:`Morphology`
      - Morphological Spatial Pattern Analysis
      - ``.tif``, ``.txt``
    * - :doc:`fragmentation`
@@ -149,7 +149,7 @@ rerunning the full analysis:
    :hidden:
 
    input_format
-   mspa
+   morphology
    fragmentation
    landmos
    accounting
