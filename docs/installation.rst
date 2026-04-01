@@ -67,6 +67,7 @@ Installation
        $ pip install -e .
 
    To use the notebooks:
+   
    .. code-block:: console
 
        $ cd notebooks
