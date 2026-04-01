@@ -43,7 +43,6 @@ Installation
 ------------
 
 **Standard Installation (not yet available)**
-
    Install the latest stable release from PyPI:
 
    .. code-block:: console
@@ -51,7 +50,6 @@ Installation
        $ pip install pyguidos
 
 **Git Installation**
-
    To install the latest development version directly from the repository:
 
    .. code-block:: console
@@ -59,7 +57,6 @@ Installation
        $ pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 
 **Git Editable Installation**
-
    If you want to use the notebooks and contribute or modify the source code, clone the repository
    and install in editable mode:
 
