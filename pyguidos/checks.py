@@ -28,7 +28,7 @@ def validate_wsize(wsize):
         sys.exit(f"The window size must be an odd number (received {wsize}). Try {wsize+1} or {wsize-1}.")
 
 
-def validate_fmap_input(present_values, bands, allow_34=False):
+def validate_fmap_input(present_values, bands, dtype, allow_34=False):
     """
     Validates the pixel values and data type of a binary or multi-class
     input GeoTIFF. Ensures mandatory values are present and no 
@@ -40,6 +40,8 @@ def validate_fmap_input(present_values, bands, allow_34=False):
         List of unique pixel values found in the raster.
     bands : int
         Number of bands. Must be 1.
+    dtype : string
+        Ensures the data type is Integer
     allow_34 : bool, optional
         If True, allows optional values 3 and 4 in addition to 0, 1, 2.
         Used for Fragmentation, Accounting and RSS tools.
@@ -55,6 +57,11 @@ def validate_fmap_input(present_values, bands, allow_34=False):
     # Check number of bands 
     if bands != 1:
         sys.exit(f"ERROR: Input GeoTIFF must be single-band, but has {bands} bands.")
+
+    # Check Data Type
+    if not np.issubdtype(dtype, np.integer):
+        sys.exit(f"ERROR: Input GeoTIFF must be Integer type (e.g. uint8, int32, etc.). "
+                 f"Found: {dtype}. Float rasters are not supported.")        
 
     # Setup Sets
     present_set = set(present_values)
@@ -75,7 +82,7 @@ def validate_fmap_input(present_values, bands, allow_34=False):
                  f"Allowed: {sorted(list(allowed))}")
 
 
-def validate_lm_input(present_values, bands):
+def validate_lm_input(present_values, bands, dtype):
     """
     Validates the pixel values of an input GeoTIFF for the Landscape
     Mosaic tool. Requires all three land cover classes to be present.
@@ -87,6 +94,8 @@ def validate_lm_input(present_values, bands):
         Mandatory: 1, 2, 3. Optional: 0 (NoData).
     bands : int
         Number of bands. Must be 1.
+    dtype : string
+        Ensures the data type is Integer
 
     Raises
     ------
@@ -97,6 +106,11 @@ def validate_lm_input(present_values, bands):
     # Check number of bands 
     if bands != 1:
         sys.exit(f"ERROR: Input GeoTIFF must be single-band, but has {bands} bands.")
+
+    # Check Data Type
+    if not np.issubdtype(dtype, np.integer):
+        sys.exit(f"ERROR: Input GeoTIFF must be Integer type (e.g. uint8, int32, etc.). "
+                 f"Found: {dtype}. Float rasters are not supported.")    
 
     # Setup Sets
     present_set = set(present_values)

@@ -65,7 +65,7 @@ def rss(
     input_pxl_freq = utils.get_pxl_freq(input_data)
 
     # Input Geotiff validations
-    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=True)
+    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=True)
 
     # Get patch size frequencies
     labeled_array, lab_pxl_freq = engine.labelling_array(input_data, 2)

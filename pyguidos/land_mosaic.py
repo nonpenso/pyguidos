@@ -96,7 +96,7 @@ def landmos(in_tiff,
     input_pxl_freq = utils.get_pxl_freq(input_data)
 
     # Input Geotiff validations
-    checks.validate_lm_input(list(input_pxl_freq.keys()), info["bands"])
+    checks.validate_lm_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'])
 
     try:
         # Prepare Binary Input

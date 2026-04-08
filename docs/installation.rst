@@ -76,14 +76,14 @@ Installation
 Configuration (Execution Workspace)
 -----------------------------------
 
-pyGuidos relies on high-performance C++ binaries. These require a workspace folder with **execution permissions**.
+pyGuidos relies on ``MSPA`` and ``Spatcon``, two high-performance C++ binary files, that require a workspace folder with **execution permissions**.
 
 By default, pyGuidos attempts to use:
 1. A ``work/`` folder in your project root (if using a Git clone).
 2. A ``pyguidos_work/`` folder in your user home directory.
 
 .. important::
-   If your system (e.g., a corporate Windows laptop) restricts execution in the Home or AppData folders, you must manually set a "safe" workspace.
+   If your system (e.g., a corporate machine) restricts execution in the Home or AppData folders, you must manually set a "safe" workspace.
 
 Run the built-in setup tool to configure your workspace:
 
@@ -137,7 +137,7 @@ Troubleshooting
 
    .. code-block:: console
 
-      $ pip install --proxy http://your-proxy:port pyguidos
+      $ pip install pyguidos --proxy http://login:password@your-proxy:port
 
 **Import error after installation**
    Ensure your ``pip`` matches your active Python version:

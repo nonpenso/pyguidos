@@ -86,7 +86,7 @@ def acc(
     input_pxl_freq = utils.get_pxl_freq(input_data)
 
     # Input Geotiff validations
-    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=True)
+    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=True)
 
     try:
         # Get patch size frequencies

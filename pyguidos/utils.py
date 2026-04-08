@@ -146,6 +146,8 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
     # Update profile for Palette support
     out_profile = profile.copy()
     out_profile.update({'photometric': 'palette'})
+    out_profile.update({'dtype': 'uint8'})
+    out_profile.update({'nodata': None})
 
     # Define standard Guidos tags
     tags = {

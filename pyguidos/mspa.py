@@ -91,7 +91,7 @@ def mspa(in_tiff,
     input_pxl_freq = utils.get_pxl_freq(input_data)
 
     # Input Geotiff validations
-    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], allow_34=False)
+    checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=False)
 
     try:
         # Create temp dir
@@ -101,7 +101,7 @@ def mspa(in_tiff,
         engine.write_mspa_input(tmpdir, in_tiff, input_data, info['dtype'], info['is_tiled'])
 
         # Execute Binary
-        engine.run_mspa(tmpdir, in_tiff, connectivity, edge_width, trans, i_e, verb)
+        engine.run_mspa(tmpdir, tmpdir / "mspa_input.tif", connectivity, edge_width, trans, i_e, verb)
         
         # Read Output
         out_tiff = tmpdir / "mspa_output.tif"
