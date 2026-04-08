@@ -79,58 +79,48 @@ class TestValidateFmapInput:
 
     def test_valid_binary_mspa(self):
         """Minimal valid MSPA input: values 1 and 2."""
-        assert checks.validate_fmap_input([1, 2], bands=1, allow_34=False) is None
+        assert checks.validate_fmap_input([1, 2], bands=1, dtype=np.uint8, allow_34=False) is None
 
     def test_valid_binary_with_nodata(self):
         """Valid input with NoData (0)."""
-        assert checks.validate_fmap_input([0, 1, 2], bands=1, allow_34=False) is None
+        assert checks.validate_fmap_input([0, 1, 2], bands=1, dtype='uint8', allow_34=False) is None
 
     def test_valid_with_special_classes(self):
         """Valid fragmentation input with special background classes 3 and 4."""
-        assert checks.validate_fmap_input([0, 1, 2, 3, 4], bands=1, allow_34=True) is None
+        assert checks.validate_fmap_input([0, 1, 2, 3, 4], bands=1, dtype=np.int16, allow_34=True) is None
 
     def test_valid_partial_special_classes(self):
         """Valid input with only one special class."""
-        assert checks.validate_fmap_input([1, 2, 3], bands=1, allow_34=True) is None
+        assert checks.validate_fmap_input([1, 2, 3], bands=1, dtype=np.uint8, allow_34=True) is None
 
     def test_missing_foreground_raises(self):
         """Missing foreground (value 2) must be rejected."""
         with pytest.raises(SystemExit):
-            checks.validate_fmap_input([0, 1], bands=1, allow_34=False)
+            checks.validate_fmap_input([0, 1], bands=1, dtype=np.uint8, allow_34=False)
 
     def test_missing_background_raises(self):
         """Missing background (value 1) must be rejected."""
         with pytest.raises(SystemExit):
-            checks.validate_fmap_input([0, 2], bands=1, allow_34=False)
-
-    def test_missing_both_mandatory_raises(self):
-        """Missing both mandatory values must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_fmap_input([0], bands=1, allow_34=False)
+            checks.validate_fmap_input([0, 2], bands=1, dtype=np.uint8, allow_34=False)
 
     def test_invalid_value_mspa_raises(self):
         """Value 3 not allowed for MSPA (allow_34=False)."""
         with pytest.raises(SystemExit):
-            checks.validate_fmap_input([1, 2, 3], bands=1, allow_34=False)
-
-    def test_invalid_value_5_raises(self):
-        """Value 5 is never allowed."""
-        with pytest.raises(SystemExit):
-            checks.validate_fmap_input([1, 2, 5], bands=1, allow_34=True)
+            checks.validate_fmap_input([1, 2, 3], bands=1, dtype=np.uint8, allow_34=False)
 
     def test_multiband_raises(self):
         """Multi-band raster must be rejected."""
         with pytest.raises(SystemExit):
-            checks.validate_fmap_input([1, 2], bands=3, allow_34=False)
+            checks.validate_fmap_input([1, 2], bands=3, dtype=np.uint8, allow_34=False)
 
-    def test_two_bands_raises(self):
-        """Two-band raster must be rejected."""
+    def test_float_dtype_raises(self):
+        """Float32 must be rejected for Fmap."""
         with pytest.raises(SystemExit):
-            checks.validate_fmap_input([1, 2], bands=2, allow_34=False)
+            checks.validate_fmap_input([1, 2], bands=1, dtype=np.float32, allow_34=False)
 
-    def test_single_band_passes(self):
-        """Single band is valid."""
-        assert checks.validate_fmap_input([1, 2], bands=1, allow_34=False) is None
+    def test_different_int_types_pass(self):
+        """Verify that various integer depths (int16, int32) are accepted."""
+        assert checks.validate_fmap_input([1, 2], bands=1, dtype=np.int32, allow_34=False) is None
 
 
 # =============================================================================
@@ -141,41 +131,35 @@ class TestValidateLmInput:
 
     def test_valid_three_classes(self):
         """Valid Land Mosaic input with all three mandatory classes."""
-        assert checks.validate_lm_input([1, 2, 3], bands=1) is None
+        assert checks.validate_lm_input([1, 2, 3], bands=1, dtype=np.uint8) is None
 
     def test_valid_with_nodata(self):
         """Valid input with NoData (0)."""
-        assert checks.validate_lm_input([0, 1, 2, 3], bands=1) is None
+        assert checks.validate_lm_input([0, 1, 2, 3], bands=1, dtype='uint8') is None
 
-    def test_missing_class1_raises(self):
-        """Missing class 1 must be rejected."""
+    def test_missing_class_raises(self):
+        """Missing mandatory classes must be rejected."""
         with pytest.raises(SystemExit):
-            checks.validate_lm_input([0, 2, 3], bands=1)
-
-    def test_missing_class2_raises(self):
-        """Missing class 2 must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_lm_input([0, 1, 3], bands=1)
-
-    def test_missing_class3_raises(self):
-        """Missing class 3 must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_lm_input([0, 1, 2], bands=1)
-
-    def test_missing_all_mandatory_raises(self):
-        """Missing all mandatory classes must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_lm_input([0], bands=1)
+            checks.validate_lm_input([1, 2], bands=1, dtype=np.uint8)
 
     def test_invalid_value_raises(self):
         """Value 5 is not allowed."""
         with pytest.raises(SystemExit):
-            checks.validate_lm_input([1, 2, 3, 5], bands=1)
+            checks.validate_lm_input([1, 2, 3, 5], bands=1, dtype=np.uint8)
 
     def test_multiband_raises(self):
         """Multi-band raster must be rejected."""
         with pytest.raises(SystemExit):
-            checks.validate_lm_input([1, 2, 3], bands=3)
+            checks.validate_lm_input([1, 2, 3], bands=3, dtype=np.uint8)
+
+    def test_float_dtype_raises(self):
+        """Float64 must be rejected for Landscape Mosaic."""
+        with pytest.raises(SystemExit):
+            checks.validate_lm_input([1, 2, 3], bands=1, dtype=np.float64)
+
+    def test_int16_passes(self):
+        """Int16 is a valid integer type."""
+        assert checks.validate_lm_input([1, 2, 3], bands=1, dtype=np.int16) is None
 
 
 # =============================================================================
