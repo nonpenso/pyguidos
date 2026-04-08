@@ -12,11 +12,18 @@ context. Further details about MSPA are available in the
 MSPA Classes
 ------------
 
-MSPA classifies foreground pixels into up to 22 foreground classes
-(11 internal + 11 external) and 3 background classes. Results are aggregated
-into 7 foreground feature classes (Core, Islet, Perforation, Edge, Loop,
-Bridge, Branch) and 3 background feature classes (Background, Border-Opening,
-Core-Opening).
+The Morphological Spatial Pattern Analysis (MSPA) classifies input map pixels into 
+distinct structural categories based on their geometry and connectivity. The number 
+of classes varies if the analysis is performed diversifying the features on the 
+outer and inner of perforations using the ``int_ext`` parameter.
+
+With ``int_ext = True`` (default), the foreground classes are 
+21 and the background classes are 3. With ``int_ext = False``, the 
+resulted foreground classes are 11 plus 1 background class. 
+
+Results are finally aggregated into the 7 main foreground feature classes 
+(Core, Islet, Perforation, Edge, Loop, Bridge, Branch) and 3 background 
+feature classes (Background, Border-Opening, Core-Opening).
 
 .. list-table:: Class names, color codes, and byte values for MSPA feature classes.
    :header-rows: 1
@@ -24,8 +31,9 @@ Core-Opening).
    * - Class
      - Color
      - RGB
-     - Pxl value External
-     - Pxl value Internal
+     - int_ext = False
+     - int_ext = True        
+       External - Internal
    * - Core
      - Green
      - 000/200/000
