@@ -26,7 +26,7 @@ Results are finally aggregated into the 7 main foreground feature classes
 feature classes (Background, Border-Opening, Core-Opening).
 
 .. list-table:: Class names, color codes, and byte values for MSPA feature classes.
-   :widths: 15 10 15 30 30
+   :widths: 25 20 15 20 20
    :header-rows: 1
 
    * - Class
@@ -39,12 +39,12 @@ feature classes (Background, Border-Opening, Core-Opening).
      - Green
      - 000/200/000
      - 17
-     - 117
+     - 17 - 117
    * - Islet
      - Brown
      - 160/060/000
      - 9
-     - 109
+     - 9 - 109
    * - Perforation
      - Blue
      - 000/000/255
@@ -54,42 +54,42 @@ feature classes (Background, Border-Opening, Core-Opening).
      - Black
      - 000/000/000
      - 3
-     - 103
+     - 3 - 103
    * - Loop
      - Yellow
      - 255/255/000
      - 65
-     - 165
+     - 65 - 165
    * - Loop in Edge
      - Yellow
      - 255/255/000
      - 67
-     - 167
+     - 67 - 167
    * - Loop in Perforation
      - Yellow
      - 255/255/000
      - 69
-     - 169
+     - 69 - 169
    * - Bridge
      - Red
      - 255/000/000
      - 33
-     - 133
+     - 33 - 133
    * - Bridge in Edge
      - Red
      - 255/000/000
      - 35
-     - 135
+     - 35 - 135
    * - Bridge in Perforation
      - Red
      - 255/000/000
      - 37
-     - 137
+     - 37 - 137
    * - Branch
      - Orange
      - 255/140/000
      - 1
-     - 101
+     - 1 - 101
    * - Background
      - Light Grey
      - 220/220/220
