@@ -26,7 +26,7 @@ Results are finally aggregated into the 7 main foreground feature classes
 feature classes (Background, Border-Opening, Core-Opening).
 
 .. list-table:: Class names, color codes, and byte values for MSPA feature classes.
-   :widths: 25 15 15 22.5 22.5
+   :widths: 25 15 15 22 22
    :header-rows: 1
 
    * - Class

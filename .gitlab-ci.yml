@@ -4,11 +4,13 @@ stages:
   - test
   - deploy
 
-# Global cache to speed up pip installs
 cache:
-  key: pip-cache
-  paths:
-    - .pip-cache/
+  - key: pip-cache
+    paths:
+      - .pip-cache/
+  - key: coverage-persistence  
+    paths:
+      - htmlcov/
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
@@ -27,15 +29,15 @@ run_tests:
   artifacts:
     when: always
     paths:
-       - htmlcov/
+      - htmlcov/
     expire_in: 1 week
   only:
     refs:
-       - develop-v2
-       - main
+      - develop-v2
+      - main
     changes:
-       - "pyguidos/**/*"
-       - "tests/**/*"
+      - "pyguidos/**/*"
+      - "tests/**/*"
 
 # 2. Build and Deploy Documentation (GitLab Pages)
 pages:
@@ -45,36 +47,19 @@ pages:
   dependencies:
     - run_tests
   script:
-    - apt-get update && apt-get install -y curl unzip libexpat1
+    - apt-get update && apt-get install -y libexpat1
     - pip install --upgrade pip
     - pip install sphinx pydata-sphinx-theme .
     - sphinx-build -b html docs public
     - |
       if [ -d "htmlcov" ]; then
-        echo "New coverage found."
+        echo "? Coverage data found. Deploying to public/coverage..."
         mkdir -p public/coverage
-        cp -r htmlcov/* public/coverage/
+        cp -rf htmlcov/* public/coverage/
       else
-        echo "Tests skipped. Trying to fetch last successful artifacts..."
-        # Using the specific 'latest' successful job endpoint
-        curl --location --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/main/download?job=run_tests" \
-          -o artifacts.zip
-        
-        # Check if the file is actually a ZIP (greater than 500 bytes)
-        if [ -f "artifacts.zip" ] && [ $(stat -c%s "artifacts.zip") -gt 500 ]; then
-          unzip -o artifacts.zip
-          mkdir -p public/coverage
-          cp -rf htmlcov/* public/coverage/ || echo "Folder missing in zip"
-          echo "Success: Coverage restored."
-        else
-          echo "API Download failed (File size: $(stat -c%s 'artifacts.zip' 2>/dev/null || echo 0) bytes)."
-          echo "--- API Response Error Message ---"
-          cat artifacts.zip || echo "File not found"
-          echo "----------------------------------"
-          mkdir -p public/coverage
-          echo "<html><body><h1>Coverage not available for this documentation-only update.</h1></body></html>" > public/coverage/index.html
-        fi
+        echo "? No coverage data found in workspace or cache."
+        mkdir -p public/coverage
+        echo "<html><body><h1>Coverage not yet generated. Please run a full pipeline.</h1></body></html>" > public/coverage/index.html
       fi
   artifacts:
     paths:
