@@ -58,17 +58,20 @@ pages:
         echo "Tests skipped. Trying to fetch last successful artifacts..."
         # Using the specific 'latest' successful job endpoint
         curl --location --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_COMMIT_REF_NAME}/download?job=run_tests" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/main/download?job=run_tests" \
           -o artifacts.zip
         
         # Check if the file is actually a ZIP (greater than 500 bytes)
         if [ -f "artifacts.zip" ] && [ $(stat -c%s "artifacts.zip") -gt 500 ]; then
           unzip -o artifacts.zip
           mkdir -p public/coverage
-          cp -r htmlcov/* public/coverage/ || echo "Folder missing in zip"
+          cp -rf htmlcov/* public/coverage/ || echo "Folder missing in zip"
           echo "Success: Coverage restored."
         else
-          echo "Artifact download failed or returned an error message. Creating empty folder to prevent crash."
+          echo "API Download failed (File size: $(stat -c%s 'artifacts.zip' 2>/dev/null || echo 0) bytes)."
+          echo "--- API Response Error Message ---"
+          cat artifacts.zip || echo "File not found"
+          echo "----------------------------------"
           mkdir -p public/coverage
           echo "<html><body><h1>Coverage not available for this documentation-only update.</h1></body></html>" > public/coverage/index.html
         fi

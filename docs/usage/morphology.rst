@@ -117,7 +117,8 @@ feature classes (Background, Border-Opening, Core-Opening).
     :align: center
     :alt: MSPA classes
 
-    Map and list of the 7 aggregated feature classes of MSPA.
+    Example of input binary map and the two derived MSPA maps (with different 
+    ``int_ext`` parameters) showing their pixel values.
 
 
 Usage

@@ -34,7 +34,7 @@ scientific documentation is to use the interactive ``info()`` function:
    * - Function
      - Description
      - Output Files
-   * - :doc:`Morphology`
+   * - :doc:`morphology`
      - Morphological Spatial Pattern Analysis
      - ``.tif``, ``.txt``
    * - :doc:`fragmentation`
