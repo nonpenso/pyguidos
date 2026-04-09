@@ -8,7 +8,7 @@ cache:
   - key: pip-cache
     paths:
       - .pip-cache/
-  - key: coverage-persistence  
+  - key: coverage-fixed-key 
     paths:
       - htmlcov/
 
