@@ -162,7 +162,7 @@ def rss(
 
     # Completed
     if verb:
-        print(f"\RSS completed in {utils.running_time(start_time, time.time())}")
+        print(fr"\RSS completed in {utils.running_time(start_time, time.time())}")
 
     return RssResult(stats=stats_dict)
 

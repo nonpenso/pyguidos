@@ -424,9 +424,9 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             # Axis Labels with Arrows (Matching the Reference)
             ax.text(50, -7, "More Blue (class=1) $\\rightarrow$",
                     ha='center', va='top', fontsize=16)
-            ax.text(15, 45, "$\leftarrow$ More Red (class=3)",
+            ax.text(15, 45, r"$\leftarrow$ More Red (class=3)",
                     rotation=60, ha='center', va='center', fontsize=16)
-            ax.text(86, 45, "$\leftarrow$ More Green (class=2)",
+            ax.text(86, 45, r"$\leftarrow$ More Green (class=2)",
                     rotation=-60, ha='center', va='center', fontsize=16)
 
             # Ticks

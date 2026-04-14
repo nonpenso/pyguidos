@@ -27,6 +27,7 @@ def spatial_data(tmp_path):
 
 # 1. TEST: Same CRS Matching
 def test_extract_same_crs(spatial_data, tmp_path):
+    gpd = pytest.importorskip("geopandas")
     raster_path, out_dir = spatial_data
     vec_path = tmp_path / "same_crs.gpkg"
     poly = Polygon([(4000010, 2999990), (4000040, 2999990), (4000040, 2999960), (4000010, 2999960)])

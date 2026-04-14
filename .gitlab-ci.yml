@@ -23,7 +23,7 @@ run_tests:
   script:
     - apt-get update && apt-get install -y libexpat1 libgomp1
     - pip install --upgrade pip
-    - pip install pytest pytest-cov . 
+    - pip install pytest pytest-cov ".[test]"
     - python -m pytest --cov=pyguidos tests/ --cov-report term-missing --cov-report html
   coverage: '/(?i)total.*? (100(?:\.0+)?%|[1-9]?\d(?:\.\d+)?%)/'
   artifacts:

@@ -10,7 +10,7 @@ authors = [
 description = "Python interface to GuidosToolbox (GTB) for spatial pattern analysis"
 readme = "README.md" 
 license = {text = "EUPL-1.2"}
-requires-python = ">=3.8" 
+requires-python = ">=3.10"
 keywords = [
     "landscape analysis",
     "spatial pattern",
@@ -25,11 +25,11 @@ classifiers = [
     "Development Status :: 3 - Alpha", 
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: GIS",
 ]
 dependencies = [
