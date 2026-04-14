@@ -55,7 +55,7 @@ notebooks = [
 ]
 test = [
     "pytest>=7.0",
-    "pytest-mock>=4.0",
+    "pytest-mock>=3.10",
     "geopandas>=0.14",
     "pandas>=2.0",
 ]
