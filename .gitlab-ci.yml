@@ -44,22 +44,23 @@ pages:
   stage: deploy
   tags:
     - shared-docker
-  dependencies:
-    - run_tests
+  needs:
+    - job: run_tests
+      artifacts: true  # Explicitly tell GitLab to bring the htmlcov folder over
   script:
     - apt-get update && apt-get install -y libexpat1
     - pip install --upgrade pip
-    - pip install sphinx pydata-sphinx-theme .
+    - pip install sphinx pydata-sphinx-theme ".[notebooks,test]" 
     - sphinx-build -b html docs public
     - |
       if [ -d "htmlcov" ]; then
-        echo "? Coverage data found. Deploying to public/coverage..."
+        echo "Coverage data found. Moving to public/coverage..."
         mkdir -p public/coverage
         cp -rf htmlcov/* public/coverage/
       else
-        echo "? No coverage data found in workspace or cache."
-        mkdir -p public/coverage
-        echo "<html><body><h1>Coverage not yet generated. Please run a full pipeline.</h1></body></html>" > public/coverage/index.html
+        echo "ERROR: htmlcov directory not found in current workspace!"
+        ls -la  
+        exit 1  
       fi
   artifacts:
     paths:

@@ -26,8 +26,8 @@ which are installed automatically with pip:
    * - matplotlib
      - 3.5
      - Histogram and ternary plot generation
-   * - fiona
-     - 1.9
+   * - pyogrio
+     - 0.12
      - Shapefile reading
    * - shapely
      - 2.0
