@@ -2,13 +2,13 @@ import os
 from pathlib import Path
 import sys
 
-import fiona
+import pyogrio
 import rasterio
 from rasterio.mask import mask as rio_mask
 from rasterio.crs import CRS
 from rasterio.transform import Affine
 from rasterio.enums import ColorInterp
-from shapely.geometry import shape, mapping, Polygon, MultiPolygon
+from shapely.geometry import mapping, Polygon, MultiPolygon
 from pyproj import Transformer
 
 from . import utils
@@ -96,119 +96,123 @@ def extract_by_polygon(
         except ValueError:
             cmap = None
 
-        with fiona.open(str(vector_path), "r") as vector:
+        # Read Vector metadata
+        info = pyogrio.read_info(str(vector_path))
+        vector_crs_raw = info.get("crs")
+        if not vector_crs_raw:
+            sys.exit("ERROR: Input vector file has not a defined Projection. "
+                     "Please assign a coordinate reference system before using extract_by_polygon().")
+        
+        # Read vector file
+        vector_df = pyogrio.read_dataframe(str(vector_path))
+            
+        # Convert pyogrio CRS to rasterio/pyproj compatible CRS
+        vector_crs = CRS.from_user_input(vector_crs_raw)
 
-            # Check vector CRS
-            if not vector.crs_wkt:
-                sys.exit("ERROR: Input vector file has not a defined Projection. "
-                         "Please assign a coordinate reference system before using extract_by_polygon().")
+        # Check if reprojection is needed
+        needs_reproject = raster_crs != vector_crs
+        transformer = None
+        if needs_reproject:
+            transformer = Transformer.from_crs(vector_crs, raster_crs, always_xy=True)
 
-            vector_crs = CRS.from_wkt(vector.crs_wkt)
+        for idx, row in vector_df.iterrows():
+            # --- Determine output filename ---
+            if id_field in vector_df.columns:
+                val = row[id_field]
+                outname = str(val).replace(" ", "_").replace("/", "-")
+            else:
+                outname = f"feature_{idx}"
 
-            # Check if reprojection is needed
-            needs_reproject = raster_crs != vector_crs
-            transformer = None
-            if needs_reproject:
-                transformer = Transformer.from_crs(vector_crs, raster_crs, always_xy=True)
+            output_path = os.path.join(output_dir, f"{name_prefix}{outname}.tif")
 
-            for idx, feature in enumerate(vector):
-                # --- Determine output filename ---
-                if id_field in feature["properties"]:
-                    # Sanitize the field value for use as a filename
-                    outname = str(feature["properties"][id_field]).replace(" ", "_").replace("/", "-")
-                else:
-                    outname = f"feature_{idx}"
+            # --- Get geometry ---
+            geom = row["geometry"]
 
-                output_path = os.path.join(output_dir, f"{name_prefix}{outname}.tif")
+            if not geom.is_valid:
+                # Attempt the repair
+                fixed_geom = geom.buffer(0)
 
-                # --- Get polygon geometry ---
-                geom = shape(feature["geometry"])
-
-                if not geom.is_valid:
-                    # Attempt the repair
-                    fixed_geom = geom.buffer(0)
-
-                    # Check if the repair resulted in a valid, non-empty geometry
-                    if fixed_geom.is_valid and not fixed_geom.is_empty:
-                        # Safety check: ensure it is a polygon type (not a Point or Line)
-                        if isinstance(fixed_geom, (Polygon, MultiPolygon)):
-                            geom = fixed_geom  # Repair worked, update geom silently
-                        else:
-                            print(f"  [SKIP] Feature '{outname}': Repair resulted in {fixed_geom.geom_type}. Skipping.")
-                            continue
+                # Check if the repair resulted in a valid, non-empty geometry
+                if fixed_geom.is_valid and not fixed_geom.is_empty:
+                    # Safety check: ensure it is a polygon type (not a Point or Line)
+                    if isinstance(fixed_geom, (Polygon, MultiPolygon)):
+                        geom = fixed_geom  # Repair worked, update geom silently
                     else:
-                        print(f"  [ERROR] Feature '{outname}': Unfixable geometry or empty after repair. Skipping.")
+                        print(f"  [SKIP] Feature '{outname}': Repair resulted in {fixed_geom.geom_type}. Skipping.")
                         continue
                 else:
-                    # If it was valid but empty
-                    if geom.is_empty:
-                        print(f"  [SKIP] Feature '{outname}': Geometry is empty. Skipping.")
-                        continue
-
-                # --- Reproject geometry to raster CRS if needed ---
-                if needs_reproject:
-                    geom = _reproject_geometry(geom, transformer)
-
-                # --- Check bounding box intersects raster ---
-                raster_bounds = src.bounds
-                if not _bounds_intersect(geom.bounds, raster_bounds):
-                    print(f"  [SKIP] Feature '{outname}': geometry does not intersect raster extent.")
+                    print(f"  [ERROR] Feature '{outname}': Unfixable geometry or empty after repair. Skipping.")
+                    continue
+            else:
+                # If it was valid but empty
+                if geom.is_empty:
+                    print(f"  [SKIP] Feature '{outname}': Geometry is empty. Skipping.")
                     continue
 
-                # --- Mask raster with polygon ---
-                try:
-                    out_image, out_transform = rio_mask(
-                        src,
-                        [mapping(geom)],   # mask expects GeoJSON-like dicts
-                        crop=True,         # crop to polygon bounding box
-                        nodata=nodata_value,
-                        all_touched=False, # only pixels whose center falls inside
-                        filled=True,       # fill masked areas with nodata
-                    )
-                except Exception as e:
-                    print(f"  [ERROR] Feature '{outname}': {e}")
-                    continue
+            # --- Reproject geometry to raster CRS if needed ---
+            if needs_reproject:
+                geom = _reproject_geometry(geom, transformer)
 
-                # out_image shape: (bands, rows, cols)
-                if out_image.size == 0:
-                    print(f"  [SKIP] Feature '{outname}': masked result is empty.")
-                    continue
+            # --- Check bounding box intersects raster ---
+            raster_bounds = src.bounds
+            if not _bounds_intersect(geom.bounds, raster_bounds):
+                print(f"  [SKIP] Feature '{outname}': geometry does not intersect raster extent.")
+                continue
 
-                # --- Snap transform to the input grid ---
-                off_x = round((out_transform[2] - src.transform[2]) / res_x) * res_x
-                off_y = round((out_transform[5] - src.transform[5]) / res_y) * res_y
-                snapped_transform = Affine(
-                    out_transform[0], out_transform[1], src.transform[2] + off_x,
-                    out_transform[3], out_transform[4], src.transform[5] + off_y
+            # --- Mask raster with polygon ---
+            try:
+                out_image, out_transform = rio_mask(
+                    src,
+                    [mapping(geom)],   # mask expects GeoJSON-like dicts
+                    crop=True,         # crop to polygon bounding box
+                    nodata=nodata_value,
+                    all_touched=False, # only pixels whose center falls inside
+                    filled=True,       # fill masked areas with nodata
                 )
+            except Exception as e:
+                print(f"  [ERROR] Feature '{outname}': {e}")
+                continue
 
-                # --- Write output GeoTIFF ---
-                out_meta = src.meta.copy()
-                meta_params = {
-                        "driver": "GTiff",
-                        "height": out_image.shape[1],
-                        "width": out_image.shape[2],
-                        "transform": snapped_transform,
-                        "nodata": None,
-                        "compress": "lzw",  # lossless compression for uint8
-                        "tiled": True,
-                        "blockxsize": 256,
-                        "blockysize": 256
-                    }
-                if cmap is not None:
-                    meta_params["photometric"] = "palette"
+            # out_image shape: (bands, rows, cols)
+            if out_image.size == 0:
+                print(f"  [SKIP] Feature '{outname}': masked result is empty.")
+                continue
 
-                out_meta.update(meta_params)
-                tags = {
-                    "TIFFTAG_IMAGEDESCRIPTION": tag_descr,
-                    "TIFFTAG_SOFTWARE": "pyGuidos"
+            # --- Snap transform to the input grid ---
+            off_x = round((out_transform[2] - src.transform[2]) / res_x) * res_x
+            off_y = round((out_transform[5] - src.transform[5]) / res_y) * res_y
+            snapped_transform = Affine(
+                out_transform[0], out_transform[1], src.transform[2] + off_x,
+                out_transform[3], out_transform[4], src.transform[5] + off_y
+            )
+
+            # --- Write output GeoTIFF ---
+            out_meta = src.meta.copy()
+            meta_params = {
+                    "driver": "GTiff",
+                    "height": out_image.shape[1],
+                    "width": out_image.shape[2],
+                    "transform": snapped_transform,
+                    "nodata": None,
+                    "compress": "lzw",  # lossless compression for uint8
+                    "tiled": True,
+                    "blockxsize": 256,
+                    "blockysize": 256
                 }
-                with rasterio.open(output_path, "w", **out_meta) as dst:
-                    dst.write(out_image)
-                    if cmap:
-                        dst.colorinterp = [ColorInterp.palette]
-                        dst.write_colormap(1, cmap)
-                    dst.update_tags(**tags)
+            if cmap is not None:
+                meta_params["photometric"] = "palette"
+
+            out_meta.update(meta_params)
+            tags = {
+                "TIFFTAG_IMAGEDESCRIPTION": tag_descr,
+                "TIFFTAG_SOFTWARE": "pyGuidos"
+            }
+            with rasterio.open(output_path, "w", **out_meta) as dst:
+                dst.write(out_image)
+                if cmap:
+                    dst.colorinterp = [ColorInterp.palette]
+                    dst.write_colormap(1, cmap)
+                dst.update_tags(**tags)
 
 
 
@@ -231,4 +235,3 @@ def _bounds_intersect(bounds_a, bounds_b):
         or bounds_a[3] < bounds_b.bottom
         or bounds_a[1] > bounds_b.top
     )
-
