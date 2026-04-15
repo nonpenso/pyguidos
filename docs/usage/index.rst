@@ -92,37 +92,38 @@ All analysis functions share a common set of parameters:
      - Print progress messages to stdout
 
 
-Result Objects
---------------
+Result Structure
+----------------
 
-Each analysis function returns a result dataclass with two fields:
+Each analysis function returns a nested :class:`dict`. This dictionary contains all the 
+metadata, file paths, and calculated statistics generated during the run.
 
-- **stats**: nested dictionary with three keys:
+The dictionary follows a consistent structure across all tools:
 
-  - ``'output paths'``: paths to generated output files, or ``None``
-    if ``stat_files=False``
-  - ``'input stats'``: pixel counts for the input map
-  - ``'output stats'``: tool-specific metrics and per-class pixel counts
-
-- **array**: the output numpy array, only populated when
-  ``return_array=True``, otherwise ``None``
+* **output paths**: (:class:`dict` or :obj:`None`) Paths to generated output files. 
+  Returns ``None`` if ``stat_files=False``.
+* **input stats**: (:class:`dict`) Basic pixel counts and metadata from the source map.
+* **output stats**: (:class:`dict`) Tool-specific metrics (e.g., MSPA classes, 
+  Fragmentation indices, or Landscape Mosaic frequencies).
 
 .. code-block:: python
 
     import pyguidos as pg
 
-    result = pg.mspa("my_map.tif", edge_width=1)
+    # Run an analysis (returns a dict)
+    result = pg.mspa("my_map.tif", edge=1)
 
-    # Access statistics dictionary
-    print(result.stats.keys())
+    # Access primary keys
+    print(result.keys())
     # dict_keys(['output paths', 'input stats', 'output stats'])
 
-    # Access output array (requires return_array=True)
-    print(result.array)
-
     # Access a specific output path
-    tif_path = result.stats['output paths']['path tif']
+    tif_path = result['output paths']['path tif']
     print(f"Result saved at: {tif_path}")
+
+    # Access calculated metrics
+    porosity = result['output stats']['porosity']
+    print(f"Landscape porosity: {porosity}")
 
 
 Standalone Statistics

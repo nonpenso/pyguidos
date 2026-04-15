@@ -126,9 +126,13 @@ def test_extract_missing_raster_crs(tmp_path, monkeypatch):
 def test_extract_missing_vector_crs(spatial_data, tmp_path, monkeypatch):
     raster_path, out_dir = spatial_data
     vec_path = tmp_path / "no_crs_vec.gpkg"
+    
     # Create without CRS
     gdf = gpd.GeoDataFrame({'id':[1], 'geometry':[Polygon([(0,0),(1,1),(1,0),(0,0)])]})
-    pyogrio.write_dataframe(gdf, str(vec_path))
+    
+    # Wrap the specific line that triggers the warning
+    with pytest.warns(UserWarning, match="'crs' was not provided"):
+        pyogrio.write_dataframe(gdf, str(vec_path))
     
     monkeypatch.setattr("pyogrio.read_info", lambda *args, **kwargs: {"crs": None})
 

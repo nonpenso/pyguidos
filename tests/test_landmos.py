@@ -34,13 +34,12 @@ def lm_result(tmp_path_factory):
     return landmos(
         str(input_tif), 
         window_size=3, 
-        return_array=True, 
         stat_files=True
     )
 
 def test_lm_outputs_exist(lm_result):
     """Verifies that both 103-class and 19-class files are created."""
-    paths = lm_result.stats["output paths"]
+    paths = lm_result["output paths"]
     from pathlib import Path
     
     assert Path(paths["path tif 103cl"]).exists()
@@ -48,17 +47,9 @@ def test_lm_outputs_exist(lm_result):
     assert Path(paths["path txt"]).exists()
     assert Path(paths["path png"]).exists() # Ternary Heatmap
 
-def test_lm_array_logic(lm_result):
-    """Checks the output array and mapping."""
-    assert lm_result.array is not None
-    # 103-class result should have values in the expected range
-    assert np.max(lm_result.array) <= 240 
-    # Input 0 should be mapped to 0 (NoData) in output
-    assert lm_result.array[0, 0, 0] == 0
-
 def test_lm_stats_content(lm_result):
     """Checks if the statistics dictionary captured all three input classes."""
-    input_stats = lm_result.stats["input stats"]
+    input_stats = lm_result["input stats"]
     
     assert input_stats["class1 pxl"] > 0
     assert input_stats["class2 pxl"] > 0
@@ -69,7 +60,7 @@ def test_lm_stats_standalone(lm_result):
     """Tests the independent landmos_stats call and report generation."""
     from pathlib import Path
     
-    tif_103 = lm_result.stats["output paths"]["path tif 103cl"]
+    tif_103 = lm_result["output paths"]["path tif 103cl"]
     
     # Run stats independently
     stats = landmos_stats(tif_103, outfile=True)
@@ -78,5 +69,5 @@ def test_lm_stats_standalone(lm_result):
     assert "pxl numb 19cl" in stats["output stats"]
     
     # Check if the CSV heatmap was created (specific to Land Mosaic)
-    csv_hm = Path(lm_result.stats["output paths"]["path csv hm"])
+    csv_hm = Path(lm_result["output paths"]["path csv hm"])
     assert csv_hm.exists()

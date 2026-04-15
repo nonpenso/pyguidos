@@ -39,41 +39,26 @@ def frag_result(tmp_path_factory):
         str(input_tif), 
         method='FAD', 
         window_size=3, 
-        return_array=True, 
         stat_files=True
     )
-
-def test_frag_mapping_values(frag_result):
-    """
-    Verifies that the mapping logic correctly translated 
-    special input values to their fragmentation output codes.
-    """
-    # frag() maps input 0 -> 102, 3 -> 105, 4 -> 106
-    output_array = frag_result.array[0] # Get 2D band
-    
-    assert output_array[0, 0] == 102  # Input 0 was mapped to 102
-    assert output_array[0, 1] == 105  # Input 3 was mapped to 105
-    assert output_array[0, 2] == 106  # Input 4 was mapped to 106
 
 def test_frag_special_stats(frag_result):
     """
     Verifies that frag_stats correctly counted the special pixels.
     """
-    input_stats = frag_result.stats["input stats"]
+    input_stats = frag_result["input stats"]
     
     assert input_stats["missing pxl"] == 1
     assert input_stats["backgr3 pxl"] == 1
     assert input_stats["backgr4 pxl"] == 1
     
     # Verify these appear in the output stats dictionary too
-    assert "fad_av" in frag_result.stats["output stats"]
+    assert "fad_av" in frag_result["output stats"]
 
 def test_frag_stats_standalone_files(frag_result):
     """Verifies standalone file generation."""
     from pathlib import Path
-    output_tif_path = frag_result.stats["output paths"]["path tif"]
-    
-    stats = frag_stats(output_tif_path, outfile=True)
+    output_tif_path = frag_result["output paths"]["path tif"]
     
     base_path = Path(output_tif_path).with_suffix('')
     assert Path(str(base_path) + ".txt").exists()

@@ -15,28 +15,31 @@ which are installed automatically with pip:
      - Minimum Version
      - Purpose
    * - numpy
-     - 1.24
+     - >=1.24, <2.1
      - Array operations
    * - rasterio
-     - 1.3
+     - >=1.3
      - GeoTIFF reading and writing
    * - scipy
-     - 1.9
+     - >=1.9
      - Connected component labelling
    * - matplotlib
-     - 3.5
+     - >=3.5
      - Histogram and ternary plot generation
    * - pyogrio
-     - 0.12
-     - Shapefile reading
+     - >=0.7
+     - Vector file reading
+   * - geopandas
+     - >=0.14
+     - Reading vectors as dataframe
    * - shapely
-     - 2.0
+     - >=2.0
      - Geometry validation and reprojection
    * - pyproj
-     - 3.4
+     - >=3.4
      - Coordinate reference system handling
    * - python-ternary
-     - 1.0
+     - >=1.0
      - Ternary diagram rendering
 
 Installation

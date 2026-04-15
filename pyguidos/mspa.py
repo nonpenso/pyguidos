@@ -9,7 +9,6 @@ import rasterio
 from . import utils
 from . import checks
 from . import engine
-from .results import MSPAResult
 from . import TEMPL_DIR
 
 
@@ -21,7 +20,6 @@ def mspa(in_tiff,
          outdir=None,
          statists=True,
          stat_files=True,
-         return_array=False,
          verb=False):
     """
     Performs Morphological Spatial Pattern Analysis (MSPA) on a binary raster.
@@ -55,11 +53,14 @@ def mspa(in_tiff,
 
     Returns
     -------
-    MSPAResult
-        A dataclass with:
-        - stats (dict): nested dictionary with output paths, input stats,
-          and per-class pixel counts.
-        - array (np.ndarray or None): the MSPA output array if return_array=True.
+    dict
+        Nested dictionary with three keys:
+        - 'output paths' (dict or None): paths to generated output files
+          ('path tif', 'path txt'), or None if outfile=False.
+        - 'input stats' (dict): pixel counts for foreground, background
+          and missing pixels.
+        - 'output stats' (dict): per-class pixel counts for the 7 MSPA
+          classes (core, edge, perforation, islet, branch, loop, bridge).
 
     Output Files
     ------------
@@ -142,10 +143,7 @@ def mspa(in_tiff,
         # Success of the process
         success = True
 
-        return MSPAResult(
-                    stats = stats_dict,
-                    array = mspa_data if return_array else None
-                    )
+        return stats_dict
 
     except Exception as e:
         print(f"Error during run: {e}")

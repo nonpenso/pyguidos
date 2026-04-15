@@ -137,7 +137,6 @@ Usage
         outdir="output/",
         statists=True,
         stat_files=True,
-        return_array=False,
         verb=False
     )
 
@@ -184,10 +183,6 @@ Parameters
      - bool
      - True
      - Write statistics to files
-   * - ``return_array``
-     - bool
-     - False
-     - Return output array
    * - ``verb``
      - bool
      - False
@@ -208,38 +203,54 @@ Output Files
      - Statistics report
 
 
-Result Object
--------------
+Results
+-------
 
-:func:`mspa` returns an :class:`MSPAResult` dataclass:
+The :func:`mspa` function returns a :class:`dict`. The structure is nested as follows:
+
+* **output paths** (:class:`dict` or :obj:`None`)
+    * **path tif** (:class:`str`): Absolute path to the MSPA segmentation GeoTIFF.
+    * **path txt** (:class:`str`): Absolute path to the MSPA statistics report.
+    * *Note: This key is* ``None`` *if* ``stat_files=False``.
+
+* **input stats** (:class:`dict`)
+    * **foreground pxl** (:class:`int`): Count of pixels with value 2 (Forest).
+    * **background pxl** (:class:`int`): Count of pixels with value 1 (Non-forest).
+    * **missing pxl** (:class:`int`): Count of NoData (0) pixels.
+
+* **output stats** (:class:`dict`)
+    * **class freq** (:class:`dict`): Breakdown of pixel counts for the 7 standard MSPA classes:
+        * ``1 core pxl``: Interior area (excluding the width of the edge).
+        * ``2 edge pxl``: Outer foreground boundary.
+        * ``3 perforation pxl``: Inner foreground boundary.
+        * ``4 islet pxl``: Disconnected small foreground patches.
+        * ``5 branch pxl``: Foreground connectors with one end connected to the same object.
+        * ``6 loop pxl``: Foreground connectors with both ends connected to the same object.
+        * ``7 bridge pxl``: Foreground connectors linking different core areas.
+    * **integral foregr** (:class:`float`): The percentage of foreground classified as Core.
+    * **porosity** (:class:`float`): A measure of the density of perforations within the foreground.
 
 .. code-block:: python
 
     result = pg.mspa("my_map.tif", edge_width=1)
 
     # Access statistics
-    print(result.stats.keys())
+    print(result.keys())
     # dict_keys(['output paths', 'input stats', 'output stats'])
 
     # Input pixel counts
-    print(result.stats["input stats"])
+    print(result["input stats"])
     # {'foreground pxl': 12500, 'background pxl': 37500, 'missing pxl': 0}
 
     # Per-class pixel counts
-    print(result.stats["output stats"])
-    # {'core pxl': 8200, 'edge pxl': 2100, 'perforation pxl': 500, ...}
+    print(result["output stats"]["class freq"])
+    # {'1 core pxl': 8200, '2 edge pxl': 2100, '3 perforation pxl': 500, ...}
 
     # Output file paths
-    print(result.stats["output paths"])
+    print(result["output paths"])
     # {'path tif': 'output/my_map_mspa_8_1_1_1.tif',
     #  'path txt': 'output/my_map_mspa_8_1_1_1.txt'}
 
-    # Access array (only if return_array=True)
-    print(result.array)
-
-.. note::
-    ``result.stats["output paths"]`` is ``None`` when ``stat_files=False``.
-    All other keys are always populated regardless of ``stat_files``.
 
 
 Computing Statistics Separately

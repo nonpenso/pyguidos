@@ -33,18 +33,13 @@ def mspa_result(tmp_path_factory):
         dst.write(data, 1)
 
     # Run the full MSPA process
-    return mspa(str(input_tif), edge_width=1, return_array=True, stat_files=True)
+    return mspa(str(input_tif), edge_width=1, stat_files=True)
 
-def test_mspa_array_output(mspa_result):
-    """Check the array from the shared result."""
-    assert mspa_result.array is not None
-    assert mspa_result.array.shape[-2:] == (10, 10)
-    assert np.max(mspa_result.array) > 2
 
 def test_mspa_stats_content(mspa_result):
     """Check the stats dictionary from the shared result."""
-    assert "input stats" in mspa_result.stats
-    assert mspa_result.stats["input stats"]["foreground pxl"] == 16
+    assert "input stats" in mspa_result
+    assert mspa_result["input stats"]["foreground pxl"] == 16
 
 def test_mspa_stats_function_directly(mspa_result):
     """
@@ -52,7 +47,7 @@ def test_mspa_stats_function_directly(mspa_result):
     produced by the fixture.
     """
     # Get the path of the TIF created during the fixture run
-    output_tif_path = mspa_result.stats["output paths"]["path tif"]
+    output_tif_path = mspa_result["output paths"]["path tif"]
     
     # Call mspa_stats directly on that file
     stats = mspa_stats(output_tif_path, outfile=True)
@@ -67,7 +62,7 @@ def test_mspa_stats_standalone(mspa_result):
     """
     
     # 1. Get the path of the TIF produced by our fixture
-    output_tif_path = mspa_result.stats["output paths"]["path tif"]
+    output_tif_path = mspa_result["output paths"]["path tif"]
     
     # 2. Run mspa_stats as a standalone call
     stats = mspa_stats(output_tif_path, outfile=True)

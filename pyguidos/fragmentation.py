@@ -11,7 +11,6 @@ import numpy as np
 from . import utils
 from . import checks
 from . import engine
-from .results import FragResult
 from . import TEMPL_DIR
 
 
@@ -22,7 +21,6 @@ def frag(
     outdir=None,
     statists=True,
     stat_files=True,
-    return_array=False,
     verb=False
     ):
     """
@@ -48,18 +46,22 @@ def frag(
         If True (default), computes and returns statistics.
     stat_files : bool, optional
         If True (default), writes statistics to .txt, .csv and .png files.
-    return_array : bool, optional
-        If True, includes the output numpy array in the result. Default False.
     verb : bool, optional
         If True, prints progress messages. Default False.
 
     Returns
     -------
-    FragResult
-        A dataclass with:
-        - stats (dict): nested dictionary with output paths, input stats,
-          and fragmentation indices (FAD_av, AVcon, class pixel counts).
-        - array (np.ndarray or None): the fragmentation output array if return_array=True.
+    dict
+        Nested dictionary with three keys:
+        - 'output paths' (dict or None): paths to generated output files
+          ('path tif', 'path txt', 'path csv', 'path png'),
+          or None if outfile=False.
+        - 'input stats' (dict): pixel counts for foreground, background,
+          missing and special class pixels.
+        - 'output stats' (dict): per-class pixel counts for fragmentation
+          classes (rare, patchy, transitional, dominant, interior) and
+          fragmentation indices (FAD_av, AVcon).
+
 
     Output Files
     ------------
@@ -78,7 +80,7 @@ def frag(
     in_tiff = Path(in_tiff)
     outdir = Path(outdir) if outdir else in_tiff.parent
     in_name = in_tiff.stem
-    out_name = f"{in_name}_{method.lower()}_{window_size}"
+    out_name = f"{in_name}_frag_{method.lower()}_{window_size}"
     info = utils.get_raster_info(in_tiff)
 
     # Read the input Geotiff
@@ -152,10 +154,7 @@ def frag(
         # Success of the process
         success = True
 
-        return FragResult(
-                    stats = stats_dict,
-                    array = data_masked if return_array else None
-                    )
+        return stats_dict
 
     except Exception as e:
         print(f"Error during run: {e}")

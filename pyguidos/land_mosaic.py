@@ -16,7 +16,6 @@ from ternary.helpers import project_point
 from . import utils
 from . import engine
 from . import checks
-from .results import LandMosResult
 from . import TEMPL_DIR
 
 
@@ -26,7 +25,6 @@ def landmos(in_tiff,
             statists=True,
             stat_files=True,
             out_colors='bgr',
-            return_array=False,
             verb=False):
     """
     Performs Landscape Mosaic analysis on a three-class raster using a
@@ -60,11 +58,15 @@ def landmos(in_tiff,
 
     Returns
     -------
-    LandMosResult
-        A dataclass with:
-        - stats (dict): nested dictionary with output paths, input stats,
-          and pixel counts for both 103-class and 19-class outputs.
-        - array (np.ndarray or None): the 103-class output array if return_array=True.
+    dict
+        Nested dictionary with three keys:
+        - 'output paths' (dict or None): paths to generated output files
+          ('path tif', 'path txt', 'path csv', 'path csv hm', 'path png'),
+          or None if outfile=False.
+        - 'input stats' (dict): pixel counts for the three input classes,
+          foreground and missing pixels.
+        - 'output stats' (dict): pixel counts for both the 103-class and
+          19-class aggregated outputs.
 
     Output Files
     ------------
@@ -175,10 +177,7 @@ def landmos(in_tiff,
         # Success of the process
         success = True
 
-        return LandMosResult(
-                    stats = stats_dict,
-                    array = data_masked if return_array else None
-                    )
+        return stats_dict
 
     except Exception as e:
         print(f"Error during run: {e}")

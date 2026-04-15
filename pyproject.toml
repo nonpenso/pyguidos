@@ -38,6 +38,7 @@ dependencies = [
     "scipy>=1.9",
     "matplotlib>=3.5",
     "pyogrio>=0.7",
+    "geopandas>=0.14",
     "shapely>=2.0",
     "pyproj>=3.4",
     "python-ternary>=1.0",
@@ -56,8 +57,7 @@ notebooks = [
 test = [
     "pytest>=7.0",
     "pytest-mock>=3.10",
-    "geopandas>=0.14",
-    "pandas>=2.0",
+    "pytest-cov>=4.0",
 ]
 
 [tool.setuptools.packages.find]

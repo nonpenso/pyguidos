@@ -195,7 +195,6 @@ Usage
         statists=True,
         stat_files=True,
         out_colors='bgr',
-        return_array=False,
         verb=False
     )
 
@@ -234,10 +233,6 @@ Parameters
      - str
      - ``'bgr'``
      - Color scheme for the 103-class output colormap
-   * - ``return_array``
-     - bool
-     - False
-     - Return output array
    * - ``verb``
      - bool
      - False
@@ -266,39 +261,55 @@ Output Files
      - Ternary diagram heatmap
 
 
-Result Object
--------------
+Results
+-------
 
-:func:`landmos` returns a :class:`LandMosResult` dataclass:
+The :func:`lm` function returns a :class:`dict`. The structure is nested as follows:
+
+* **output paths** (:class:`dict` or :obj:`None`)
+    * **path tif 103cl** (:class:`str`): Absolute path to the 103-class Land Mosaic GeoTIFF.
+    * **path tif 19cl** (:class:`str`): Absolute path to the aggregated 19-class Land Mosaic GeoTIFF.
+    * **path txt** (:class:`str`): Absolute path to the statistics text report.
+    * **path csv** (:class:`str`): Absolute path to the pixel count CSV.
+    * **path csv hm** (:class:`str`): Absolute path to the Heatmap/Transition matrix CSV.
+    * **path png** (:class:`str`): Absolute path to the Land Mosaic tri-polar classification plot.
+    * *Note: This key is* ``None`` *if* ``stat_files=False``.
+
+* **input stats** (:class:`dict`)
+    * **class1 pxl** (:class:`int`): Count of pixels for Land Cover Class 1 (e.g., Natural).
+    * **class2 pxl** (:class:`int`): Count of pixels for Land Cover Class 2 (e.g., Agricultural).
+    * **class3 pxl** (:class:`int`): Count of pixels for Land Cover Class 3 (e.g., Developed/Urban).
+    * **foreground pxl** (:class:`int`): Total count of valid (non-missing) pixels.
+    * **missing pxl** (:class:`int`): Count of NoData (0) pixels.
+
+* **output stats** (:class:`dict`)
+    * **pxl numb 103cl** (:class:`dict`): Pixel counts for the detailed 103-class Land Mosaic classification.
+    * **pxl numb 19cl** (:class:`dict`): Pixel counts for the simplified 19-class Land Mosaic classification.
 
 .. code-block:: python
 
     result = pg.landmos("my_landcover.tif", window_size=33)
 
     # Access statistics
-    print(result.stats.keys())
+    print(result.keys())
     # dict_keys(['output paths', 'input stats', 'output stats'])
 
     # Input pixel counts
-    print(result.stats["input stats"])
+    print(result["input stats"])
     # {'class1 pxl': 15000, 'class2 pxl': 20000, 'class3 pxl': 10000,
     #  'foreground pxl': 45000, 'missing pxl': 0}
 
     # Pixel counts for both 103-class and 19-class outputs
-    print(result.stats["output stats"].keys())
+    print(result["output stats"].keys())
     # dict_keys(['pxl numb 103cl', 'pxl numb 19cl'])
 
     # Output file paths
-    print(result.stats["output paths"])
+    print(result["output paths"])
     # {'path tif': 'output/my_landcover_lm_33_103class.tif',
     #  'path txt': 'output/my_landcover_lm_33.txt',
     #  'path csv': 'output/my_landcover_lm_33.csv',
     #  'path csv hm': 'output/my_landcover_lm_33_heatmap.csv',
     #  'path png': 'output/my_landcover_lm_33_heatmap.png'}
-
-.. note::
-    ``result.stats["output paths"]`` is ``None`` when ``stat_files=False``.
-    All other keys are always populated regardless of ``stat_files``.
 
 
 Computing Statistics Separately

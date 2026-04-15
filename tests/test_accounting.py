@@ -38,26 +38,12 @@ def acc_result(tmp_path_factory):
     return acc(
         str(input_tif), 
         thresholds=[10], 
-        return_array=True, 
         stat_files=True
     )
 
-def test_acc_array_mapping(acc_result):
-    """Verifies output array dimensions and that reclassification occurred."""
-    assert acc_result.array is not None
-    assert acc_result.array.shape == (15, 15) 
-    
-    # Verify the specific mapping at the positions defined in the fixture
-    # Position [0,0] was input 0 -> should be 129
-    # Position [0,1] was input 3 -> should be 105
-    # Position [0,2] was input 4 -> should be 176
-    assert acc_result.array[0, 0] == 129
-    assert acc_result.array[0, 1] == 105
-    assert acc_result.array[0, 2] == 176
-
 def test_acc_special_bg_stats(acc_result):
     """Verifies that BG 3 and 4 are correctly tracked in the statistics."""
-    input_stats = acc_result.stats["input stats"]
+    input_stats = acc_result["input stats"]
     
     # is correctly handled by acc_stats
     assert input_stats["missing pxl"] == 1
@@ -69,7 +55,7 @@ def test_acc_stats_standalone(acc_result):
     """Tests independent acc_stats call and report file generation."""
     from pathlib import Path
     
-    output_tif = acc_result.stats["output paths"]["path tif"]
+    output_tif = acc_result["output paths"]["path tif"]
     
     # Run standalone stats logic on the generated output
     stats = acc_stats(output_tif, outfile=True)

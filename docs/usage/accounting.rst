@@ -100,7 +100,6 @@ Usage
         outdir="output/",
         statists=True,
         stat_files=True,
-        return_array=False,
         verb=False
     )
 
@@ -135,10 +134,6 @@ Parameters
      - bool
      - True
      - Write statistics to files
-   * - ``return_array``
-     - bool
-     - False
-     - Return output array
    * - ``verb``
      - bool
      - False
@@ -193,35 +188,51 @@ Output Files
      - Statistics report
 
 
-Result Object
--------------
+Results
+-------
 
-:func:`acc` returns an :class:`AccResult` dataclass:
+The :func:`acc` function returns a :class:`dict`. The structure is nested as follows:
+
+* **output paths** (:class:`dict` or :obj:`None`)
+    * **path tif** (:class:`str`): Absolute path to the resulting Accounting GeoTIFF.
+    * **path txt** (:class:`str`): Absolute path to the statistics text report.
+    * *Note: This key is* ``None`` *if* ``stat_files=False``.
+
+* **input stats** (:class:`dict`)
+    * **foreground pxl** (:class:`int`): Count of pixels with value 2 (Forest).
+    * **background pxl** (:class:`int`): Count of pixels with value 1 (Background).
+    * **missing pxl** (:class:`int`): Count of NoData (0) pixels.
+    * **backgr3 pxl** (:class:`int`): Count of special background class 3 pixels.
+    * **backgr4 pxl** (:class:`int`): Count of special background class 4 pixels.
+
+* **output stats** (:class:`dict`)
+    * **pxl numb** (:class:`dict`): A dictionary where keys are class IDs and values are the total number of pixels belonging to that accounting class.
+    * **patch numb** (:class:`dict`): A dictionary where keys are class IDs and values represent the total number of discrete patches identified for that accounting class.
 
 .. code-block:: python
 
     result = pg.acc("my_map.tif", thresholds=[10, 100, 1000, 10000])
 
     # Access statistics
-    print(result.stats.keys())
+    print(result.keys())
     # dict_keys(['output paths', 'input stats', 'output stats'])
 
     # Input pixel counts
-    print(result.stats["input stats"])
+    print(result["input stats"])
     # {'foreground pxl': 12500, 'background pxl': 37500,
     #  'missing pxl': 0, 'backgr3 pxl': 0, 'backgr4 pxl': 0}
 
     # Per-class pixel and patch counts
-    print(result.stats["output stats"])
+    print(result["output stats"])
     # {'pxl numb': Counter({...}), 'patch numb': Counter({...})}
 
     # Output file paths
-    print(result.stats["output paths"])
+    print(result["output paths"])
     # {'path tif': 'output/my_map_acc.tif',
     #  'path txt': 'output/my_map_acc.txt'}
 
 .. note::
-    ``result.stats["output paths"]`` is ``None`` when ``stat_files=False``.
+    ``result["output paths"]`` is ``None`` when ``stat_files=False``.
     All other keys are always populated regardless of ``stat_files``.
 
 

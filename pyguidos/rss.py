@@ -7,7 +7,6 @@ import numpy as np
 from . import utils
 from . import engine
 from . import checks
-from .results import RssResult
 from . import TEMPL_DIR
 
 
@@ -164,5 +163,5 @@ def rss(
     if verb:
         print(fr"\RSS completed in {utils.running_time(start_time, time.time())}")
 
-    return RssResult(stats=stats_dict)
+    return stats_dict
 

@@ -9,7 +9,6 @@ import numpy as np
 from . import utils
 from . import engine
 from . import checks
-from .results import AccResult
 from . import TEMPL_DIR
 
 
@@ -23,7 +22,6 @@ def acc(
     outdir=None,
     statists=True,
     stat_files=True,
-    return_array=False,
     verb=False
     ):
     """
@@ -48,18 +46,19 @@ def acc(
         If True (default), computes and returns statistics.
     stat_files : bool, optional
         If True (default), writes statistics to a .txt report file.
-    return_array : bool, optional
-        If True, includes the output numpy array in the result. Default False.
     verb : bool, optional
         If True, prints progress messages. Default False.
 
     Returns
     -------
-    AccResult
-        A dataclass with:
-        - stats (dict): nested dictionary with output paths, input stats,
-          and per-class pixel and patch counts.
-        - array (np.ndarray or None): the ACC output array if return_array=True.
+    dict
+        Nested dictionary with three keys:
+        - 'output paths' (dict or None): paths to generated output files
+          ('path tif', 'path txt'), or None if outfile=False.
+        - 'input stats' (dict): pixel counts for foreground, background,
+          missing and special class pixels.
+        - 'output stats' (dict): per-class pixel counts and patch counts
+          for each accounting size class.
 
     Output Files
     ------------
@@ -143,10 +142,7 @@ def acc(
             txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)
 
-        return AccResult(
-                    stats = stats_dict,
-                    array = out_array if return_array else None
-                    )
+        return stats_dict
 
     except Exception as e:
         print(f"Error during run: {e}")

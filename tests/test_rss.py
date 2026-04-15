@@ -39,7 +39,7 @@ def rss_result(tmp_path_factory):
 
 def test_rss_indices_calculated(rss_result):
     """Verifies that connectivity indices are present and non-zero."""
-    out_stats = rss_result.stats["output stats"]
+    out_stats = rss_result["output stats"]
     
     # Check core indices
     assert "COH" in out_stats
@@ -50,7 +50,7 @@ def test_rss_indices_calculated(rss_result):
 
 def test_rss_special_bg_stats(rss_result):
     """Verifies that BG 3 and 4 are tracked in RSS input stats."""
-    input_stats = rss_result.stats["input stats"]
+    input_stats = rss_result["input stats"]
     
     assert input_stats["missing pxl"] == 1
     assert input_stats["backgr3 pxl"] == 1
@@ -60,7 +60,7 @@ def test_rss_special_bg_stats(rss_result):
 def test_rss_report_generation(rss_result):
     """Verifies the text report exists and contains the tool ID."""
     from pathlib import Path
-    txt_path = Path(rss_result.stats["output paths"]["path txt"])
+    txt_path = Path(rss_result["output paths"]["path txt"])
     
     assert txt_path.exists()
     

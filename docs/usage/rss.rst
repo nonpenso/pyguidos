@@ -101,37 +101,55 @@ Output Files
      - Statistics report with all connectivity indices
 
 
-Result Object
--------------
+Results
+-------
 
-:func:`rss` returns an :class:`RssResult` dataclass:
+The :func:`rss` function returns a :class:`dict`. The structure is nested as follows:
+
+* **output paths** (:class:`dict` or :obj:`None`)
+    * **path txt** (:class:`str`): Absolute path to the comprehensive statistics report.
+    * *Note: This key is* ``None`` *if* ``stat_files=False``.
+
+* **input stats** (:class:`dict`)
+    * **foreground pxl** (:class:`int`): Count of pixels with value 2 (Forest).
+    * **background pxl** (:class:`int`): Count of pixels with value 1 (Background).
+    * **missing pxl** (:class:`int`): Count of NoData (0) pixels.
+    * **backgr3 pxl** (:class:`int`): Count of special background class 3 pixels.
+    * **backgr4 pxl** (:class:`int`): Count of special background class 4 pixels.
+
+* **output stats** (:class:`dict`)
+    * **total patches** (:class:`int`): The total number of discrete patches identified in the landscape.
+    * **average patch size** (:class:`float`): The mean size of patches (usually in pixel units).
+    * **median patch size** (:class:`float`): The median size of patches.
+    * **largest patch size** (:class:`int`): The size of the largest single patch found.
+    * **CNOA** (:class:`float`): Component-wise Normalized Occupied Area.
+    * **ECA** (:class:`float`): Equivalent Connected Area.
+    * **RAC** (:class:`float`): Relative Area of Connectivity.
+    * **COH** (:class:`float`): Cohesion index.
+    * **REST_POT** (:class:`float`): Restoration Potential index.
 
 .. code-block:: python
 
     result = pg.rss("my_map.tif")
 
     # Access statistics
-    print(result.stats.keys())
+    print(result.keys())
     # dict_keys(['output paths', 'input stats', 'output stats'])
 
     # Input pixel counts
-    print(result.stats["input stats"])
+    print(result["input stats"])
     # {'foreground pxl': 12500, 'background pxl': 37500,
     #  'missing pxl': 0, 'backgr3 pxl': 0, 'backgr4 pxl': 0}
 
     # Connectivity indices
-    print(result.stats["output stats"])
+    print(result["output stats"])
     # {'total patches': 142, 'average patch size': 88.0,
     #  'median patch size': 12.0, 'largest patch size': 8542,
     #  'ECA': 8764.3, 'COH': 70.1, 'CNOA': 3, 'REST_POT': 29.9, 'RAC': 25.0}
 
     # Output file paths
-    print(result.stats["output paths"])
+    print(result["output paths"])
     # {'path txt': 'output/my_map_rss.txt'}
-
-.. note::
-    ``result.stats["output paths"]`` is ``None`` when ``stat_files=False``.
-    All other keys are always populated regardless of ``stat_files``.
 
 
 Patch Statistics

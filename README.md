@@ -49,14 +49,15 @@ Requirements
 ============
 
 - Python >= 3.8
-- numpy
-- rasterio
-- scipy
-- matplotlib
-- fiona
-- shapely
-- pyproj
-- python-ternary
+- numpy >=1.24, <2.1
+- rasterio >=1.3
+- scipy >=1.9
+- matplotlib >=3.5
+- pyogrio >=0.7
+- geopandas >=0.14
+- shapely >=2.0
+- pyproj >=3.4
+- python-ternary >=1.0
 
 ---
 
@@ -84,11 +85,11 @@ cd pyguidos
 ```
 2. Create and activate a virtual environment:
 ```bash
-python -m venv venv
+python -m venv myvenv
 # Windows:
-venv\Scripts\activate
+myvenv\Scripts\activate
 # Linux/Mac:
-source venv/bin/activate
+source myvenv/bin/activate
 ```
 3. Install in editable mode with dependencies:
 ```bash
@@ -157,7 +158,7 @@ result = pg.mspa(
     transition=True,
     int_ext=True
 )
-print(result.stats)
+print(result)
 
 # Fragmentation analysis
 result = pg.frag(

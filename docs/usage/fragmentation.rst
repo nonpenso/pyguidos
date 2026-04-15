@@ -74,7 +74,6 @@ Usage
         outdir="output/",
         statists=True,
         stat_files=True,
-        return_array=False,
         verb=False
     )
 
@@ -113,10 +112,6 @@ Parameters
      - bool
      - True
      - Write statistics to files
-   * - ``return_array``
-     - bool
-     - False
-     - Return output array
    * - ``verb``
      - bool
      - False
@@ -141,38 +136,59 @@ Output Files
      - Foreground pixel histogram
 
 
-Result Object
--------------
+Results
+-------
 
-:func:`frag` returns a :class:`FragResult` dataclass:
+The :func:`frag` function returns a :class:`dict`. The structure is nested as follows:
+
+* **output paths** (:class:`dict` or :obj:`None`)
+    * **path tif** (:class:`str`): Absolute path to the fragmentation result GeoTIFF.
+    * **path txt** (:class:`str`): Absolute path to the statistics text report.
+    * **path csv** (:class:`str`): Absolute path to the per-value pixel count CSV.
+    * **path png** (:class:`str`): Absolute path to the foreground pixel histogram image.
+    * *Note: This key is* ``None`` *if* ``stat_files=False``.
+
+* **input stats** (:class:`dict`)
+    * **foreground pxl** (:class:`int`): Count of pixels with value 2 (Forest).
+    * **background pxl** (:class:`int`): Count of pixels with value 1 (Background).
+    * **missing pxl** (:class:`int`): Count of NoData (0) pixels.
+    * **backgr3 pxl** (:class:`int`): Count of special background class 3 pixels.
+    * **backgr4 pxl** (:class:`int`): Count of special background class 4 pixels.
+
+* **output stats** (:class:`dict`)
+    * **class freq** (:class:`dict`): Breakdown of pixel counts per fragmentation category:
+        * ``1 rare pxl``: Pixels in the "Rare" category.
+        * ``2 patch pxl``: Pixels in the "Patchy" category.
+        * ``3 trans pxl``: Pixels in the "Transitional" category.
+        * ``4 domin pxl``: Pixels in the "Dominant" category.
+        * ``5 inter pxl``: Pixels in the "Interior" category.
+    * **fad_av** (:class:`float`): The average Forest Area Density index.
+    * **avcon** (:class:`float`): The Average Connectivity index.
 
 .. code-block:: python
 
     result = pg.frag("my_map.tif", method="FAD", window_size=27)
 
     # Access statistics
-    print(result.stats.keys())
+    print(result.keys())
     # dict_keys(['output paths', 'input stats', 'output stats'])
 
     # Input pixel counts
-    print(result.stats["input stats"])
+    print(result["input stats"])
     # {'foreground pxl': 12500, 'background pxl': 37500, 'missing pxl': 0, ...}
 
     # Fragmentation indices and class pixel counts
-    print(result.stats["output stats"])
-    # {'rare pxl': 1200, 'patch pxl': 2300, 'trans pxl': 3100,
-    #  'domin pxl': 4200, 'inter pxl': 1700, 'fad_av': 62.3, 'avcon': 58.1}
+    print(result["output stats"])
+    # {{'1 rare pxl': 1200, '2 patch pxl': 2300, '3 trans pxl': 3100,
+    #  '4 domin pxl': 4200, '5 inter pxl': 1700}, 'fad_av': 62.3, 'avcon': 58.1}
 
     # Output file paths
-    print(result.stats["output paths"])
+    print(result["output paths"])
     # {'path tif': 'output/my_map_fad_27.tif',
     #  'path txt': 'output/my_map_fad_27.txt',
     #  'path csv': 'output/my_map_fad_27.csv',
     #  'path png': 'output/my_map_fad_27.png'}
 
-.. note::
-    ``result.stats["output paths"]`` is ``None`` when ``stat_files=False``.
-    All other keys are always populated regardless of ``stat_files``.
 
 
 Computing Statistics Separately
