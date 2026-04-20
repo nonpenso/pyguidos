@@ -3,7 +3,6 @@ import time
 from pathlib import Path
 import csv
 from collections import Counter
-import shutil
 
 import numpy as np
 import rasterio
@@ -13,8 +12,8 @@ from matplotlib.collections import PatchCollection
 import ternary
 from ternary.helpers import project_point
 
+from . import spat
 from . import utils
-from . import engine
 from . import checks
 from . import TEMPL_DIR
 
@@ -78,7 +77,6 @@ def landmos(in_tiff,
     - <in_name>_lm_<window_size>_heatmap.png  : ternary diagram heatmap
     """
     start_time = time.time()
-    success = False
 
     # Validate parametres
     checks.validate_wsize(window_size)
@@ -92,7 +90,7 @@ def landmos(in_tiff,
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
-        input_data = src.read()
+        input_data = src.read(1).astype(np.int16)
 
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
@@ -101,37 +99,15 @@ def landmos(in_tiff,
     checks.validate_lm_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'])
 
     try:
-        # Prepare Binary Input
-        tmpdir = utils.setup_run_dir()
-        engine.write_spatcon_input(tmpdir, input_data)
-
-        # Write Spatcon TXT files
-        dims = (info['rows'], info['cols'])
-        w = window_size
-        r = 7
-        b = 0
-        a = 2
-        h = 1
-        m = 0
-        f = 0
-        engine.write_spatcon_params(tmpdir, dims, (w, r, b, a, h, m, f))
-
-        # Execute Spatcon Binary
-        engine.run_spatcon(tmpdir, verbose=verb)
-
-        # Process Output
-        spat_bin = tmpdir / "scoutput"
-        spat_data = np.fromfile(spat_bin, dtype=np.uint8).reshape((1, info['rows'], info['cols']))
-        data_masked = spat_data.astype(np.uint8)
-        #data_masked = np.select([input_data == 0], [np.uint8(0)], default=spat_data)
-        data_masked[input_data == 0] = 0
+        # Compute Landscape Mosaic
+        data_out = spat.compute_LM(input_data, window_size)
 
         # Save 103 classes Geotiff
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/"
         tag_descr = f"GTB_LM, <{window_size},{out_colors}>, {weblink}"
         cmap_path = TEMPL_DIR / f"lm_{out_colors}_colormap.txt"
         out_tiff103c = outdir / f"{out_name}_103class_{out_colors}.tif"
-        utils.save_output_geotiff(out_tiff103c, data_masked, info['profile'], cmap_path, tag_descr)
+        utils.save_output_geotiff(out_tiff103c, data_out, info['profile'], cmap_path, tag_descr)
 
         # Reclassiafy Geotiff 103 -> 19 classes
         reclass = {}
@@ -140,11 +116,10 @@ def landmos(in_tiff,
                 l = [int(x) for x in line.split(' ')]
                 reclass[l[0]]=l[1]
 
-        max_value = max(reclass.keys())
-        mapping_array = np.zeros(max_value + 1, dtype=int)
+        mapping_array = np.zeros(256, dtype=np.uint8)
         for old_val, new_val in reclass.items():
             mapping_array[old_val] = new_val
-        data_19cl = mapping_array[data_masked]
+        data_19cl = mapping_array[data_out]
 
         # Save 19 classes Geotiff
         cmap_path19 = TEMPL_DIR / "lm_19c_colormap.txt"
@@ -154,7 +129,7 @@ def landmos(in_tiff,
         # Statistics and Reporting
         stats_dict = None
         if statists:
-            lm_pixel_freq = utils.get_pxl_freq(data_masked)
+            lm_pixel_freq = utils.get_pxl_freq(data_out)
             stats_dict = landmos_stats(lm_tiff=out_tiff103c,
                                        outfile = stat_files,
                                        outdir=outdir,
@@ -174,20 +149,12 @@ def landmos(in_tiff,
             txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)
 
-        # Success of the process
-        success = True
-
         return stats_dict
 
     except Exception as e:
         print(f"Error during run: {e}")
         raise # Still show the error
 
-    finally:
-        if success:
-            shutil.rmtree(tmpdir) # Only delete if it worked
-        else:
-            print(f"Debug: Files preserved in {tmpdir}")
 
 
 def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_freq=None, source_freq=None):

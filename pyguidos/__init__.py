@@ -1,7 +1,7 @@
 from pathlib import Path
-import subprocess
+#import subprocess
 import os
-import sys
+#import sys
 import inspect
 import platform
 import warnings
@@ -21,86 +21,86 @@ GLOBAL_CONFIG = Path.home() / ".pyguidos_config"
 __version__ = "2.1.0"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
-# Workspace discovery
-def _test_execution(path: Path) -> bool:
-    """Tests if a directory allows writing and executing files."""
-    # Use a generic filename for the test
-    test_file = path / "pyguidos_exec_test"
-    try:
-        path.mkdir(parents=True, exist_ok=True)
+# # Workspace discovery
+# def _test_execution(path: Path) -> bool:
+#     """Tests if a directory allows writing and executing files."""
+#     # Use a generic filename for the test
+#     test_file = path / "pyguidos_exec_test"
+#     try:
+#         path.mkdir(parents=True, exist_ok=True)
         
-        # Write a simple cross-platform script
-        if os.name == 'nt':
-            test_file = test_file.with_suffix(".bat")
-            test_file.write_text("@echo off\necho success")
-        else:
-            # Linux/Mac script
-            test_file.write_text("#!/bin/sh\necho success")
-            os.chmod(test_file, 0o755) # Add executable permission
+#         # Write a simple cross-platform script
+#         if os.name == 'nt':
+#             test_file = test_file.with_suffix(".bat")
+#             test_file.write_text("@echo off\necho success")
+#         else:
+#             # Linux/Mac script
+#             test_file.write_text("#!/bin/sh\necho success")
+#             os.chmod(test_file, 0o755) # Add executable permission
         
-        # Try to run it. shell=True helps with .bat and scripts
-        result = subprocess.run([str(test_file)], capture_output=True, shell=True, timeout=3)
-        success = (result.returncode == 0 and "success" in result.stdout.decode().lower())
+#         # Try to run it. shell=True helps with .bat and scripts
+#         result = subprocess.run([str(test_file)], capture_output=True, shell=True, timeout=3)
+#         success = (result.returncode == 0 and "success" in result.stdout.decode().lower())
         
-        if test_file.exists():
-            test_file.unlink()
+#         if test_file.exists():
+#             test_file.unlink()
             
-        return success
-    except Exception:
-        return False
+#         return success
+#     except Exception:
+#         return False
 
-def get_workspace():
-    # Priority 1: Existing Config
-    if GLOBAL_CONFIG.exists():
-        conf_path = Path(GLOBAL_CONFIG.read_text(encoding="utf-8").strip())
-        if _test_execution(conf_path):
-            return conf_path
+# def get_workspace():
+#     # Priority 1: Existing Config
+#     if GLOBAL_CONFIG.exists():
+#         conf_path = Path(GLOBAL_CONFIG.read_text(encoding="utf-8").strip())
+#         if _test_execution(conf_path):
+#             return conf_path
 
-    # Priority 2: Developer Mode (Git Clone)
-    if (PROJECT_ROOT / ".git").exists():
-        dev_work = PROJECT_ROOT / "work"
-        if _test_execution(dev_work):
-            return dev_work
+#     # Priority 2: Developer Mode (Git Clone)
+#     if (PROJECT_ROOT / ".git").exists():
+#         dev_work = PROJECT_ROOT / "work"
+#         if _test_execution(dev_work):
+#             return dev_work
 
-    # Priority 3: Default Home Directory
-    home_work = Path.home() / "pyguidos_work"
-    if _test_execution(home_work):
-        return home_work
+#     # Priority 3: Default Home Directory
+#     home_work = Path.home() / "pyguidos_work"
+#     if _test_execution(home_work):
+#         return home_work
 
-    # --- THE FALLBACK (INTERACTIVE ONLY) ---
+#     # --- THE FALLBACK (INTERACTIVE ONLY) ---
     
-    # Check if we are in an interactive terminal (CLI or Notebook)
-    # This prevents the script from hanging in automated/server environments
-    if not sys.stdin.isatty():
-        raise PermissionError(
-            "pyguidos: Execution is blocked in standard folders (Home/Temp) "
-            "and no interactive terminal was found to ask for a custom path. "
-            "Please manually create a '.pyguidos_config' file in your home directory "
-            "containing a valid, writable path."
-        )
+#     # Check if we are in an interactive terminal (CLI or Notebook)
+#     # This prevents the script from hanging in automated/server environments
+#     if not sys.stdin.isatty():
+#         raise PermissionError(
+#             "pyguidos: Execution is blocked in standard folders (Home/Temp) "
+#             "and no interactive terminal was found to ask for a custom path. "
+#             "Please manually create a '.pyguidos_config' file in your home directory "
+#             "containing a valid, writable path."
+#         )
 
-    print("\n" + "="*60)
-    print(" pyguidos: ACTION REQUIRED ")
-    print("="*60)
-    print("Your current environment prevents running binaries in standard folders.")
-    print("This is common in restricted corporate or high-security systems.")
+#     print("\n" + "="*60)
+#     print(" pyguidos: ACTION REQUIRED ")
+#     print("="*60)
+#     print("Your current environment prevents running binaries in standard folders.")
+#     print("This is common in restricted corporate or high-security systems.")
     
-    while True:
-        user_path = input("\nPlease paste a path with EXECUTION permissions: ").strip()
-        if not user_path:
-            continue
+#     while True:
+#         user_path = input("\nPlease paste a path with EXECUTION permissions: ").strip()
+#         if not user_path:
+#             continue
             
-        candidate = Path(user_path).resolve()
-        if _test_execution(candidate):
-            GLOBAL_CONFIG.write_text(str(candidate), encoding="utf-8")
-            print(f"Path validated and saved to {GLOBAL_CONFIG}")
-            return candidate
-        else:
-            print(f"Execution still blocked in {candidate}.")
-            print("   Please ensure the path is writable and not mounted with 'noexec'.")
+#         candidate = Path(user_path).resolve()
+#         if _test_execution(candidate):
+#             GLOBAL_CONFIG.write_text(str(candidate), encoding="utf-8")
+#             print(f"Path validated and saved to {GLOBAL_CONFIG}")
+#             return candidate
+#         else:
+#             print(f"Execution still blocked in {candidate}.")
+#             print("   Please ensure the path is writable and not mounted with 'noexec'.")
 
-# This runs once when 'import pyguidos' is called
-WORK_DIR = get_workspace()
+# # This runs once when 'import pyguidos' is called
+# WORK_DIR = get_workspace()
 
 
 # Global Numba Setup
@@ -134,7 +134,7 @@ _setup_numba()
 
 # ================================================================================
 # Import Tools and Results
-from .mspa import mspa, mspa_stats
+#from .mspa import mspa, mspa_stats
 from .fragmentation import frag, frag_stats
 from .land_mosaic import landmos, landmos_stats
 from .accounting import acc, acc_stats
@@ -149,16 +149,16 @@ def info(tool: str = None):
     
     Usage:
         pg.info()           # Lists all available tools
-        pg.info('mspa')     # Shows details and documentation links for MSPA
+        pg.info('acc')     # Shows details and documentation links for Accounting
     """
     registry = {
-        "mspa": {
-            "title": "Morphological Spatial Pattern Analysis (MSPA)",
-            "desc": "Classifies binary maps into mutually exclusive morphological classes "
-                    "(Core, Edge, Islet, Loop, Perforation, Branch).",
-            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/mspa.html",
-            "sheet": "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"
-        },
+        # "mspa": {
+        #     "title": "Morphological Spatial Pattern Analysis (MSPA)",
+        #     "desc": "Classifies binary maps into mutually exclusive morphological classes "
+        #             "(Core, Edge, Islet, Loop, Perforation, Branch).",
+        #     "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/mspa.html",
+        #     "sheet": "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"
+        # },
         "frag": {
             "title": "Fragmentation",
             "desc": "Calculates the Fragmentation with Fixed Observation Scale (FOS) approach.",
@@ -214,7 +214,8 @@ def info(tool: str = None):
         print(f"\nFull usage: help(pg.{tool})\n")
 
 # Exported names
-__all__ = ["mspa", "mspa_stats", 
+__all__ = [
+           # "mspa", "mspa_stats", 
            "frag", "frag_stats",
            "landmos", "landmos_stats",
            "acc", "acc_stats",

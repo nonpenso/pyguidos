@@ -1,9 +1,9 @@
 import re
-import shutil
+#import shutil
 import collections
-import time
+#import time
 from pathlib import Path
-import uuid
+#import uuid
 
 import numpy as np
 import rasterio
@@ -11,40 +11,40 @@ from rasterio.enums import ColorInterp
 from pyproj import CRS as pyprojCRS
 from numba import njit
 
-from . import WORK_DIR, GLOBAL_CONFIG
+# from . import WORK_DIR, GLOBAL_CONFIG
 
-def setup_run_dir():
-    """
-    Creates a unique temporary working directory for a single binary
-    executable run. Silently removes job folders older than
-    7 days from the work directory.
+# def setup_run_dir():
+#     """
+#     Creates a unique temporary working directory for a single binary
+#     executable run. Silently removes job folders older than
+#     7 days from the work directory.
 
-    Returns
-    -------
-    Path
-        Path to the newly created temporary run directory,
-        named 'job_<uuid>' inside the package work/ folder.
-    """
-    # Silently clean up folders older than 1 weeks
-    max_age_seconds = 7 * 24 * 3600
-    now = time.time()
-    for old_job in WORK_DIR.glob("job_*"):
-        if old_job.is_dir():
-            age = now - old_job.stat().st_mtime
-            if age > max_age_seconds:
-                try:
-                    shutil.rmtree(old_job)
-                except Exception:
-                    pass  # Silent: never block a new run over cleanup
+#     Returns
+#     -------
+#     Path
+#         Path to the newly created temporary run directory,
+#         named 'job_<uuid>' inside the package work/ folder.
+#     """
+#     # Silently clean up folders older than 1 weeks
+#     max_age_seconds = 7 * 24 * 3600
+#     now = time.time()
+#     for old_job in WORK_DIR.glob("job_*"):
+#         if old_job.is_dir():
+#             age = now - old_job.stat().st_mtime
+#             if age > max_age_seconds:
+#                 try:
+#                     shutil.rmtree(old_job)
+#                 except Exception:
+#                     pass  # Silent: never block a new run over cleanup
 
-    # Create a unique subfolder for this specific run
-    unique_id = str(uuid.uuid4())[:8]
-    run_dir = WORK_DIR / f"job_{unique_id}"
+#     # Create a unique subfolder for this specific run
+#     unique_id = str(uuid.uuid4())[:8]
+#     run_dir = WORK_DIR / f"job_{unique_id}"
 
-    # 3. Create the directories
-    run_dir.mkdir(parents=True, exist_ok=True)
+#     # 3. Create the directories
+#     run_dir.mkdir(parents=True, exist_ok=True)
 
-    return run_dir
+#     return run_dir
 
 
 def get_raster_info(intiff_path):
@@ -439,13 +439,13 @@ def get_gtb_nodata(tiff_path):
     return info["profile"].get("nodata") or 0
 
 
-def reset_workspace():
-    """Deletes the workspace configuration so it can be re-defined on next import."""
-    if GLOBAL_CONFIG.exists():
-        GLOBAL_CONFIG.unlink()
-        print("Configuration removed. Restart your session to re-configure.")
-    else:
-        print("No configuration file found.")
+# def reset_workspace():
+#     """Deletes the workspace configuration so it can be re-defined on next import."""
+#     if GLOBAL_CONFIG.exists():
+#         GLOBAL_CONFIG.unlink()
+#         print("Configuration removed. Restart your session to re-configure.")
+#     else:
+#         print("No configuration file found.")
 
 
 def citation():
