@@ -9,6 +9,7 @@ import numpy as np
 import rasterio
 from rasterio.enums import ColorInterp
 from pyproj import CRS as pyprojCRS
+from numba import njit
 
 from . import WORK_DIR, GLOBAL_CONFIG
 
@@ -207,19 +208,28 @@ def get_pxl_freq(array, chunk_size=1000):
     """
     data = array[0] if array.ndim == 3 else array
 
-    # Fast path for uint8: bincount covers all 256 possible values instantly
-    if data.dtype == np.uint8:
-        counts = np.bincount(data.ravel(), minlength=256)
-        return collections.Counter({i: int(c) for i, c in enumerate(counts) if c > 0})
+    counts_array = numba_pixel_counts(data)
+    counts_dict = {i: count for i, count in enumerate(counts_array) if count > 0}
 
-    # General path for int32/large arrays (e.g. labeled patch arrays)
-    total_counts = collections.Counter()
-    for i in range(0, data.shape[0], chunk_size):
-        chunk = data[i : i + chunk_size, :]
-        values, counts = np.unique(chunk, return_counts=True)
-        total_counts.update(dict(zip(values.tolist(), counts.tolist())))
+    return collections.Counter(counts_dict)
 
-    return total_counts
+
+@njit(cache=True)
+def numba_pixel_counts(data):
+    """
+    Scans the array once and returns a dictionary of counts.
+    int64 for the counts to prevent overflow on large rasters.
+    """
+    counts_array = np.zeros(256, dtype=np.int64)
+    
+    flat_data = data.ravel()
+    for i in range(flat_data.size):
+        val = flat_data[i]
+        # Safety check: only count values within the 0-255 range
+        if 0 <= val <= 255:
+            counts_array[val] += 1
+            
+    return counts_array
 
 
 def running_time(start_time, end_time):

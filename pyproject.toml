@@ -42,6 +42,9 @@ dependencies = [
     "shapely>=2.0",
     "pyproj>=3.4",
     "python-ternary>=1.0",
+    "numba>=0.58.0",
+    "tbb>=2021.6.0; sys_platform == 'win32'",
+    "intel-openmp; sys_platform == 'linux'",
 ]
 
 [project.urls]

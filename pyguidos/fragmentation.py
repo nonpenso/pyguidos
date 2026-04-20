@@ -3,14 +3,13 @@ import time
 from pathlib import Path
 import csv
 import matplotlib.pyplot as plt
-import shutil
 
 import rasterio
 import numpy as np
 
+from . import spat
 from . import utils
 from . import checks
-from . import engine
 from . import TEMPL_DIR
 
 
@@ -24,10 +23,10 @@ def frag(
     verb=False
     ):
     """
-    Performs Fragmentation analysis on a binary raster using Spatcon moving
-    window tool. Computes the proportion of foreground pixels within each
-    window, classifying landscape fragmentation into 5 classes: Rare, Patchy,
-    Transitional, Dominant, and Interior.
+    Performs Fragmentation analysis on a binary raster computing the proportion
+    of foreground pixels within each window [0-100], classifying landscape 
+    fragmentation into 5 classes: Rare, Patchy, Transitional, Dominant, 
+    and Interior.
 
     Parameters
     ----------
@@ -36,8 +35,9 @@ def frag(
         0 = NoData, 1 = Background, 2 = Foreground.
         Optional: 3 = Background class 2, 4 = Background class 3.
     method : str
-        Fragmentation method. Must be 'FAD' (Forest Area Density) or
-        'FAC' (Foreground Area Clustering).
+        Fragmentation methods:
+        'FAD' Foreground Area Density
+        'FAC' Foreground Area Clustering
     window_size : int
         Size of the moving window in pixels. Must be an odd integer >= 3.
     outdir : str or Path, optional
@@ -71,7 +71,6 @@ def frag(
     - <in_name>_<method>_<window_size>.png  : foreground pixel histogram
     """
     start_time = time.time()
-    success = False
 
     # Validate parametres
     checks.validate_frag_params(window_size, method)
@@ -85,7 +84,7 @@ def frag(
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
-        input_data = src.read()
+        input_data = src.read(1).astype(np.int16)
 
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
@@ -94,49 +93,23 @@ def frag(
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=True)
 
     try:
-        # Copy input tiff to temp dir
-        tmpdir = utils.setup_run_dir()
-        engine.write_spatcon_input(tmpdir, input_data)
-
-        # Write Spatcon TXT files
-        dims = (info['rows'], info['cols'])
-        meth_codes = {"FAD": [81, 0], "FAC": [76, 2]}
-        w = window_size
-        r = meth_codes[method][0]
-        b = meth_codes[method][1]
-        a = 2
-        h = 1
-        m = 0
-        f = 1
-        engine.write_spatcon_params(tmpdir, dims, (w, r, b, a, h, m, f))
-
-        # Execute Spatcon Binary
-        engine.run_spatcon(tmpdir, verbose=verb)
-
-        # Process Output
-        spat_bin = tmpdir / "scoutput"
-        out_data = np.fromfile(spat_bin, dtype=np.float32).reshape(1, info['rows'], info['cols'])
-        out_data_int = np.floor(out_data * 100 + 0.5).astype(np.uint8, casting='unsafe')
-
-        # Mapping logic (NoData, Background, Special codes)
-        choices = np.array([102, 101, 105, 106], dtype=np.uint8)
-        data_masked = np.select(
-            [input_data == 0, input_data == 1, input_data == 3, input_data == 4],
-            choices,
-            default=out_data_int
-        ).astype(np.uint8, casting='unsafe')
-
+        # Compute Fragmentation
+        if method.lower() == 'fad':
+            data_out = spat.compute_FAD(input_data, window_size, 1)
+        elif method.lower() == 'fac':
+            data_out = spat.compute_FAC(input_data, window_size, 1)
+ 
         # Save Final Geotiff with Palette and Tags
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/"
-        tag_descr = f"GTB_FOS, <Binary,-1,8,{method}_5,{info['resX']},{window_size}>, {weblink}"
+        tag_descr = f"GTB_FOS, <Binary,-1,8,{method.upper()}_5,{info['resX']},{window_size}>, {weblink}"
         cmap_path = TEMPL_DIR / "frag_colormap.txt"
         out_tiff = outdir / f"{out_name}.tif"
-        utils.save_output_geotiff(out_tiff, data_masked, info['profile'], cmap_path, tag_descr)
+        utils.save_output_geotiff(out_tiff, data_out, info['profile'], cmap_path, tag_descr)
 
         # Statistics and Reporting
         stats_dict = None
         if statists:
-            frag_pxl_freq = utils.get_pxl_freq(data_masked)
+            frag_pxl_freq = utils.get_pxl_freq(data_out)
             stats_dict = frag_stats(frag_tiff = out_tiff,
                                     outfile = stat_files,
                                     outdir = outdir,
@@ -151,20 +124,12 @@ def frag(
             txt_file = txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)
 
-        # Success of the process
-        success = True
-
         return stats_dict
 
     except Exception as e:
         print(f"Error during run: {e}")
         raise # Still show the error
 
-    finally:
-        if success:
-            shutil.rmtree(tmpdir) # Only delete if it worked
-        else:
-            print(f"Debug: Files preserved in {tmpdir}")
 
 
 def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_freq=None):

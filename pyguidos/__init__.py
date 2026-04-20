@@ -3,6 +3,10 @@ import subprocess
 import os
 import sys
 import inspect
+import platform
+import warnings
+import tempfile
+from numba import config
 
 # Internal paths
 MODULE_ROOT = Path(__file__).resolve().parent
@@ -14,7 +18,7 @@ DATA_DIR = MODULE_ROOT / "data"
 GLOBAL_CONFIG = Path.home() / ".pyguidos_config"
 
 # Package metadata
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 # Workspace discovery
@@ -44,7 +48,6 @@ def _test_execution(path: Path) -> bool:
         return success
     except Exception:
         return False
-
 
 def get_workspace():
     # Priority 1: Existing Config
@@ -99,6 +102,37 @@ def get_workspace():
 # This runs once when 'import pyguidos' is called
 WORK_DIR = get_workspace()
 
+
+# Global Numba Setup
+def _setup_numba():
+    # Set threading layer
+    curr_os = platform.system()
+    if curr_os == "Linux":
+        os.environ['NUMBA_THREADING_LAYER'] = 'omp'
+    elif curr_os == "Darwin":
+        os.environ['NUMBA_THREADING_LAYER'] = 'workqueue'
+    else:
+        os.environ['NUMBA_THREADING_LAYER'] = 'tbb'
+
+    # Silence TBB warnings
+    warnings.filterwarnings("ignore", message=".*TBB threading layer.*")
+
+    # Configure Cache to Temp
+    cache_path = os.path.join(tempfile.gettempdir(), "numba_spatcon_cache")
+    if not os.path.exists(cache_path):
+        try:
+            os.makedirs(cache_path)
+        except OSError:
+            cache_path = os.path.join(os.getcwd(), ".numba_cache")
+    
+    config.CACHE_DIR = cache_path
+    config.RELEASE_GIL = 1
+
+# Execute setup upon import
+_setup_numba()
+
+
+# ================================================================================
 # Import Tools and Results
 from .mspa import mspa, mspa_stats
 from .fragmentation import frag, frag_stats
