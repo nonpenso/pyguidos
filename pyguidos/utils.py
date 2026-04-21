@@ -150,6 +150,13 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
     out_profile.update({'photometric': 'palette'})
     out_profile.update({'dtype': 'uint8'})
     out_profile.update({'nodata': None})
+    
+    # Estimate size in GB (assuming 1 byte per pixel for uint8)
+    estimated_gb = (data.nbytes) / (1024**3)
+    
+    if estimated_gb > 3.8:
+        out_profile.update(bigtiff='YES')
+        out_profile.update(compress='lzw', predictor=2)
 
     # Define standard Guidos tags
     tags = {
