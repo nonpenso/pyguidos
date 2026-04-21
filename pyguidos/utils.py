@@ -6,6 +6,7 @@ from pathlib import Path
 #import uuid
 
 import numpy as np
+from scipy.ndimage import label, generate_binary_structure
 import rasterio
 from rasterio.enums import ColorInterp
 from pyproj import CRS as pyprojCRS
@@ -231,6 +232,66 @@ def numba_pixel_counts(data):
             
     return counts_array
 
+
+def labelling_array(input_array, target_values):
+    """
+    Labels connected clusters of target pixel values using 8-connectivity
+    and returns a frequency Counter of patch sizes. Used internally by
+    acc() and rss() to identify and measure individual foreground patches.
+
+    Parameters
+    ----------
+    input_array : np.ndarray
+        2D input array to label.
+    target_values : int or list of int
+        Pixel value(s) to treat as foreground for labelling.
+        Accepts a single integer or a list of integers.
+
+    Returns
+    -------
+    tuple
+        - labeled_array (np.ndarray): integer array where each connected
+          patch of target_values is assigned a unique positive label ID.
+          Background pixels (not in target_values) are labelled 0.
+        - label_freq (Counter): mapping of patch label ID to pixel count,
+          excluding background label 0.
+    """
+    # 1. Standardize targets to a NumPy array
+    if isinstance(target_values, (int, np.integer)):
+        targets = np.array([target_values], dtype=input_array.dtype)
+    else:
+        targets = np.array(target_values, dtype=input_array.dtype)
+
+    # 2. Masking using Numba
+    foreground_mask = _create_mask(input_array, targets)
+
+    # 3. Labeling
+    structure = generate_binary_structure(2, 2) # 8-connectivity
+    labeled_array, _ = label(foreground_mask, structure=structure)
+
+    # 4. Frequency counter
+    label_freq = get_pxl_freq(labeled_array)
+
+    # 5. Clean up background
+    if 0 in label_freq:
+        del label_freq[0]
+
+    return labeled_array, label_freq
+
+@njit(cache=True)
+def _create_mask(input_array, targets):
+    """Numba-accelerated mask creation"""
+    nrows, ncols = input_array.shape
+    mask = np.zeros((nrows, ncols), dtype=np.bool_)
+    for i in range(nrows):
+        for j in range(ncols):
+            val = input_array[i, j]
+            # Check if val is in our targets
+            for t in targets:
+                if val == t:
+                    mask[i, j] = True
+                    break
+    return mask
 
 def running_time(start_time, end_time):
     """

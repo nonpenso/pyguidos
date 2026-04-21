@@ -5,7 +5,6 @@ import rasterio
 import numpy as np
 
 from . import utils
-from . import engine
 from . import checks
 from . import TEMPL_DIR
 
@@ -58,7 +57,7 @@ def rss(
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
-        input_data = src.read(1)
+        input_data = src.read(1).astype(np.int16)
 
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
@@ -67,7 +66,7 @@ def rss(
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=True)
 
     # Get patch size frequencies
-    labeled_array, lab_pxl_freq = engine.labelling_array(input_data, 2)
+    labeled_array, lab_pxl_freq = utils.labelling_array(input_data, 2)
 
     # Counting pixel per input class
     fgrnd = input_pxl_freq.get(2, 0)
@@ -85,8 +84,9 @@ def rss(
     median_size = np.median(patch_sizes)
     largest_size = np.max(patch_sizes)
 
-    sizes_array = np.array(patch_sizes)
-    RAC = fgrnd / (fgrnd + bgrnd) * 100
+    sizes_array = np.array(patch_sizes, dtype=np.int32)
+    total_area = fgrnd + bgrnd
+    RAC = (fgrnd / total_area * 100) if total_area > 0 else 0.0
     ECA = np.sqrt(np.sum(sizes_array**2))
     COH = (ECA / fgrnd) * 100
     CNOA = 1.0 + ((2.0 * fgrnd * ECA**2)/(fgrnd**2 - ECA**2))

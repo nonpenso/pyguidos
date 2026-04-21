@@ -7,7 +7,6 @@ import rasterio
 import numpy as np
 
 from . import utils
-from . import engine
 from . import checks
 from . import TEMPL_DIR
 
@@ -79,7 +78,7 @@ def acc(
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
-        input_data = src.read(1)
+        input_data = src.read(1).astype(np.int16)
 
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
@@ -89,7 +88,7 @@ def acc(
 
     try:
         # Get patch size frequencies
-        labeled_array, lab_pxl_freq = engine.labelling_array(input_data, 2)
+        labeled_array, lab_pxl_freq = utils.labelling_array(input_data, 2)
 
         # Create a lookup array for high-speed mapping
         max_id = max(lab_pxl_freq.keys())
@@ -234,7 +233,7 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
         if 'acc_data' not in dir():
             with rasterio.open(acc_tiff) as src:
                 acc_data = src.read(1)
-        _, lab_pxl_freq = engine.labelling_array(acc_data, ACC_VALUES)
+        _, lab_pxl_freq = utils.labelling_array(acc_data, ACC_VALUES)
 
     # Counting pixel per ACC class
     bgrnd = acc_pxl_freq[0]

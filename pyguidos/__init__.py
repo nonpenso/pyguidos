@@ -1,7 +1,7 @@
 from pathlib import Path
 #import subprocess
 import os
-#import sys
+import sys
 import inspect
 import platform
 import warnings
@@ -12,112 +12,49 @@ from numba import config
 MODULE_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = MODULE_ROOT.parent
 
-PROGS_DIR = MODULE_ROOT / "progs"
+#PROGS_DIR = MODULE_ROOT / "progs"
 TEMPL_DIR = MODULE_ROOT / "templates"
 DATA_DIR = MODULE_ROOT / "data"
-GLOBAL_CONFIG = Path.home() / ".pyguidos_config"
+#GLOBAL_CONFIG = Path.home() / ".pyguidos_config"
 
 # Package metadata
 __version__ = "2.1.0"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
-# # Workspace discovery
-# def _test_execution(path: Path) -> bool:
-#     """Tests if a directory allows writing and executing files."""
-#     # Use a generic filename for the test
-#     test_file = path / "pyguidos_exec_test"
-#     try:
-#         path.mkdir(parents=True, exist_ok=True)
-        
-#         # Write a simple cross-platform script
-#         if os.name == 'nt':
-#             test_file = test_file.with_suffix(".bat")
-#             test_file.write_text("@echo off\necho success")
-#         else:
-#             # Linux/Mac script
-#             test_file.write_text("#!/bin/sh\necho success")
-#             os.chmod(test_file, 0o755) # Add executable permission
-        
-#         # Try to run it. shell=True helps with .bat and scripts
-#         result = subprocess.run([str(test_file)], capture_output=True, shell=True, timeout=3)
-#         success = (result.returncode == 0 and "success" in result.stdout.decode().lower())
-        
-#         if test_file.exists():
-#             test_file.unlink()
-            
-#         return success
-#     except Exception:
-#         return False
-
-# def get_workspace():
-#     # Priority 1: Existing Config
-#     if GLOBAL_CONFIG.exists():
-#         conf_path = Path(GLOBAL_CONFIG.read_text(encoding="utf-8").strip())
-#         if _test_execution(conf_path):
-#             return conf_path
-
-#     # Priority 2: Developer Mode (Git Clone)
-#     if (PROJECT_ROOT / ".git").exists():
-#         dev_work = PROJECT_ROOT / "work"
-#         if _test_execution(dev_work):
-#             return dev_work
-
-#     # Priority 3: Default Home Directory
-#     home_work = Path.home() / "pyguidos_work"
-#     if _test_execution(home_work):
-#         return home_work
-
-#     # --- THE FALLBACK (INTERACTIVE ONLY) ---
-    
-#     # Check if we are in an interactive terminal (CLI or Notebook)
-#     # This prevents the script from hanging in automated/server environments
-#     if not sys.stdin.isatty():
-#         raise PermissionError(
-#             "pyguidos: Execution is blocked in standard folders (Home/Temp) "
-#             "and no interactive terminal was found to ask for a custom path. "
-#             "Please manually create a '.pyguidos_config' file in your home directory "
-#             "containing a valid, writable path."
-#         )
-
-#     print("\n" + "="*60)
-#     print(" pyguidos: ACTION REQUIRED ")
-#     print("="*60)
-#     print("Your current environment prevents running binaries in standard folders.")
-#     print("This is common in restricted corporate or high-security systems.")
-    
-#     while True:
-#         user_path = input("\nPlease paste a path with EXECUTION permissions: ").strip()
-#         if not user_path:
-#             continue
-            
-#         candidate = Path(user_path).resolve()
-#         if _test_execution(candidate):
-#             GLOBAL_CONFIG.write_text(str(candidate), encoding="utf-8")
-#             print(f"Path validated and saved to {GLOBAL_CONFIG}")
-#             return candidate
-#         else:
-#             print(f"Execution still blocked in {candidate}.")
-#             print("   Please ensure the path is writable and not mounted with 'noexec'.")
-
-# # This runs once when 'import pyguidos' is called
-# WORK_DIR = get_workspace()
-
-
 # Global Numba Setup
 def _setup_numba():
-    # Set threading layer
     curr_os = platform.system()
+    
+    # --- 1. WINDOWS-SPECIFIC DLL FIX ---
+    if curr_os == "Windows" and sys.version_info >= (3, 8):
+        # 'Library\bin' folder relative to the running Python interpreter
+        venv_base = sys.prefix
+        paths_to_check = [
+            os.path.join(venv_base, "Library", "bin"),  # Conda style
+            os.path.join(venv_base, "Scripts"),         # Standard venv style
+            os.path.join(venv_base, "bin")              # Some local setups
+        ]
+        
+        for path in paths_to_check:
+            if os.path.exists(path):
+                try:
+                    os.add_dll_directory(path)
+                except Exception:
+                    pass # Ignore errors if path is already added or inaccessible
+
+    # --- 2. THREADING LAYER CONFIG ---
     if curr_os == "Linux":
         os.environ['NUMBA_THREADING_LAYER'] = 'omp'
     elif curr_os == "Darwin":
         os.environ['NUMBA_THREADING_LAYER'] = 'workqueue'
     else:
+        # On Windows, we prefer TBB if available
         os.environ['NUMBA_THREADING_LAYER'] = 'tbb'
 
-    # Silence TBB warnings
+    # --- 3. GLOBAL CONFIGS ---
     warnings.filterwarnings("ignore", message=".*TBB threading layer.*")
 
-    # Configure Cache to Temp
+     # --- 4. CACHE TO TEMP CONFIGS ---
     cache_path = os.path.join(tempfile.gettempdir(), "numba_spatcon_cache")
     if not os.path.exists(cache_path):
         try:

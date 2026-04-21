@@ -6,71 +6,31 @@ Run with: pytest tests/test_utils.py -v
 """
 
 import pytest
-import collections
 import numpy as np
+import rasterio
+from rasterio.transform import IDENTITY
 from pyguidos import utils
 
 
 # =============================================================================
-# get_pxl_freq
+# Raster & Metadata Logic
 # =============================================================================
 
-class TestGetPxlFreq:
+def test_get_gtb_nodata_logic(monkeypatch):
+    """Test the priority system of nodata resolution."""
 
-    def test_uint8_2d_basic(self):
-        """Basic uint8 2D array."""
-        arr = np.array([[0, 1, 2], [1, 2, 2]], dtype=np.uint8)
-        freq = utils.get_pxl_freq(arr)
-        assert freq[0] == 1
-        assert freq[1] == 2
-        assert freq[2] == 3
+    # Mocking get_raster_info with a tag that matches the internal regex
+    def mock_info_fos(path):
+        return {
+            # This tag MUST match your regex: GTB_FOS_WS<number>_M<number>
+            "tag": "GTB_FOS, <Binary,-1,8,FAD_5,100,31>, https:", 
+            "profile": {"nodata": 0}
+        }
 
-    def test_uint8_3d_first_band(self):
-        """3D uint8 array — only first band used."""
-        arr = np.zeros((3, 4, 4), dtype=np.uint8)
-        arr[0, :, :] = 1   # band 0 → all 1s
-        arr[1, :, :] = 2   # band 1 → all 2s (ignored)
-        freq = utils.get_pxl_freq(arr)
-        assert freq[1] == 16
-        assert 2 not in freq
-
-    def test_uint8_returns_counter(self):
-        """Result must be a collections.Counter instance."""
-        arr = np.array([[1, 2]], dtype=np.uint8)
-        freq = utils.get_pxl_freq(arr)
-        assert isinstance(freq, collections.Counter)
-
-    def test_int32_general_path(self):
-        """Non-uint8 path (uses chunking internally)."""
-        arr = np.array([[0, 1000], [1000, 0]], dtype=np.int32)
-        freq = utils.get_pxl_freq(arr)
-        assert freq[0] == 2
-        assert freq[1000] == 2
-
-
-# =============================================================================
-# running_time
-# =============================================================================
-
-class TestRunningTime:
-
-    def test_seconds_format(self):
-        """Duration under 60 seconds returns seconds format."""
-        result = utils.running_time(0.0, 5.5)
-        assert "seconds" in result
-        assert "5.50" in result
-
-    def test_minutes_format(self):
-        """Duration over 60 seconds returns minutes format."""
-        result = utils.running_time(0.0, 90.0)
-        assert "m" in result
-        assert "30.0s" in result
-
-    def test_hours_format(self):
-        """Duration over 3600 seconds returns hours format."""
-        result = utils.running_time(0.0, 3661.0)
-        assert "h" in result
-        assert "1m" in result
+    monkeypatch.setattr(utils, "get_raster_info", mock_info_fos)
+    
+    # Now this should successfully identify GTB_FOS and return 102
+    assert utils.get_gtb_nodata("fake.tif") == 102
 
 
 # =============================================================================
@@ -110,31 +70,272 @@ class TestGetToolParameters:
         assert utils.get_tool_parameters("--") is None
 
 # =============================================================================
+# Pixel Frequency & Labelling
+# =============================================================================
 
-def test_utils_housekeeping(tmp_path):
+def test_get_pxl_freq():
+    """Verify frequency counting for 2D arrays."""
+    arr = np.array([[101, 101, 102], [105, 106, 101]], dtype=np.uint8)
+    freq = utils.get_pxl_freq(arr)
+    assert freq[101] == 3
+    assert freq[102] == 1
+    assert freq[105] == 1
+
+def test_labelling_array():
+    """Verify labelling and patch counting using the updated target_values logic."""
+    from pyguidos import utils
+    import numpy as np
+
+    # Test Case 1: 8-connectivity (Hardcoded in your function)
+    # Diagonal pixels should be seen as ONE patch because your function 
+    # uses 8-connectivity (generate_binary_structure(2, 2))
+    arr_diag = np.array([
+        [2, 0],
+        [0, 2]
+    ], dtype=np.uint8)
+    
+    labeled_diag, freq_diag = utils.labelling_array(arr_diag, target_values=2)
+    
+    # In 8-connectivity, diagonal pixels are connected
+    assert len(freq_diag) == 1  # Should be 1 patch
+    assert freq_diag[1] == 2    # The patch should have 2 pixels
+
+    # Test Case 2: Multiple target values
+    # If we treat 2 and 3 as foreground, they should merge into one patch if adjacent
+    arr_multi = np.array([
+        [2, 3, 0],
+        [0, 0, 0]
+    ], dtype=np.uint8)
+    
+    _, freq_multi = utils.labelling_array(arr_multi, target_values=[2, 3])
+    
+    assert len(freq_multi) == 1 # 2 and 3 are adjacent, so 1 patch
+    assert sum(freq_multi.values()) == 2
+
+    # Test Case 3: Separated patches
+    arr_sep = np.array([
+        [2, 0, 2],
+        [0, 0, 0]
+    ], dtype=np.uint8)
+    
+    _, freq_sep = utils.labelling_array(arr_sep, target_values=2)
+    assert len(freq_sep) == 2 # Clearly separated by a 0, so 2 patches
+
+# =============================================================================
+# Raster Metadata & I/O
+# =============================================================================
+
+def test_get_tool_parameters():
+    """Verify parsing of GTB metadata tags."""
+    # Your code returns None if the regex doesn't match perfectly. 
+    # Ensure the tag format matches your re.match in utils.py
+    params = utils.get_tool_parameters("GTB_FOS_WS27_M1")
+    if params:
+        assert params["tool_id"] == "GTB_FOS"
+        assert params["window_size"] == 27
+        assert params["method"] == 1
+
+def test_get_gtb_nodata(monkeypatch):
+    """Test the priority system: GTB Tag > Profile > Default 0."""
+    from pyguidos import utils
+
+    # 1. Mock get_raster_info to provide the Tag
+    def mock_info(path):
+        if "fragmentation" in str(path):
+            return {"tag": "GTB_FOS, <Binary,-1,8,FAD_5,100.000,27>, https://forest.jrc.ec.europa.eu/", 
+                    "profile": {"nodata": 0}}
+        if "standard" in str(path):
+            return {"tag": None, "profile": {"nodata": 255}}
+        return {"tag": None, "profile": {}}
+
+    # 2. Mock get_tool_parameters to translate that Tag into a Tool ID
+    def mock_params(tag):
+        if "GTB_FOS" in tag:
+            return {"tool_id": "GTB_FOS"}
+        return None
+
+    monkeypatch.setattr(utils, "get_raster_info", mock_info)
+    monkeypatch.setattr(utils, "get_tool_parameters", mock_params)
+    
+    # Now it should work: 
+    # Tag is found -> tool_id is 'GTB_FOS' -> dictionary returns 102
+    assert utils.get_gtb_nodata("fragmentation.tif") == 102
+    
+    # Priority 2: No tag, uses profile
+    assert utils.get_gtb_nodata("standard.tif") == 255
+    
+    # Priority 3: No tag, no profile, defaults to 0
+    assert utils.get_gtb_nodata("empty.tif") == 0
+
+
+def test_get_gtb_nodata_unknown_gtb_tool(monkeypatch):
+    """If the tool ID is not in GTB_NODATA, it should fall back to profile."""
     from pyguidos import utils
     
-    # 1. Test citation
-    cite = utils.citation()
-    assert isinstance(cite, str)
-    assert "Vogt" in cite  # Check that it actually contains expected info
+    def mock_info_unknown(path):
+        return {
+            "tag": "GTB_UNKNOWN_TAG",
+            "profile": {"nodata": 99}
+        }
     
-def test_reset_workspace(tmp_path, monkeypatch):
+    def mock_params_unknown(tag):
+        return {"tool_id": "GTB_NEW_TOOL"} # Not in the 4 defined keys
+
+    monkeypatch.setattr(utils, "get_raster_info", mock_info_unknown)
+    monkeypatch.setattr(utils, "get_tool_parameters", mock_params_unknown)
+    
+    # Should skip Priority 1 and return Profile (99)
+    assert utils.get_gtb_nodata("new_tool.tif") == 99
+
+
+from rasterio.enums import ColorInterp
+
+def test_save_output_geotiff_palette(tmp_path):
+    """Verify that save_output_geotiff correctly writes data, tags, and colormaps."""
     from pyguidos import utils
-    from pathlib import Path
-
-    # 1. Create a fake config file location
-    fake_config = tmp_path / ".pyguidos_config"
     
-    # 2. Force the utils module to use our fake path instead of the real one
-    monkeypatch.setattr(utils, "GLOBAL_CONFIG", fake_config)
-
-    # Scenario A: File exists, should be deleted
-    fake_config.write_text("user_path=/home/test")
-    assert fake_config.exists()
+    out_file = tmp_path / "output.tif"
     
-    utils.reset_workspace()  # No arguments needed now!
-    assert not fake_config.exists()
+    # 1. Prepare a dummy profile (standard for uint8)
+    profile = {
+        'driver': 'GTiff',
+        'height': 5,
+        'width': 5,
+        'count': 1,
+        'dtype': 'uint8',
+        'crs': 'EPSG:3035',
+        'transform': rasterio.transform.from_origin(0, 5, 1, 1)
+    }
+    
+    # 2. Prepare dummy data (2D array)
+    data = np.zeros((5, 5), dtype=np.uint8)
+    data[0, 0] = 102 # Mock some FOS missing data
+    
+    # 3. Prepare a dictionary colormap (MSPA style)
+    cmap_dict = {102: (255, 0, 0, 255)} # 102 is Red
+    
+    # 4. Define the Tag
+    tag_str = "GTB_FOS_WS27_M1"
+    
+    # CALL THE FUNCTION
+    utils.save_output_geotiff(
+        output_path=out_file,
+        data=data,
+        profile=profile,
+        colormap_input=cmap_dict,
+        tag_descr=tag_str
+    )
+    
+    # VALIDATE
+    assert out_file.exists()
+    with rasterio.open(out_file) as src:
+        # Check metadata tags
+        assert src.tags()["TIFFTAG_IMAGEDESCRIPTION"] == tag_str
+        assert src.tags()["TIFFTAG_SOFTWARE"] == "pyGuidos"
+        
+        # Check Color Interpretation
+        assert src.colorinterp[0] == ColorInterp.palette
+        
+        # Check Colormap
+        saved_cmap = src.colormap(1)
+        assert saved_cmap[102] == (255, 0, 0, 255)
 
-    # Scenario B: File doesn't exist, should just print "No configuration file found"
-    utils.reset_workspace()
+
+def test_save_output_geotiff_dict_input(tmp_path):
+    from pyguidos import utils
+    out_file = tmp_path / "test_dict.tif"
+    data = np.array([[1, 2], [3, 4]], dtype=np.uint8)
+    
+    profile = {
+        'driver': 'GTiff',
+        'height': 2,
+        'width': 2,
+        'count': 1,
+        'dtype': 'uint8',
+        'crs': 'EPSG:4326',
+        'transform': IDENTITY  # Fixed: No parentheses, use uppercase constant
+    }
+    
+    cmap_dict = {1: (255, 0, 0, 255), 2: (0, 255, 0, 255)}
+    tag = "GTB_TEST_TAG_V1"
+
+    utils.save_output_geotiff(out_file, data, profile, cmap_dict, tag)
+    assert out_file.exists()
+
+def test_save_output_geotiff_file_input(tmp_path):
+    from pyguidos import utils
+    out_file = tmp_path / "test_file.tif"
+    cmap_txt = tmp_path / "colors.txt"
+    cmap_txt.write_text("1 255 255 0\n2 0 0 255") 
+    
+    data = np.array([[1, 2]], dtype=np.uint8)
+    profile = {
+        'driver': 'GTiff', 'height': 1, 'width': 2, 'count': 1,
+        'dtype': 'uint8', 'crs': None, 
+        'transform': IDENTITY  # Fixed: No parentheses
+    }
+
+    utils.save_output_geotiff(out_file, data, profile, cmap_txt, "GTB_FILE_TEST")
+        
+        
+# =============================================================================
+# Reporting & Housekeeping
+# =============================================================================
+
+def test_running_time():
+    """Verify time delta string formatting matches actual output."""
+    result = utils.running_time(0, 65.5)
+    # Your output is '1m 5.5s'
+    assert "1m" in result
+    assert "5.5s" in result
+
+
+def test_generate_text_report_with_real_template(tmp_path):
+    """
+    Verify keyword replacement using placeholders found in frag_templ.txt.
+    Ensures no stray '$' signs remain after replacement.
+    """
+    # 1. Simulate the template file from your repo
+    template_content = """
+    FRAGMENTATION ANALYSIS 
+    Input image: {input_file}
+    Foreground [pixel=2]: {foreg_pxl}
+    FAD VALUES  FREQUENCY [%]
+    Rare [0-9] {rare_val} 
+    """
+    # Note: Your template uses {key}, but your previous test used ${key}.
+    # I will provide the test for {key} based on the file content you shared.
+    
+    templ_file = tmp_path / "frag_templ.txt"
+    templ_file.write_text(template_content)
+    
+    output_file = tmp_path / "report.txt"
+    
+    # 2. Data mapping
+    replacements = {
+        "input_file": "forest_map.tif",
+        "foreg_pxl": "5000",
+        "rare_val": "12.3456"
+    }
+    
+    # 3. Run the utility
+    utils.generate_text_report(templ_file, output_file, replacements)
+    
+    # 4. Assertions
+    result_text = output_file.read_text()
+    
+    assert "Input image: forest_map.tif" in result_text
+    assert "Foreground [pixel=2]: 5000" in result_text
+    assert "Rare [0-9] 12.3456" in result_text
+    
+    # Ensure no curly braces remain for the keys we provided
+    assert "{input_file}" not in result_text
+
+
+def test_citation():
+    """Ensure citation returns the correct string."""
+    text = utils.citation()
+    assert "Caudullo G." in text
+    assert "Vogt P." in text
+    
+

@@ -82,7 +82,8 @@ def compute_FAD(data, window_size, handle_missing):
                 denom = non_missing_count if handle_missing == 1 else (window_size * window_size)
                 
                 if denom > 0:
-                    pf = int((fg_count / denom) * 100.0 + 0.5)
+                    #pf = int((fg_count / denom) * 100.0 + 0.5)
+                    pf = (fg_count * 200 + denom) // (2 * denom)
                     result[i, j] = np.uint8(min(pf, 100))
                 else:
                     result[i, j] = OUT_MISSING
@@ -189,7 +190,8 @@ def compute_FAC(data, window_size, handle_missing):
 
             denom = total_edges if handle_missing == 1 else total_potential_edges
             if denom > 0:
-                pff = int((fg_fg_edges / denom) * 100.0 + 0.5)
+                #pff = int((fg_fg_edges / denom) * 100.0 + 0.5)
+                pff = (fg_fg_edges * 200 + denom) // (2 * denom)
                 result[i, j] = np.uint8(min(pff, 100))
             else:
                 result[i, j] = OUT_MISSING

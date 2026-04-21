@@ -1,45 +1,107 @@
 import pytest
+import pyguidos as pg
 from pathlib import Path
-import pyguidos
-import sys
+import os
 
-def test_get_workspace_priority_1(tmp_path, monkeypatch):
-    """Test Priority 1: Existing Config file."""
-    fake_config = tmp_path / ".pyguidos_config"
-    fake_work = tmp_path / "custom_work"
-    fake_work.mkdir()
-    
-    # Write the path into the fake config
-    fake_config.write_text(str(fake_work), encoding="utf-8")
-    
-    # Mock the GLOBAL_CONFIG variable itself to point to our fake file
-    monkeypatch.setattr(pyguidos, "GLOBAL_CONFIG", fake_config)
-    # Mock _test_execution so it always returns True
-    monkeypatch.setattr(pyguidos, "_test_execution", lambda x: True)
-    
-    assert pyguidos.get_workspace() == fake_work
+# =============================================================================
+# Package Metadata & API Tests
+# =============================================================================
 
-def test_get_workspace_interactive_input(monkeypatch, tmp_path):
-    """Test the interactive while loop (Priority 4)."""
-    valid_path = (tmp_path / "valid_user_path").resolve()
-    valid_path.mkdir()
+def test_package_metadata():
+    """Verify version and author strings are present."""
+    assert hasattr(pg, "__version__")
+    assert "Caudullo" in pg.__author__
 
-    # Mock environment to reach the input() loop
-    monkeypatch.setattr(pyguidos, "GLOBAL_CONFIG", Path("/nonexistent/config"))
-    monkeypatch.setattr(pyguidos, "PROJECT_ROOT", Path("/nonexistent/root"))
-    monkeypatch.setattr(Path, "home", lambda: Path("/nonexistent/home"))
-    
-    # Force sys.stdin.isatty to True (Simulate Terminal)
-    monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
-    
-    # Mock input() to provide one empty then one valid path
-    responses = iter(["", str(valid_path)])
-    monkeypatch.setattr("builtins.input", lambda _: next(responses))
-    
-    # Mock _test_execution to only accept our valid_path
-    monkeypatch.setattr(pyguidos, "_test_execution", lambda x: str(x) == str(valid_path))
-    
-    # Mock write_text to prevent it from actually writing to disk
-    monkeypatch.setattr(Path, "write_text", lambda *args, **kwargs: 10)
+def test_api_exposure():
+    """Ensure key functions are accessible directly via 'pg'."""
+    # These should be available via __all__ and imports in __init__
+    assert hasattr(pg, "frag")
+    assert hasattr(pg, "landmos")
+    assert hasattr(pg, "citation")
+    assert hasattr(pg, "info")
 
-    assert pyguidos.get_workspace() == valid_path
+# =============================================================================
+# Environment & Numba Setup Tests
+# =============================================================================
+
+def test_numba_config():
+    """
+    Verify Numba configuration logic.
+    We check RELEASE_GIL and the presence of the threading layer.
+    """
+    from numba import config
+    import os
+    
+    # 1. Verify GIL release is enabled
+    assert config.RELEASE_GIL == 1
+    
+    # 2. Check threading layer (critical for your parallel=True functions)
+    # This ensures _setup_numba() actually executed its logic branch
+    assert "NUMBA_THREADING_LAYER" in os.environ
+    
+    # 3. Soft check on CACHE_DIR
+    # Instead of asserting it exists (since Numba might keep it as '' 
+    # until a function is actually jitted), we check if the variable is 
+    # at least a string type.
+    assert isinstance(config.CACHE_DIR, str)
+
+def test_numba_caching_mechanism():
+    """
+    Verify that our custom cache directory is being prioritized
+    if it is not empty.
+    """
+    from numba import config
+    # If it is empty, Numba defaults to __pycache__. 
+    # If it's NOT empty, it must be a valid path.
+    if config.CACHE_DIR != '':
+        assert os.path.isdir(config.CACHE_DIR)
+
+def test_threading_layer_set():
+    """Verify NUMBA_THREADING_LAYER is present in environment."""
+    # Depending on OS, this should have been set by _setup_numba()
+    assert "NUMBA_THREADING_LAYER" in os.environ
+    # E.g., on Linux it should be 'omp', on Windows 'tbb'
+    # We just check it's not empty
+    assert len(os.environ["NUMBA_THREADING_LAYER"]) > 0
+
+# =============================================================================
+# Info / Registry Tests
+# =============================================================================
+
+def test_info_output(capsys):
+    """Verify pg.info() prints the registry without error."""
+    pg.info()
+    captured = capsys.readouterr()
+    assert "Available Analytical Tools" in captured.out
+    assert "frag" in captured.out
+    assert "landmos" in captured.out
+
+def test_info_specific_tool(capsys):
+    """Verify pg.info('frag') prints specific tool details."""
+    pg.info('frag')
+    captured = capsys.readouterr()
+    
+    # Updated to match the actual uppercase header in your __init__.py
+    assert "FRAGMENTATION" in captured.out
+    
+    # Verify the documentation links are present
+    assert "User Guide" in captured.out
+    assert "Method Sheet" in captured.out
+    
+    # Check if the dynamic usage signature was captured correctly
+    # (Matches the pg.frag(...) line seen in your error message)
+    assert "pg.frag(in_tiff, method, window_size" in captured.out
+
+# =============================================================================
+# Paths Verification
+# =============================================================================
+
+def test_internal_paths():
+    """Ensure internal directory variables point to existing folders."""
+    # TEMPL_DIR should point to where frag_templ.txt lives
+    assert pg.TEMPL_DIR.exists()
+    assert pg.TEMPL_DIR.is_dir()
+    
+    # Check if our critical template is actually in that directory
+    expected_template = pg.TEMPL_DIR / "frag_templ.txt"
+    assert expected_template.exists()

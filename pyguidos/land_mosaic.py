@@ -343,15 +343,6 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
                 draw_line((100-v, v, 0), (0, v, 100-v))
                 draw_line((100-v, 0, v), (0, 100-v, v))
 
-            # # Helper function to convert (1, 2, 3) to (x, y)
-            # def draw_filled_region(points, color, alpha=0.5):
-            #     # Project all ternary points to cartesian x,y
-            #     projected_points = [project_point(p) for p in points]
-            #     # Extract x and y lists
-            #     xs, ys = zip(*projected_points)
-            #     # Use the underlying matplotlib axes to fill
-            #     tax.get_axes().fill(xs, ys, facecolor=color, alpha=alpha, edgecolor='black', linewidth=0.5)
-
             # Regions
             zones = {
                 # Pure Corners (>90%)

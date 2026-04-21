@@ -7,13 +7,47 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
 ----
 
-Unreleased
-----------
+2.1.0 - 2026-04-21
+------------------
+
+**Overview**
+
+Version 2.1.0 represents a major leap in performance and maintainability. The core spatial engines for Fragmentation and Landscape Mosaic have been rewritten as native, Numba-optimized Python functions. This change eliminates the dependency on the `spatcon` binary for these modules, enabling massive parallelization and significantly faster execution on multi-core systems. This release also marks the introduction of a comprehensive automated test suite with over 90% code coverage.
+
+**Added**
+
+- Native Spatial Engines — Replaced ``spatcon`` binary calls with high-performance Numba
+  JIT-compiled kernels for Fragmentation FAD and FAC, and Landscape Mosaic.
+- Advanced Parallelization — Spatial operations now utilize all available CPU cores via Numba’s
+  ``parallel=True`` execution, significantly reducing processing time for large GeoTIFFs.
+- Enhanced Rounding Logic — Implemented "Round-Half-Up" integer arithmetic in spatial kernels to
+  ensure 100% consistency with legacy GuidosToolbox results.
+
+**Changed**
+
+- Numba Caching — JIT-compiled kernels are now cached in a persistent temporary directory to
+  eliminate "cold-start" lag on subsequent tool runs.
+- Error Reporting — Standardized output codes (e.g., 101 for Background, 102 for Missing) across
+  all spatial modules for better integration with GIS software.
+- Threading Control — Intelligent OS-level threading layer selection (TBB for Windows, 
+  OpenMP for Linux, Workqueue for macOS).
+  
+**Removed**
+
+- ``mspa()`` Function — The morphological spatial pattern analysis module has been removed. A
+  pure-Python native implementation is currently in development.
+
+**Fixed**
+
+- Integer Math Precision — Resolved a discrepancy where `83.8%` would occasionally floor 
+  to ``83`` instead of rounding to ``84``.
+- MSPA Implementation Path — The mspa() function remains as a binary-backed process in this version to ensure analytical continuity. A full native Python implementation of the MSPA morphological engine is scheduled for a future release to eliminate binary dependencies entirely.
+
 
 ----
 
-2.0.0 — 2026
-------------
+2.0.0 — 2026-04-16
+------------------
 
 **Overview**
 
