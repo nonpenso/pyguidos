@@ -24,7 +24,7 @@ __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 # Global Numba Setup
 def _setup_numba():
     curr_os = platform.system()
-    
+
     # --- 1. WINDOWS-SPECIFIC DLL FIX ---
     if curr_os == "Windows" and sys.version_info >= (3, 8):
         # 'Library\bin' folder relative to the running Python interpreter
@@ -34,7 +34,7 @@ def _setup_numba():
             os.path.join(venv_base, "Scripts"),         # Standard venv style
             os.path.join(venv_base, "bin")              # Some local setups
         ]
-        
+
         for path in paths_to_check:
             if os.path.exists(path):
                 try:
@@ -61,20 +61,20 @@ def _setup_numba():
             os.makedirs(cache_path)
         except OSError:
             cache_path = os.path.join(os.getcwd(), ".numba_cache")
-    
+
     config.CACHE_DIR = cache_path
     config.RELEASE_GIL = 1
 
 # Execute setup upon import
 _setup_numba()
 
-# Prevent PROJ cannot find proj.db
-try:
-    proj_path = pyproj.datadir.get_data_dir()
-    if 'PROJ_LIB' not in os.environ:
-        os.environ['PROJ_LIB'] = proj_path
-except Exception:
-    pass
+### Prevent PROJ cannot find proj.db
+##try:
+##    proj_path = pyproj.datadir.get_data_dir()
+##    if 'PROJ_LIB' not in os.environ:
+##        os.environ['PROJ_LIB'] = proj_path
+##except Exception:
+##    pass
 
 
 # ================================================================================
@@ -91,7 +91,7 @@ from .utils import citation
 def info(tool: str = None):
     """
     Displays quick-help and JRC documentation links for pyguidos tools.
-    
+
     Usage:
         pg.info()           # Lists all available tools
         pg.info('acc')     # Shows details and documentation links for Accounting
@@ -144,27 +144,27 @@ def info(tool: str = None):
     if tool in registry:
         t = registry[tool]
         # Dynamically get the function object from the module
-        func = globals().get(tool) 
-        
+        func = globals().get(tool)
+
         print(f"\n{'─'*10} {t['title'].upper()} {'─'*10}")
         print(f"Description:  {t['desc']}")
         print(f"User Guide:   {t['guide']}")
         print(f"Method Sheet: {t['sheet']}")
-        
+
         if func:
             # This shows the exact arguments: e.g., mspa(in_tiff, foreground=2, ...)
             signature = inspect.signature(func)
             print(f"Usage:        pg.{tool}{signature}")
-            
+
         print(f"\nFull usage: help(pg.{tool})\n")
 
 # Exported names
 __all__ = [
-           # "mspa", "mspa_stats", 
+           # "mspa", "mspa_stats",
            "frag", "frag_stats",
            "landmos", "landmos_stats",
            "acc", "acc_stats",
-           "rss", 
-           "extract_by_polygon", 
+           "rss",
+           "extract_by_polygon",
            "citation", "info"
            ]
