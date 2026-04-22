@@ -11,7 +11,7 @@ from rasterio.transform import Affine
 from rasterio.enums import ColorInterp
 from shapely.geometry import mapping, Polygon, MultiPolygon
 from pyproj import Transformer
-
+import pyproj
 from . import utils
 
 
@@ -99,16 +99,20 @@ def extract_by_polygon(
 
         # Read Vector metadata
         info = pyogrio.read_info(str(vector_path))
-        vector_crs_raw = info.get("crs")
-        if not vector_crs_raw:
+        raw_crs = info.get("crs")
+        if not raw_crs:
             sys.exit("ERROR: Input vector file has not a defined Projection. "
                      "Please assign a coordinate reference system before using extract_by_polygon().")
-        
+        try:
+            intermediate_crs = pyproj.CRS(raw_crs)
+            vector_crs = CRS.from_wkt(intermediate_crs.to_wkt())
+        except Exception as e:
+            print(f"Failed to parse CRS: {e}")
+            # Fallback to a default or handle error
+            vector_crs = None
+
         # Read vector file
         vector_df = pyogrio.read_dataframe(str(vector_path))
-            
-        # Convert pyogrio CRS to rasterio/pyproj compatible CRS
-        vector_crs = CRS.from_user_input(vector_crs_raw)
 
         # Check if reprojection is needed
         needs_reproject = raster_crs != vector_crs

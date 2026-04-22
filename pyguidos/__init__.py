@@ -1,5 +1,4 @@
 from pathlib import Path
-#import subprocess
 import os
 import sys
 import inspect
@@ -7,6 +6,7 @@ import platform
 import warnings
 import tempfile
 from numba import config
+import pyproj
 
 # Internal paths
 MODULE_ROOT = Path(__file__).resolve().parent
@@ -67,6 +67,14 @@ def _setup_numba():
 
 # Execute setup upon import
 _setup_numba()
+
+# Prevent PROJ cannot find proj.db
+try:
+    proj_path = pyproj.datadir.get_data_dir()
+    if 'PROJ_LIB' not in os.environ:
+        os.environ['PROJ_LIB'] = proj_path
+except Exception:
+    pass
 
 
 # ================================================================================

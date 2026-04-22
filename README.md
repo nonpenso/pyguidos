@@ -84,16 +84,19 @@ git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 cd pyguidos
 ```
 2. Create and activate a virtual environment:
-```bash
-python -m venv myvenv
-# Windows:
-myvenv\Scripts\activate
-# Linux/Mac:
-source myvenv/bin/activate
-```
+- Windows
+  ```bash
+  python -m venv myvenv
+  myvenv\Scripts\activate
+  ```
+- Linux/Mac
+  ```bash
+  python -m venv myvenv
+  source myvenv/bin/activate
+  ```
 3. Install in editable mode with dependencies:
 ```bash
-pip install -e ".[test,notebooks]"
+pip install -e .
 ```
 This links module's source code directly to your Python environment, so any changes you make are immediately reflected without reinstallation.
 
