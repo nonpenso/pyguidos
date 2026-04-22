@@ -20,6 +20,8 @@ run_tests:
   stage: test
   tags:
     - shared-docker
+  variables:
+    - NUMBA_DISABLE_JIT: "1"
   script:
     - apt-get update && apt-get install -y libexpat1 libgomp1
     - pip install --upgrade pip

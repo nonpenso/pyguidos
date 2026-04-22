@@ -68,14 +68,6 @@ def _setup_numba():
 # Execute setup upon import
 _setup_numba()
 
-### Prevent PROJ cannot find proj.db
-##try:
-##    proj_path = pyproj.datadir.get_data_dir()
-##    if 'PROJ_LIB' not in os.environ:
-##        os.environ['PROJ_LIB'] = proj_path
-##except Exception:
-##    pass
-
 
 # ================================================================================
 # Import Tools and Results
