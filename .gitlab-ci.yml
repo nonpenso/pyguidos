@@ -40,7 +40,7 @@ run_tests:
     changes:
       - "pyguidos/**/*"
       - "tests/**/*"
-	  - ".gitlab-ci.yml"
+	    - ".gitlab-ci.yml"
 
 # 2. Build and Deploy Documentation (GitLab Pages)
 pages:
