@@ -105,27 +105,6 @@ pip install -e .
 ```
 This links module's source code directly to your Python environment, so any changes you make are immediately reflected without reinstallation.
 
----
-
-
-Configuration
-============
-
-`pyguidos` requires a workspace folder with **execution permissions** to run its internal C++ analytical engine.
-
-* Automatic: By default, it will try to use a `~/pyguidos/work/` folder in the project 
-  root (if using Git) or `~/pyguidos_work` in your home directory.
-* Manual (Required for restricted environments): If your IT policy blocks execution in
-  standard folders, you must configure a proper workspace.
-
-Run the following command in your terminal after installation:
-```bash
-pyguidos-setup
-```
-
-Follow the prompts to provide a path. The setup tool will test the folder for permissions and save the configuration permanently.
-
-**NOTE**: You can reset or change this path at any time by running `pyguidos-setup` again.
 
 ---
 
