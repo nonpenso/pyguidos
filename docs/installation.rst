@@ -4,7 +4,7 @@ Installation
 Requirements
 ------------
 
-pyGuidos requires **Python 3.8 or higher** and the following dependencies,
+pyGuidos requires **Python >=3.8 and <=3.12** and the following dependencies,
 which are installed automatically with pip:
 
 .. list-table::
@@ -15,7 +15,7 @@ which are installed automatically with pip:
      - Minimum Version
      - Purpose
    * - numpy
-     - >=1.24, <2.1
+     - >=1.24, <2
      - Array operations
    * - rasterio
      - >=1.3
@@ -76,25 +76,6 @@ Installation
        $ cd notebooks
        $ jupyter notebook
 
-Configuration (Execution Workspace)
------------------------------------
-
-pyGuidos relies on ``MSPA`` and ``Spatcon``, two high-performance C++ binary files, that require a workspace folder with **execution permissions**.
-
-By default, pyGuidos attempts to use:
-1. A ``work/`` folder in your project root (if using a Git clone).
-2. A ``pyguidos_work/`` folder in your user home directory.
-
-.. important::
-   If your system (e.g., a corporate machine) restricts execution in the Home or AppData folders, you must manually set a "safe" workspace.
-
-Run the built-in setup tool to configure your workspace:
-
-.. code-block:: console
-
-    $ pyguidos-setup
-
-Follow the prompts to provide a path (e.g., ``D:/pyguidos_work``). The tool will test the folder and save the configuration.
 
 Verify Installation
 -------------------
@@ -105,29 +86,6 @@ After installation, verify everything is working correctly:
 
     import pyguidos
     print(pyguidos.__version__)
-    print(f"Workspace: {pg.WORK_DIR}")
-
-Platform Support
-----------------
-
-pyGuidos is tested and supported on:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 70
-
-   * - OS
-     - Architecture
-   * - **Linux**
-     - x86_64, ARM64
-   * - **macOS**
-     - x86_64, ARM64 (Apple Silicon)
-   * - **Windows**
-     - x86_64
-
-.. note::
-    The underlying GuidosToolbox binaries (MSPA, Spatcon) are platform-specific
-    and are bundled automatically with the package for all supported platforms.
 
 Troubleshooting
 ---------------

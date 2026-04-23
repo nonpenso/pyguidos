@@ -47,17 +47,22 @@ Full API documentation is available at https://jrc-forest.pages.code.europa.eu/g
 
 Requirements
 ============
+> [!CAUTION] Python Version Compatibility 
+This module supports **Python >= 3.8 and <= 3.12**. Python 3.13+ is currently not supported due to dependency constraints.
 
-- Python >= 3.8
-- numpy >=1.24, <2.1
+- Python >= 3.8, <= 3.12
+- numpy >=1.24, <2
 - rasterio >=1.3
-- scipy >=1.9
+- scipy >=1.10
 - matplotlib >=3.5
 - pyogrio >=0.7
 - geopandas >=0.14
 - shapely >=2.0
 - pyproj >=3.4
 - python-ternary >=1.0
+- numba >=0.58.0, <0.61
+- tbb >=2021.6.0; sys_platform == 'win32'
+- intel-openmp; sys_platform == 'linux'
 
 ---
 
@@ -78,20 +83,20 @@ pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 
 ### 3. Editable Installation (Recommended for Testing)
 To run the example notebooks or contribute to the source code, you must clone the repository and install it in "editable" mode. This allows changes in the code to be reflected immediately.
-1. Clone the repository:
+1. Clone the repository
 ```bash
 git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 cd pyguidos
 ```
-2. Create and activate a virtual environment:
-- Windows
+2. Create and activate a virtual environment using Python 3.12. If you have multiple versions installed, specify the version 3.12.
+  - Windows
   ```bash
-  python -m venv myvenv
+  py -3.12 -m venv myvenv
   myvenv\Scripts\activate
   ```
-- Linux/Mac
+  - Linux/Mac
   ```bash
-  python -m venv myvenv
+  python3.12 -m venv myvenv
   source myvenv/bin/activate
   ```
 3. Install in editable mode with dependencies:
@@ -205,10 +210,10 @@ If you use pyGuidos in your research, please cite both the GuidosToolbox
 software and this package:
 
 **GuidosToolbox:**
-> Vogt P. and Riitters K. (2017). GuidosToolbox: universal digital image object analysis. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: [10.1080/22797254.2017.1330650](https://doi.org/10.1080/22797254.2017.1330650)
+  - Vogt P. and Riitters K. (2017). GuidosToolbox: universal digital image object analysis. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: [10.1080/22797254.2017.1330650](https://doi.org/10.1080/22797254.2017.1330650)
 
 **pyGuidos:**
-> Caudullo G. and Vogt P. (2026). PyGuidos, A cross-platform Python 
+  - Caudullo G. and Vogt P. (2026). PyGuidos, A cross-platform Python 
 interface to GuidosToolbox for landscape pattern analysis. In press.
 
 ### Interactive Citation

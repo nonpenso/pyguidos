@@ -10,7 +10,7 @@ pyGuidos
    :alt: Coverage Status
 
 .. image:: https://img.shields.io/badge/version-2.1.0-blue
-   :alt: Version 2.0.0
+   :alt: Version 2.1.0
 
 .. image:: https://img.shields.io/badge/license-EUPL--1.2-orange
    :target: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
