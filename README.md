@@ -28,7 +28,6 @@ Modules
 
 | Function | Description |
 |---|---|
-| `mspa()` | Morphological Spatial Pattern Analysis |
 | `frag()` | Fragmentation analysis |
 | `landmos()` | Landscape Mosaic |
 | `acc()` | Foreground Patch Size Accounting |
@@ -120,10 +119,10 @@ import pyguidos as pg
 pg.info()
 
 # Get detailed documentation and methodology links for a specific tool
-pg.info('mspa')
+pg.info('landmos')
 
 # Get full technical specification of a function
-help(pg.mspa)
+help(pg.landmos)
 ```
 
 ---
@@ -133,19 +132,6 @@ Usage Examples
 
 ```python
 import pyguidos as pg
-
-# Check where the engine is running and saving data
-print(f"Working in: {pg.WORK_DIR}")
-
-# Morphological Spatial Pattern Analysis
-result = pg.mspa(
-    in_tiff="my_map.tif",
-    edge_width=1,
-    connectivity=8,
-    transition=True,
-    int_ext=True
-)
-print(result)
 
 # Fragmentation analysis
 result = pg.frag(
