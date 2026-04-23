@@ -41,6 +41,7 @@ run_tests:
       - "pyguidos/**/*"
       - "tests/**/*"
       - ".gitlab-ci.yml"
+      - "pyproject.toml"
 
 # 2. Build and Deploy Documentation (GitLab Pages)
 pages:
