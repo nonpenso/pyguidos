@@ -9,7 +9,7 @@ pyGuidos
    :target: https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html
    :alt: Coverage Status
 
-.. image:: https://img.shields.io/badge/version-2.0.0-blue
+.. image:: https://img.shields.io/badge/version-2.1.0-blue
    :alt: Version 2.0.0
 
 .. image:: https://img.shields.io/badge/license-EUPL--1.2-orange
