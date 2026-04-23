@@ -51,6 +51,7 @@ pages:
   needs:
     - job: run_tests
       artifacts: true  # Explicitly tell GitLab to bring the htmlcov folder over
+      optional: true
   script:
     - apt-get update && apt-get install -y libexpat1
     - pip install --upgrade pip
