@@ -17,6 +17,9 @@ which are installed automatically with pip:
    * - numpy
      - >=1.24, <2
      - Array operations
+   * - numba
+     - >=0.58.0, <0.61
+     - NumPy code into machine code
    * - rasterio
      - >=1.3
      - GeoTIFF reading and writing

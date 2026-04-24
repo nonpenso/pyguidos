@@ -9,7 +9,7 @@ before using any of the analysis functions.
 Binary
 ---------------------------
 
-Most pyGuidos tools (MSPA, Fragmentation, Accounting, RSS) expect a
+Most pyGuidos tools (Fragmentation, Accounting, MSPA, RSS) expect a
 binary GeoTIFF with the following pixel values:
 
 .. list-table::

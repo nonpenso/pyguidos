@@ -23,10 +23,10 @@ scientific documentation is to use the interactive ``info()`` function:
     pg.info()
 
     # Get detailed links and usage for a specific tool
-    pg.info('mspa')
+    pg.info('frag')
     
     # Get full technical specification of a function
-    help(pg.mspa)
+    help(pg.frag)
 
 .. list-table::
    :header-rows: 1
@@ -111,7 +111,7 @@ The dictionary follows a consistent structure across all tools:
     import pyguidos as pg
 
     # Run an analysis (returns a dict)
-    result = pg.mspa("my_map.tif", edge=1)
+    result = pg.frag("my_map.tif", "FAD", window_size=27)
 
     # Access primary keys
     print(result.keys())
@@ -122,8 +122,8 @@ The dictionary follows a consistent structure across all tools:
     print(f"Result saved at: {tif_path}")
 
     # Access calculated metrics
-    porosity = result['output stats']['porosity']
-    print(f"Landscape porosity: {porosity}")
+    avcon = result['output stats']['avcon ']
+    print(f"AVCON: {avcon}")
 
 
 Standalone Statistics
@@ -136,10 +136,9 @@ rerunning the full analysis:
 .. code-block:: python
 
     # Recompute statistics on an existing MSPA output
-    stats = pg.mspa_stats(
-        mspa_tiff="output/my_map_mspa_8_1_1_1.tif",
-        outfile=True,
-        source_tiff="my_map.tif"
+    stats = pg.frag_stats(
+        frag_tiff="output/my_map_frag_FAD_27.tif",
+        outfile=True
     )
 
 .. note::
