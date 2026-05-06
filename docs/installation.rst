@@ -26,6 +26,9 @@ which are installed automatically with pip:
    * - scipy
      - >=1.15
      - Connected component labelling
+   * - scikit-image
+     - >=0.26
+     - Image processing     
    * - matplotlib
      - >=3.10
      - Histogram and ternary plot generation

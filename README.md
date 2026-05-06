@@ -30,6 +30,7 @@ Modules
 |---|---|
 | `frag()` | Fragmentation analysis |
 | `landmos()` | Landscape Mosaic |
+| `spa()` | Simplified Pattern Analysis |
 | `acc()` | Foreground Patch Size Accounting |
 | `rss()` | Restoration Status Summary |
 | `extract_by_polygon()` | Extract raster by polygon features |
@@ -47,17 +48,18 @@ Full API documentation is available at https://jrc-forest.pages.code.europa.eu/g
 Requirements
 ============
 
-- Python >= 3.8, <= 3.12
-- numpy >=1.24, <2
-- rasterio >=1.3
-- scipy >=1.10
-- matplotlib >=3.5
-- pyogrio >=0.7
-- geopandas >=0.14
+- Python >= 3.8
+- numpy >2.0
+- rasterio >=1.4
+- scipy >=1.15
+- scikit-image>=0.26
+- matplotlib >=3.10
+- pyogrio >=0.10
+- geopandas >=1.1
 - shapely >=2.0
 - pyproj >=3.4
 - python-ternary >=1.0
-- numba >=0.58.0, <0.61
+- numba >0.62
 - tbb >=2021.6.0; sys_platform == 'win32'
 - intel-openmp; sys_platform == 'linux'
 
