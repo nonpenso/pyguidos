@@ -36,32 +36,32 @@ The following table describes the byte values and categories for each level:
      - Core, Edge, Perforation, Islet, Linear, Core Opening
 
 .. note::
-   In all modes, Background is represented by value **0**, and No Data is represented by **129**.
+    In all modes, Background is represented by value **0**, and No Data is represented by **129**.
 
 .. figure:: ../_image/FM.png
-    :width: 100%
+    :width: 80%
     :align: center
     :alt: Forest map
 
     Example of input binary map.
 
 .. figure:: ../_image/SPA_CL2.png
-    :width: 100%
+    :width: 80%
     :align: center
     :alt: MSPA classes
     
 .. figure:: ../_image/SPA_CL3.png
-    :width: 100%
+    :width: 80%
     :align: center
     :alt: MSPA classes
 
 .. figure:: ../_image/SPA_CL5.png
-    :width: 100%
+    :width: 80%
     :align: center
     :alt: MSPA classes
 
 .. figure:: ../_image/SPA_CL6.png
-    :width: 100%
+    :width: 80%
     :align: center
     :alt: MSPA classes
 

@@ -10,20 +10,20 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.2.0] - 2026-05-06
 
-###Overview
+### Overview
 Version 2.2.0 achieves a major milestone with the introduction of "SPA" (Simplified Pattern Analysis), a simplified version of MSPA module, now fully reimplemented in native Python. This release also future-proofs the library by providing full compatibility with the NumPy 2.x ecosystem and official testing for Python up to version 3.14. To improve maintainability and developer access, the internal architecture has been refactored to separate raw numerical computation from statistical reporting, providing more granular access to spatial data via dedicated stats functions.
 
-###Added
-- **`spa()` Native Implementation**: Introduced Simplified Pattern Analysis (SPA), a high-performance Python-native morphological engine.
+### Added
+- **SPA Native Implementation**: Introduced Simplified Pattern Analysis (SPA) with the function `spa()`, a high-performance Python-native morphological engine.
 - **Python 3.14 Support**: Official support and CI/CD testing for the latest Python 3.13 and 3.14 releases.
 - **NumPy 2.x Compatibility**: Updated all internal array logic and C-API interactions to support NumPy 2.0+ promotion rules and metadata structures.
 
-###Changed
+### Changed
 - **Architectural Refactoring**: Core logic has been decoupled into "Compute" (raw array processing) and "Export" (statistics and GeoTIFF generation) layers for better performance and modularity.
 - **Unified Internal Pipeline:** Standardized how `frag()`, `rss()`, `acc()`, `landmos()` and `spa()` handle data flow, ensuring that the main function and its stats counterpart call the same underlying engine.
 - **Numba Optimization**: Refined JIT-compilation signatures to maintain high-speed execution across the transition to NumPy 2.x.
 
-###Fixed
+### Fixed
 - **Statistical Consistency**: Fixed potential discrepancies between file output and dictionary results by unifying the internal calculation calls.
 - **Memory Efficiency**: Optimized the `xxx_stats()` calls to reduce memory overhead when processing extremely large GeoTIFFs where only tabular data is required.
 
@@ -36,20 +36,20 @@ Version 2.2.0 achieves a major milestone with the introduction of "SPA" (Simplif
 Version 2.1.0 represents a major leap in performance and maintainability. The core spatial engines for Fragmentation and Landscape Mosaic have been rewritten as native, Numba-optimized Python functions. This change eliminates the dependency on the `spatcon` binary for these modules, enabling massive parallelization and significantly faster execution on multi-core systems. This release also marks the introduction of a comprehensive automated test suite with over 90% code coverage.
 
 ### Added
-- **Native Spatial Engines** — Replaced `spatcon` binary calls with high-performance Numba JIT-compiled kernels for Fragmentation FAD and FAC, and Landscape Mosaic.
-- **Advanced Parallelization** — Spatial operations now utilize all available CPU cores via Numba’s `parallel=True` execution, significantly reducing processing time for large GeoTIFFs.
+- **Native Spatial Engines**: Replaced `spatcon` binary calls with high-performance Numba JIT-compiled kernels for Fragmentation FAD and FAC, and Landscape Mosaic.
+- **Advanced Parallelization**: Spatial operations now utilize all available CPU cores via Numba’s `parallel=True` execution, significantly reducing processing time for large GeoTIFFs.
 - **Enhanced Rounding Logic** — Implemented "Round-Half-Up" integer arithmetic in spatial kernels to ensure 100% consistency with legacy GuidosToolbox results.
 
 ### Changed
-- **Numba Caching** — JIT-compiled kernels are now cached in a persistent temporary directory to eliminate "cold-start" lag on subsequent tool runs.
-- **Error Reporting** — Standardized output codes (e.g., 101 for Background, 102 for Missing) across all spatial modules for better integration with GIS software.
-- **Threading Control** — Intelligent OS-level threading layer selection (TBB for Windows, OpenMP for Linux, Workqueue for macOS).
+- **Numba Caching**: JIT-compiled kernels are now cached in a persistent temporary directory to eliminate "cold-start" lag on subsequent tool runs.
+- **Error Reporting**: Standardized output codes (e.g., 101 for Background, 102 for Missing) across all spatial modules for better integration with GIS software.
+- **Threading Control**: Intelligent OS-level threading layer selection (TBB for Windows, OpenMP for Linux, Workqueue for macOS).
 
 ### Removed
-- **`mspa()` Function** — The morphological spatial pattern analysis module has been removed. A pure-Python native implementation is currently in development.
+- **`mspa()` Function**: The morphological spatial pattern analysis module has been removed. A pure-Python native implementation is currently in development.
 
 ### Fixed
-- **Integer Math Precision** — Resolved a discrepancy where `83.8%` would occasionally floor to `83` instead of rounding to `84`.
+- **Integer Math Precision**: Resolved a discrepancy where `83.8%` would occasionally floor to `83` instead of rounding to `84`.
 
 
 ---

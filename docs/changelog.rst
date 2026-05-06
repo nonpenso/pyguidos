@@ -16,20 +16,20 @@ Version 2.2.0 achieves a major milestone with the introduction of "SPA" (Simplif
 
 Added
 
-- spa() Native Implementation: Introduced Simplified Pattern Analysis (SPA), a high-performance Python-native morphological engine.
+- SPA Native Implementation: Introduced Simplified Pattern Analysis (SPA) with the function ``spa()``, a high-performance Python-native morphological engine.
 - Python 3.14 Support: Official support and CI/CD testing for the latest Python 3.13 and 3.14 releases.
 - NumPy 2.x Compatibility: Updated all internal array logic and C-API interactions to support NumPy 2.0+ promotion rules and metadata structures.
 
 Changed
 
 - Architectural Refactoring: Core logic has been decoupled into "Compute" (raw array processing) and "Export" (statistics and GeoTIFF generation) layers for better performance and modularity.
-- Unified Internal Pipeline: Standardized how frag(), rss(), acc(), and spa() handle data flow, ensuring that the main function and its stats counterpart call the same underlying engine.
+- Unified Internal Pipeline: Standardized how ``frag()``, ``rss()``, ``acc()``, ``landmos()`` and spa() handle data flow, ensuring that the main function and its stats counterpart call the same underlying engine.
 - Numba Optimization: Refined JIT-compilation signatures to maintain high-speed execution across the transition to NumPy 2.x.
 
 Fixed
 
 - Statistical Consistency: Fixed potential discrepancies between file output and dictionary results by unifying the internal calculation calls.
-- Memory Efficiency: Optimized the xxx_stats() calls to reduce memory overhead when processing extremely large GeoTIFFs where only tabular data is required.
+- Memory Efficiency: Optimized the ``xxx_stats()`` calls to reduce memory overhead when processing extremely large GeoTIFFs where only tabular data is required.
 
 
 2.1.0 - 2026-04-21
