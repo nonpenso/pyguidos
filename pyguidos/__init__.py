@@ -6,19 +6,17 @@ import platform
 import warnings
 import tempfile
 from numba import config
-import pyproj
+#import pyproj
 
 # Internal paths
 MODULE_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = MODULE_ROOT.parent
-
-#PROGS_DIR = MODULE_ROOT / "progs"
 TEMPL_DIR = MODULE_ROOT / "templates"
 DATA_DIR = MODULE_ROOT / "data"
-#GLOBAL_CONFIG = Path.home() / ".pyguidos_config"
+
 
 # Package metadata
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
@@ -71,9 +69,9 @@ _setup_numba()
 
 # ================================================================================
 # Import Tools and Results
-#from .mspa import mspa, mspa_stats
 from .fragmentation import frag, frag_stats
 from .land_mosaic import landmos, landmos_stats
+from .spa import spa, spa_stats
 from .accounting import acc, acc_stats
 from .rss import rss
 from .extract_by_polygon import extract_by_polygon
@@ -89,13 +87,13 @@ def info(tool: str = None):
         pg.info('acc')     # Shows details and documentation links for Accounting
     """
     registry = {
-        # "mspa": {
-        #     "title": "Morphological Spatial Pattern Analysis (MSPA)",
-        #     "desc": "Classifies binary maps into mutually exclusive morphological classes "
-        #             "(Core, Edge, Islet, Loop, Perforation, Branch).",
-        #     "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/mspa.html",
-        #     "sheet": "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"
-        # },
+        "spa": {
+            "title": "Simplified Pattern Analysis (SPA)",
+            "desc": "Classifies binary maps into mutually exclusive morphological classes "
+                    "(Core, Edge, Islet, Loop, Perforation, Linear).",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/mspa.html",
+            "sheet": "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"
+        },
         "frag": {
             "title": "Fragmentation",
             "desc": "Calculates the Fragmentation with Fixed Observation Scale (FOS) approach.",
@@ -152,7 +150,7 @@ def info(tool: str = None):
 
 # Exported names
 __all__ = [
-           # "mspa", "mspa_stats",
+           "spa", "spa_stats",
            "frag", "frag_stats",
            "landmos", "landmos_stats",
            "acc", "acc_stats",

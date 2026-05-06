@@ -7,12 +7,12 @@ import rasterio
 import numpy as np
 
 from . import utils
+from . import engine
 from . import checks
 from . import TEMPL_DIR
 
 
 ACC_VALUES = [103, 33, 65, 1, 9, 17]
-
 
 
 def acc(
@@ -88,7 +88,7 @@ def acc(
 
     try:
         # Get patch size frequencies
-        labeled_array, lab_pxl_freq = utils.labelling_array(input_data, 2)
+        labeled_array, lab_pxl_freq = engine.labelling_array(input_data, 2)
 
         # Create a lookup array for high-speed mapping
         max_id = max(lab_pxl_freq.keys())
@@ -121,17 +121,18 @@ def acc(
         cmap_path = TEMPL_DIR / "acc_colormap.txt"
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, out_array, info['profile'], cmap_path, tag_descr)
-
+        
         # Statistics and Reporting
         if statists:
+            minfo = utils.get_raster_info(out_tiff)
             acc_pxl_freq = utils.get_pxl_freq(out_array)
-            stats_dict = acc_stats(acc_tiff = out_tiff,
-                                   outfile = stat_files,
-                                   outdir = outdir,
-                                   source_tiff = in_tiff,
-                                   acc_freq = acc_pxl_freq,
-                                   label_freq = lab_pxl_freq
-                                   )
+            stats_dict = _get_acc_stats(acc_freq = acc_pxl_freq, 
+                                        lab_freq = lab_pxl_freq, 
+                                        tiff_info = minfo,
+                                        outfile=stat_files, 
+                                        out_name=out_name, 
+                                        out_dir=outdir, 
+                                        source_tiff=in_tiff)
 
         # Computational time
         time_str = utils.running_time(start_time, time.time())
@@ -149,18 +150,17 @@ def acc(
 
 
 
-def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_freq=None, label_freq=None):
+def acc_stats(acc_tiff, stat_files=True, outdir=None, source_tiff=None):
     """
-    Computes statistics for an existing Accounting result GeoTIFF. Can be
-    called independently on a previously generated accounting output, or
-    is invoked automatically by acc() when statists=True.
+    Computes statistics for an existing Accounting GeoTIFF. Can be
+    called independently on a previously generated accounting output.
 
     Parameters
     ----------
     acc_tiff : str or Path
         Path to the accounting result GeoTIFF. Must contain a valid GTB_ACC
         metadata tag in the TIFFTAG_IMAGEDESCRIPTION field.
-    outfile : bool, optional
+    stat_files : bool, optional
         If True (default), writes statistics to a .txt report file.
     outdir : str or Path, optional
         Directory for output files. Defaults to the input file's directory.
@@ -168,16 +168,6 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
         Path to the original input GeoTIFF used to generate the accounting
         result. Used only to report the source filename in the statistics
         report. Default None.
-    acc_freq : Counter, optional
-        Pre-computed pixel frequency Counter for the accounting result array.
-        If provided, skips reading the GeoTIFF for pixel counting.
-        Passed internally by acc() to avoid redundant disk reads.
-        Default None.
-    label_freq : Counter, optional
-        Pre-computed pixel frequency Counter for the labeled patch array
-        generated during acc() processing. If provided, skips the
-        labelling step. Passed internally by acc() to avoid redundant
-        computation. Default None.
 
     Returns
     -------
@@ -212,51 +202,82 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
                  "acc_stats requires a 'GTB_ACC' result file."
         )
 
-    # Get ACC parameters
-    thre_str = tool_params["thresholds"]
-    thresholds = [int(t) for t in thre_str]
-
     # Define input and output file names
     out_name = Path(acc_tiff).stem
     outdir = Path(outdir) if outdir else acc_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
 
     # Accounting pixel and patch counting
-    acc_pxl_freq = acc_freq
-    if acc_pxl_freq is None:
-        with rasterio.open(acc_tiff) as src:
-            acc_data = src.read(1)
-        acc_pxl_freq = utils.get_pxl_freq(acc_data)
+    with rasterio.open(acc_tiff) as src:
+        acc_data = src.read(1)
+    acc_pxl_freq = utils.get_pxl_freq(acc_data)
+    
+    # Get statistics
+    stats_dict = _get_acc_stats(acc_freq = acc_pxl_freq, 
+                                lab_freq = None, 
+                                tiff_info = minfo, 
+                                outfile = stat_files, 
+                                out_name = out_name, 
+                                out_dir = outdir, 
+                                source_tiff = source_tiff)
+    
+    # Computational time
+    time_str = utils.running_time(start_time_stat, time.time())
+    if stat_files:
+        txt_file = outdir / f'{out_name}.txt'
+        utils.update_time_line(txt_file, time_str)
 
-    lab_pxl_freq = label_freq
-    if lab_pxl_freq is None:
-        if 'acc_data' not in dir():
-            with rasterio.open(acc_tiff) as src:
-                acc_data = src.read(1)
-        _, lab_pxl_freq = utils.labelling_array(acc_data, ACC_VALUES)
+    return stats_dict
+
+
+#############
+
+def _get_acc_stats(acc_freq, 
+                   tiff_info, 
+                   lab_freq=None,
+                   outfile=True, 
+                   out_name=None, 
+                   out_dir=None, 
+                   source_tiff=None):
+    """
+    Get the Accounting statistics.    
+    """
+    # Get ACC parameters
+    tag = tiff_info["tag"]
+    tool_params = utils.get_tool_parameters(tag)
+    thre_str = tool_params["thresholds"]
+    thresholds = [int(t) for t in thre_str]
+
+    # Define input and output file names
+    source_tiff = Path(source_tiff) if source_tiff else None
 
     # Counting pixel per ACC class
-    bgrnd = acc_pxl_freq[0]
-    bgr3 = acc_pxl_freq[105]
-    bgr4 = acc_pxl_freq[176]
-    ndata =  acc_pxl_freq[129]
-    fgrnd = (minfo["rows"] * minfo["cols"]) - bgrnd - bgr3 - bgr4 - ndata
+    bgrnd = acc_freq[0]
+    bgr3 = acc_freq[105]
+    bgr4 = acc_freq[176]
+    ndata =  acc_freq[129]
+    fgrnd = (tiff_info["rows"] * tiff_info["cols"]) - bgrnd - bgr3 - bgr4 - ndata
 
     # Counting patches and pixels per class
-    class_pch = collections.Counter()
-    class_pxl = collections.Counter()
-    patch_sizes = []
-    for patch_id, pixel_count in lab_pxl_freq.items():
-        if patch_id > 0:
-            patch_class = get_class(pixel_count, thresholds)
-            class_pch[patch_class] += 1
-            class_pxl[patch_class] += pixel_count
-            patch_sizes.append(pixel_count)
-
-    tot_pch = len(patch_sizes)
-    avg_size = np.mean(patch_sizes)
-    median_size = np.median(patch_sizes)
-    largest_size = np.max(patch_sizes)
+    tot_pch = "-"
+    avg_size_txt = "-"
+    median_size = "-"
+    largest_size = "-"
+    class_pch = None
+    if lab_freq:
+        class_pch = collections.Counter()
+        patch_sizes = []
+        for patch_id, pixel_count in lab_freq.items():
+            if patch_id > 0:
+                patch_class = get_class(pixel_count, thresholds)
+                class_pch[patch_class] += 1
+                patch_sizes.append(pixel_count)
+    
+        tot_pch = len(patch_sizes)
+        avg_size = np.mean(patch_sizes)
+        avg_size_txt = f"{avg_size:.1f}"
+        median_size = np.median(patch_sizes)
+        largest_size = np.max(patch_sizes)
 
     if outfile:
         ### TXT Template Reporting ###
@@ -265,7 +286,8 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
         rows_list = []
         num_thr = len(thresholds)
 
-
+        class_pxl_out = {}
+        class_pth_out = {}
         for i in range(num_thr + 1):
             # Determine Class Value and Color from the sequences
             val = ACC_VALUES[i]
@@ -281,17 +303,24 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
 
             size_col = f"{size_raw:<16}"
 
-            # Get stats for this specific pixel value
-            p_count = class_pxl.get(val, 0)
-            o_count = class_pch.get(val, 0)
-
-            # Calculate percentages
+            # Pixel class count and freq
+            p_count = acc_freq[val]
             p_pct = (p_count / fgrnd * 100) if fgrnd > 0 else 0
-            o_pct = (o_count / tot_pch * 100) if tot_pch > 0 else 0
+            class_pxl_out[f'{i+1} {size_raw}'] = p_count
+
+            # Patch class count and freq
+            o_count_txt = "        -"
+            o_pct_txt = "       -"
+            if lab_freq:
+                o_count = class_pch.get(val, 0)
+                o_pct = (o_count / tot_pch * 100) if tot_pch > 0 else 0
+                o_count_txt = f"{o_count:>9}"
+                o_pct_txt = f"{o_pct:>8.2f}"
+                class_pth_out[f'{i+1} {size_raw}']=o_count
 
             # Format the row string
             row = (f"{i+1:<6} {val:<8} {color:<7} {size_col} "
-                   f"{p_count:>10} {p_pct:>8.2f} {o_count:>9} {o_pct:>8.2f}")
+                   f"{p_count:>10} {p_pct:>8.2f} {o_count_txt} {o_pct_txt}")
             rows_list.append(row)
 
         # Combine rows into a single string
@@ -299,13 +328,13 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
 
         content = {
             "input_file": source_tiff.name if source_tiff else "n/a",
-            "epsg_code": minfo["epsg"],
-            "unit_type": 'metres' if minfo["is_projected"] else 'degrees',
-            "resolx": minfo["resX"],
-            "resoly": minfo["resY"],
-            "rows_val": minfo["rows"],
-            "cols_val": minfo["cols"],
-            "tot_pxl": minfo["rows"] * minfo["cols"],
+            "epsg_code": tiff_info["epsg"],
+            "unit_type": 'metres' if tiff_info["is_projected"] else 'degrees',
+            "resolx": tiff_info["resX"],
+            "resoly": tiff_info["resY"],
+            "rows_val": tiff_info["rows"],
+            "cols_val": tiff_info["cols"],
+            "tot_pxl": tiff_info["rows"] * tiff_info["cols"],
             "foreg_pxl": fgrnd,
             "backg_pxl": bgrnd,
             "miss_pxl": ndata,
@@ -317,20 +346,19 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
             "output_file": f"{out_name}.tif",
             "table_rows": table_body,
             "tot_pch": tot_pch,
-            "avg_pch": f"{avg_size:.1f}",
+            "avg_pch": avg_size_txt,
             "med_pch": median_size,
             "lar_pch": largest_size,
-            "comp_time": f"{utils.running_time(start_time_stat, time.time())}"
         }
 
-        txt_file = outdir / f'{out_name}.txt'
+        txt_file = out_dir / f'{out_name}.txt'
         utils.generate_text_report(TEMPL_DIR / 'acc_templ.txt', txt_file, content)
 
     # Statistic dictionaries
     path_stats_dict = None
     if outfile:
         path_stats_dict = {
-            "path tif" : str(acc_tiff),
+            "path tif" : str(out_dir / f"{out_name}.tif"),
             "path txt" : str(txt_file)
             }
     input_stats_dict = {
@@ -341,8 +369,8 @@ def acc_stats(acc_tiff, outfile = True, outdir = None, source_tiff=None, acc_fre
         "backgr4 pxl" : bgr4
         }
     output_stats_dict = {
-        "pxl numb": class_pxl,
-        "patch numb": class_pch
+        "class pxl": class_pxl_out,
+        "class patch": class_pth_out
         }
     stats_dict = {
         "output paths" : path_stats_dict,

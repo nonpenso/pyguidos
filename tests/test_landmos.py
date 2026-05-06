@@ -63,7 +63,7 @@ def test_lm_stats_standalone(lm_result):
     tif_103 = lm_result["output paths"]["path tif 103cl"]
     
     # Run stats independently
-    stats = landmos_stats(tif_103, outfile=True)
+    stats = landmos_stats(tif_103, stat_files=True)
     
     assert "output stats" in stats
     assert "pxl numb 19cl" in stats["output stats"]

@@ -60,7 +60,12 @@ def test_frag_stats_standalone_files(frag_result):
     from pathlib import Path
     output_tif_path = frag_result["output paths"]["path tif"]
     
-    base_path = Path(output_tif_path).with_suffix('')
-    assert Path(str(base_path) + ".txt").exists()
-    assert Path(str(base_path) + ".csv").exists()
-    assert Path(str(base_path) + ".png").exists()
+    # Run standalone stats logic on the generated output
+    stats = frag_stats(output_tif_path, stat_files=True)
+    
+    # Verify .txt report generation
+    expected_txt = Path(output_tif_path).with_suffix('.txt')
+    assert expected_txt.exists()
+    
+    # Verify the stats dictionary structure
+    assert "avcon" in stats["output stats"]

@@ -9,6 +9,7 @@ import pytest
 import numpy as np
 import rasterio
 from rasterio.transform import IDENTITY
+from rasterio.transform import from_origin
 from pyguidos import utils
 
 
@@ -70,7 +71,7 @@ class TestGetToolParameters:
         assert utils.get_tool_parameters("--") is None
 
 # =============================================================================
-# Pixel Frequency & Labelling
+# Pixel Frequency
 # =============================================================================
 
 def test_get_pxl_freq():
@@ -80,46 +81,6 @@ def test_get_pxl_freq():
     assert freq[101] == 3
     assert freq[102] == 1
     assert freq[105] == 1
-
-def test_labelling_array():
-    """Verify labelling and patch counting using the updated target_values logic."""
-    from pyguidos import utils
-    import numpy as np
-
-    # Test Case 1: 8-connectivity (Hardcoded in your function)
-    # Diagonal pixels should be seen as ONE patch because your function 
-    # uses 8-connectivity (generate_binary_structure(2, 2))
-    arr_diag = np.array([
-        [2, 0],
-        [0, 2]
-    ], dtype=np.uint8)
-    
-    labeled_diag, freq_diag = utils.labelling_array(arr_diag, target_values=2)
-    
-    # In 8-connectivity, diagonal pixels are connected
-    assert len(freq_diag) == 1  # Should be 1 patch
-    assert freq_diag[1] == 2    # The patch should have 2 pixels
-
-    # Test Case 2: Multiple target values
-    # If we treat 2 and 3 as foreground, they should merge into one patch if adjacent
-    arr_multi = np.array([
-        [2, 3, 0],
-        [0, 0, 0]
-    ], dtype=np.uint8)
-    
-    _, freq_multi = utils.labelling_array(arr_multi, target_values=[2, 3])
-    
-    assert len(freq_multi) == 1 # 2 and 3 are adjacent, so 1 patch
-    assert sum(freq_multi.values()) == 2
-
-    # Test Case 3: Separated patches
-    arr_sep = np.array([
-        [2, 0, 2],
-        [0, 0, 0]
-    ], dtype=np.uint8)
-    
-    _, freq_sep = utils.labelling_array(arr_sep, target_values=2)
-    assert len(freq_sep) == 2 # Clearly separated by a 0, so 2 patches
 
 # =============================================================================
 # Raster Metadata & I/O
@@ -253,7 +214,7 @@ def test_save_output_geotiff_dict_input(tmp_path):
         'count': 1,
         'dtype': 'uint8',
         'crs': 'EPSG:4326',
-        'transform': IDENTITY  # Fixed: No parentheses, use uppercase constant
+        'transform': from_origin(500000, 500000, 10.0, 10.0)
     }
     
     cmap_dict = {1: (255, 0, 0, 255), 2: (0, 255, 0, 255)}
@@ -271,8 +232,8 @@ def test_save_output_geotiff_file_input(tmp_path):
     data = np.array([[1, 2]], dtype=np.uint8)
     profile = {
         'driver': 'GTiff', 'height': 1, 'width': 2, 'count': 1,
-        'dtype': 'uint8', 'crs': None, 
-        'transform': IDENTITY  # Fixed: No parentheses
+        'dtype': 'uint8', 'crs': 'EPSG:4326', 
+        'transform': from_origin(500000, 500000, 10.0, 10.0)
     }
 
     utils.save_output_geotiff(out_file, data, profile, cmap_txt, "GTB_FILE_TEST")

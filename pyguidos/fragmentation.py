@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import rasterio
 import numpy as np
 
-from . import spat
+from . import engine
 from . import utils
 from . import checks
 from . import TEMPL_DIR
@@ -95,9 +95,9 @@ def frag(
     try:
         # Compute Fragmentation
         if method.lower() == 'fad':
-            data_out = spat.compute_FAD(input_data, window_size, 1)
+            data_out = engine.compute_FAD(input_data, window_size, 1)
         elif method.lower() == 'fac':
-            data_out = spat.compute_FAC(input_data, window_size, 1)
+            data_out = engine.compute_FAC(input_data, window_size, 1)
  
         # Save Final Geotiff with Palette and Tags
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/"
@@ -110,11 +110,13 @@ def frag(
         stats_dict = None
         if statists:
             frag_pxl_freq = utils.get_pxl_freq(data_out)
-            stats_dict = frag_stats(frag_tiff = out_tiff,
-                                    outfile = stat_files,
-                                    outdir = outdir,
-                                    source_tiff = in_tiff,
-                                    frag_freq = frag_pxl_freq)
+            minfo = utils.get_raster_info(out_tiff)
+            stats_dict = _get_frag_stats(frag_freq = frag_pxl_freq, 
+                                         tiff_info = minfo, 
+                                         outfile = stat_files, 
+                                         out_name = out_name, 
+                                         out_dir = outdir, 
+                                         source_tiff = in_tiff)    
 
         # Computational time
         time_str = utils.running_time(start_time, time.time())
@@ -132,7 +134,7 @@ def frag(
 
 
 
-def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_freq=None):
+def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
     """
     Computes statistics for an existing Fragmentation result GeoTIFF. Can be
     called independently on a previously generated fragmentation output, or
@@ -143,7 +145,7 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
     frag_tiff : str or Path
         Path to the fragmentation result GeoTIFF. Must contain a valid
         GTB_FOS metadata tag in the TIFFTAG_IMAGEDESCRIPTION field.
-    outfile : bool, optional
+    stat_files : bool, optional
         If True (default), writes statistics to .txt, .csv and .png files.
     outdir : str or Path, optional
         Directory for output files. Defaults to the input file's directory.
@@ -151,11 +153,6 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
         Path to the original input GeoTIFF used to generate the fragmentation
         result. Used only to report the source filename in the statistics
         report. Default None.
-    frag_freq : Counter, optional
-        Pre-computed pixel frequency Counter for the fragmentation result
-        array. If provided, skips reading the GeoTIFF for pixel counting.
-        Passed internally by frag() to avoid redundant disk reads.
-        Default None.
 
     Returns
     -------
@@ -194,33 +191,70 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
                  "frag_stats requires a 'GTB_FOS' result file."
         )
 
-    # Get Fragmentation parameters
-    method,fclasses = tool_params["method"].split('_')
-    window_size = int(tool_params["wsize"])
-
     # Define input and output file names
     out_name = Path(frag_tiff).stem
     outdir = Path(outdir) if outdir else frag_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
 
     # Fragmentation pixel counting
-    if frag_freq:
-        frag_pxl_freq = frag_freq
-    else:
-        with rasterio.open(frag_tiff) as src:
-            frag_data = src.read()
-        frag_pxl_freq = utils.get_pxl_freq(frag_data)
+    with rasterio.open(frag_tiff) as src:
+        frag_data = src.read(1)
+    frag_pxl_freq = utils.get_pxl_freq(frag_data)
+    
+    # Get statistics
+    stats_dict = _get_frag_stats(frag_freq = frag_pxl_freq, 
+                                 tiff_info = minfo, 
+                                 outfile = stat_files, 
+                                 out_name = out_name, 
+                                 out_dir = outdir, 
+                                 source_tiff = source_tiff)    
+
+    # Computational time
+    time_str = utils.running_time(start_time_stat, time.time())
+    if stat_files:
+        txt_file = outdir / f'{out_name}.txt'
+        utils.update_time_line(txt_file, time_str)
+
+    return stats_dict
+
+
+#############
+
+def _get_frag_stats(frag_freq, 
+                    tiff_info, 
+                    outfile=True, 
+                    out_name=None, 
+                    out_dir=None, 
+                    source_tiff=None):
+    """
+    Get the Fragmentation statistics.    
+    """
+    
+    # Get Frag parameters
+    tag = tiff_info["tag"]
+    tool_params = utils.get_tool_parameters(tag)
+    method,fclasses = tool_params["method"].split('_')
+    window_size = int(tool_params["wsize"])
+    
+    # Define input and output file names
+    source_tiff = Path(source_tiff) if source_tiff else None
+
+    # Input tiff classes
+    bgrnd = frag_freq[101]
+    bgr3 = frag_freq[105]
+    bgr4 = frag_freq[106]
+    ndata =  frag_freq[102]
 
     # Counting pixel per Frag class
-    rare = sum(frag_pxl_freq[i] for i in range(10))
-    patchy = sum(frag_pxl_freq[i] for i in range(10, 40))
-    trans = sum(frag_pxl_freq[i] for i in range(40, 60))
-    domin = sum(frag_pxl_freq[i] for i in range(60, 90))
-    inter = sum(frag_pxl_freq[i] for i in range(90, 101))
+    rare = sum(frag_freq[i] for i in range(10))
+    patchy = sum(frag_freq[i] for i in range(10, 40))
+    trans = sum(frag_freq[i] for i in range(40, 60))
+    domin = sum(frag_freq[i] for i in range(60, 90))
+    inter = sum(frag_freq[i] for i in range(90, 101))
 
     fgrnd = rare + patchy + trans + domin + inter
-    ruarea = fgrnd + frag_pxl_freq[101]
-    sum_prod = sum(v * frag_pxl_freq[v] for v in range(101))
+    ruarea = fgrnd + frag_freq[101]
+    sum_prod = sum(v * frag_freq[v] for v in range(101))
 
     fad_av = sum_prod / fgrnd
     avcon = sum_prod / ruarea
@@ -228,19 +262,19 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
     if outfile:
 
         ### CSV Export ###
-        csv_file = outdir / f'{out_name}.csv'
+        csv_file = out_dir / f'{out_name}.csv'
         with open(csv_file, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(['pixel_value', 'pixel_count', 'foreground_proportion'])
             for v in range(101):
-                pct = (frag_pxl_freq[v] / fgrnd * 100)
-                writer.writerow([v, frag_pxl_freq[v], f"{pct:.6f}"])
+                pct = (frag_freq[v] / fgrnd * 100)
+                writer.writerow([v, frag_freq[v], f"{pct:.6f}"])
 
         ### Histogram PNG figure ###
 
         # X & Y values
         pixel_values = list(range(101))
-        frag_pxl_prop = [frag_pxl_freq[i]/fgrnd * 100 for i in pixel_values]
+        frag_pxl_prop = [frag_freq[i]/fgrnd * 100 for i in pixel_values]
 
         # Create the colormap
         cmap_path = TEMPL_DIR / "frag_colormap.txt"
@@ -272,30 +306,30 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
 
         # Plotting
         plt.tight_layout()
-        png_file = outdir / f'{out_name}.png'
+        png_file = out_dir / f'{out_name}.png'
         plt.savefig(png_file, dpi=300, facecolor='white', transparent=False)
         plt.close()
 
         ### TXT Template Reporting ###
         content = {
             "input_file": source_tiff.name if source_tiff else "n/a",
-            "epsg_code": minfo["epsg"],
-            "unit_type": 'metres' if minfo["is_projected"] else 'degrees',
-            "resolx": minfo["resX"],
-            "resoly": minfo["resY"],
-            "rows_val": minfo["rows"],
-            "cols_val": minfo["cols"],
-            "tot_pxl": minfo["rows"] * minfo["cols"],
+            "epsg_code": tiff_info["epsg"],
+            "unit_type": 'metres' if tiff_info["is_projected"] else 'degrees',
+            "resolx": tiff_info["resX"],
+            "resoly": tiff_info["resY"],
+            "rows_val": tiff_info["rows"],
+            "cols_val": tiff_info["cols"],
+            "tot_pxl": tiff_info["rows"] * tiff_info["cols"],
             "foreg_pxl": fgrnd,
-            "backg_pxl": frag_pxl_freq[101],
-            "miss_pxl": frag_pxl_freq[102],
-            "spec3_pxl": frag_pxl_freq[105],
-            "spec4_pxl": frag_pxl_freq[106],
+            "backg_pxl": bgrnd,
+            "miss_pxl": ndata,
+            "spec3_pxl": bgr3,
+            "spec4_pxl": bgr4,
 
             "used_method": method,
             "window_size": window_size,
-            "window_areaHA": f"{(window_size**2)*minfo['resX']*minfo['resY']/10000:.4f}" if minfo["is_projected"] else '--',
-            "window_areaAC": f"{(window_size**2)*minfo['resX']*minfo['resY']*0.000247105:.4f}" if minfo["is_projected"] else '--',
+            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["is_projected"] else '--',
+            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["is_projected"] else '--',
 
             "output_file": f"{out_name}.tif",
             "rep_unit_pxl": ruarea,
@@ -307,27 +341,26 @@ def frag_stats(frag_tiff, outfile = True, outdir = None, source_tiff=None, frag_
             "inter_val": (inter / fgrnd * 100),
             "fad_av_idx": fad_av,
             "avcon_idx": avcon,
-            "comp_time": f"{utils.running_time(start_time_stat, time.time())}"
         }
 
-        txt_file = outdir / f'{out_name}.txt'
+        txt_file = out_dir / f'{out_name}.txt'
         utils.generate_text_report(TEMPL_DIR / 'frag_templ.txt', txt_file, content)
 
     # Statistic dictionaries
     path_stats_dict = None
     if outfile:
         path_stats_dict = {
-            "path tif" : str(frag_tiff),
+            "path tif" : str(out_dir / f"{out_name}.tif"),
             "path txt" : str(txt_file),
             "path csv" : str(csv_file),
             "path png" : str(png_file)
             }
     input_stats_dict = {
         "foreground pxl" : fgrnd,
-        "background pxl" : frag_pxl_freq[101],
-        "missing pxl" : frag_pxl_freq[102],
-        "backgr3 pxl" : frag_pxl_freq[105],
-        "backgr4 pxl" : frag_pxl_freq[106]
+        "background pxl" : bgrnd,
+        "missing pxl" : ndata,
+        "backgr3 pxl" : bgr3,
+        "backgr4 pxl" : bgr4
         }
     class_freq = {
         "1 rare pxl" : rare,

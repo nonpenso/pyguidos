@@ -215,50 +215,50 @@ class TestValidateFragParams:
 # validate_mspa_params
 # =============================================================================
 
-class TestValidateMspaParams:
+# class TestValidateMspaParams:
 
-    def test_valid_connectivity_8(self):
-        """Valid edge_width=1 with connectivity=8."""
-        assert checks.validate_mspa_params(1, 8) is None
+#     def test_valid_connectivity_8(self):
+#         """Valid edge_width=1 with connectivity=8."""
+#         assert checks.validate_mspa_params(1, 8) is None
 
-    def test_valid_connectivity_4(self):
-        """Valid edge_width=1 with connectivity=4."""
-        assert checks.validate_mspa_params(1, 4) is None
+#     def test_valid_connectivity_4(self):
+#         """Valid edge_width=1 with connectivity=4."""
+#         assert checks.validate_mspa_params(1, 4) is None
 
-    def test_valid_larger_edge_width(self):
-        """Valid larger edge_width values."""
-        for ew in [2, 3, 5, 10]:
-            assert checks.validate_mspa_params(ew, 8) is None
+#     def test_valid_larger_edge_width(self):
+#         """Valid larger edge_width values."""
+#         for ew in [2, 3, 5, 10]:
+#             assert checks.validate_mspa_params(ew, 8) is None
 
-    def test_invalid_connectivity_raises(self):
-        """Connectivity values other than 4 or 8 must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_mspa_params(1, 6)
+#     def test_invalid_connectivity_raises(self):
+#         """Connectivity values other than 4 or 8 must be rejected."""
+#         with pytest.raises(SystemExit):
+#             checks.validate_mspa_params(1, 6)
 
-    def test_invalid_connectivity_1_raises(self):
-        """Connectivity=1 must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_mspa_params(1, 1)
+#     def test_invalid_connectivity_1_raises(self):
+#         """Connectivity=1 must be rejected."""
+#         with pytest.raises(SystemExit):
+#             checks.validate_mspa_params(1, 1)
 
-    def test_invalid_edge_width_zero_raises(self):
-        """Edge width of 0 must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_mspa_params(0, 8)
+#     def test_invalid_edge_width_zero_raises(self):
+#         """Edge width of 0 must be rejected."""
+#         with pytest.raises(SystemExit):
+#             checks.validate_mspa_params(0, 8)
 
-    def test_invalid_edge_width_negative_raises(self):
-        """Negative edge width must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_mspa_params(-1, 8)
+#     def test_invalid_edge_width_negative_raises(self):
+#         """Negative edge width must be rejected."""
+#         with pytest.raises(SystemExit):
+#             checks.validate_mspa_params(-1, 8)
 
-    def test_invalid_edge_width_float_raises(self):
-        """Float edge width must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_mspa_params(1.5, 8)
+#     def test_invalid_edge_width_float_raises(self):
+#         """Float edge width must be rejected."""
+#         with pytest.raises(SystemExit):
+#             checks.validate_mspa_params(1.5, 8)
 
-    def test_invalid_edge_width_string_raises(self):
-        """String edge width must be rejected."""
-        with pytest.raises(SystemExit):
-            checks.validate_mspa_params("1", 8)
+#     def test_invalid_edge_width_string_raises(self):
+#         """String edge width must be rejected."""
+#         with pytest.raises(SystemExit):
+#             checks.validate_mspa_params("1", 8)
 
 
 # =============================================================================

@@ -1,6 +1,12 @@
 import numpy as np
+from scipy.ndimage import distance_transform_edt, binary_fill_holes, label, generate_binary_structure
+from skimage.segmentation import flood_fill
+from skimage.morphology import reconstruction
+import math
+import gc
 from numba import njit, prange
 
+from . import utils
 
 # Global Constants
 MISSING_IN = 0
@@ -10,7 +16,10 @@ BACKGR_SP3 = 3
 BACKGR_SP4 = 4
 
 
+
+#############################
 # ---- SPATCON FUNCTIONS ----
+#############################
 
 @njit("uint8[:,:](int16[:,:], int32, int32)", parallel=True, cache=True, fastmath=True)
 def compute_FAD(data, window_size, handle_missing):
@@ -38,7 +47,7 @@ def compute_FAD(data, window_size, handle_missing):
                      - 102: Missing data or invalid calculations.
     """
     
-# FOS constants
+    # FOS constants
     OUT_BACKGROUND = 101
     OUT_MISSING = 102
     OUT_BACKGR_SP3 = 105
@@ -225,9 +234,9 @@ def compute_LM(data, window_size):
         Mosaic classification map. Each integer code corresponds to a specific 
         position on the tri-polar transition model.
     """
-    # Define internal class mapping based on your 1,2,3 requirement
+    # Landscape Mosaic constants
     AGR_VAL = 1
-    FOR_VAL = 2
+    NAT_VAL = 2
     DEV_VAL = 3
     
     nrows, ncols = data.shape
@@ -255,7 +264,7 @@ def compute_LM(data, window_size):
                         v = data[wi, wj]
                         if v == AGR_VAL:
                             n_agr += 1
-                        elif v == FOR_VAL:
+                        elif v == NAT_VAL:
                             n_for += 1
                         elif v == DEV_VAL:
                             n_dev += 1
@@ -359,3 +368,222 @@ def compute_LM(data, window_size):
             result[i, j] = np.uint8(code)
 
     return result
+
+
+
+##########################
+# ---- MSPA FUNCTIONS ----
+##########################
+
+
+def compute_spa(input_arr, s, n_classes):
+    """
+    Performs simplified pattern analysis SPA on a binary raster.
+    
+    Inputs
+        input_arr: a 2D NumPy Array with a classification map 
+                  0: NoData, 1: Background, 2: Foreground
+        s (Float): the Edge Width parameter (e.g., 1.0, 3.0).
+        n_classes (Int): The output number of classes (2, 3, 5, 6).
+
+    Output: 2D NumPy array (uint8) with MSPA classes.
+    """
+    # Metrics
+    threshold = s + 0.98
+    size_param = (s + 0.98) / math.sqrt(2.0)
+    bufsize = int(size_param * 1.5 + 0.5)
+    frame = bufsize + 1
+
+    # Pad image with 0
+    original_padded = np.pad(input_arr, frame, mode='constant', constant_values=0)
+    padded = original_padded.copy()
+
+    # MASKS
+    FG_mask = (padded == FOREGROUND)
+    NoData_mask = (padded == MISSING_IN)
+
+    # EXPAND DATA to MISSING
+    dist_to_fg = distance_transform_edt(~FG_mask)
+    padded[NoData_mask & (dist_to_fg <= threshold)] = FOREGROUND
+    padded[NoData_mask & (dist_to_fg > threshold)] = BACKGROUND
+    
+    del dist_to_fg, NoData_mask, FG_mask
+    gc.collect()
+
+    # CORE & BASIC MASKS
+    FG = (padded == FOREGROUND)
+    dist_fg = distance_transform_edt(FG)
+    CORE = dist_fg > threshold
+    del dist_fg
+
+    # ISLET
+    CORE_PATCHES = reconstruction(CORE.astype(np.uint8), FG.astype(np.uint8))
+    ISLET = FG & ~(CORE_PATCHES.astype(bool))
+    del CORE_PATCHES
+
+    # INTERNAL TERRITORY
+    BG = (padded == BACKGROUND)
+    BG_EXT = flood_fill(BG.astype(np.uint8), (0, 0), 2) == 2
+    BG_INT = BG & ~BG_EXT
+    del BG, BG_EXT
+
+    CORE_FILL = binary_fill_holes(CORE)
+    BG_INCORE = BG_INT & CORE_FILL
+    del BG_INT
+
+    dist_bg_incore = distance_transform_edt(~BG_INCORE)
+    BG_INCORE_DIL = dist_bg_incore <= threshold
+    INTERNAL = binary_fill_holes(BG_INCORE_DIL, structure=np.ones((3,3)))
+    del dist_bg_incore
+
+    # INTERNAL CORE
+    CORE_INT = CORE & INTERNAL
+    CORE_INT_DIL = distance_transform_edt(~CORE_INT) <= threshold
+    del CORE_INT, INTERNAL
+
+    # HALO
+    HALO_MASK = distance_transform_edt(~CORE) <= threshold
+
+    # FINAL ASSEMBLY
+    out_padded = _assemble_spa(
+        padded, original_padded, CORE, ISLET, HALO_MASK,
+        BG_INCORE_DIL, CORE_INT_DIL, BG_INCORE, n_classes
+    )
+
+    # CROP
+    r0, r1 = frame, frame + input_arr.shape[0]
+    c0, c1 = frame, frame + input_arr.shape[1]
+    return out_padded[r0:r1, c0:c1]
+
+
+@njit(parallel=True)
+def _assemble_spa(healed_padded, original_padded,
+                  core, islet, halo, bg_incore_dil,
+                  core_int_dil, bg_incore, n_class):
+    """
+    It runs in parallel across all CPU cores to assign the final MSPA 
+    class to every pixel.
+    
+    Inputs:
+        - healed_padded: The foregorund with NoData gaps filled.
+        - original_padded: The foreground used to restore NoData.
+        - core, islet, halo, bg_incore_dil, core_int_dil, bg_incore: Boolean masks 
+              representing the different morphological regions.
+        - n_class: Used for conditional labeling.
+    """
+    # SPA constants
+    OUT_BG_HOLE = 100
+    OUT_MISSING = 129
+    CORE = 17
+    EDGE = 3
+    ISLE = 9
+    PERF = 5
+    LINE = 1
+    
+    rows, cols = healed_padded.shape
+    out = np.zeros((rows, cols), dtype=np.uint8)
+
+    for i in prange(rows):
+        for j in range(cols):
+            # 1. TRUTH CHECK: If it was originally NoData, it stays 129
+            if original_padded[i, j] == MISSING_IN:
+                out[i, j] = OUT_MISSING
+                continue
+
+            # 2. BACKGROUND HOLE CHECK (Input 1 -> Output 100)
+            if bg_incore[i, j] and n_class > 2:
+                out[i, j] = OUT_BG_HOLE
+                continue
+
+            # 3. FOREGROUND CLASSIFICATION
+            val = healed_padded[i, j]
+            if val == 2:
+                # --- BINARY MODE (n_class == 2) ---
+                if n_class == 2:
+                    if core[i, j] or halo[i, j]:
+                        out[i, j] = CORE  # CORE and EDGE (including Perforation)
+                    else:
+                        out[i, j] = LINE   # ISLET and LINEAR
+                
+                # --- MULTI-CLASS MODE (n_class > 2) ---
+                else:
+                    if core[i, j]: 
+                        out[i, j] = CORE # CORE
+                    elif islet[i, j]:
+                        out[i, j] = ISLE if n_class == 6 else LINE # ISLET or LINE
+                    elif halo[i, j]:
+                        # PERFORATION vs EDGE
+                        if bg_incore_dil[i, j] and not core_int_dil[i, j]:
+                            out[i, j] = PERF if n_class >= 5 else LINE # PERF or LINE
+                        else:
+                            out[i, j] = EDGE if n_class >= 5 else LINE # EDGE or LINE
+                    else:
+                        out[i, j] = LINE # LINEAR (Bridge/Loop/Branch)
+    return out
+
+
+###############################
+# ---- LABELLING FUNCTIONS ----
+###############################
+
+
+def labelling_array(input_array, target_values):
+    """
+    Labels connected clusters of target pixel values using 8-connectivity
+    and returns a frequency Counter of patch sizes. Used internally by
+    acc() and rss() to identify and measure individual foreground patches.
+
+    Parameters
+    ----------
+    input_array : np.ndarray
+        2D input array to label.
+    target_values : int or list of int
+        Pixel value(s) to treat as foreground for labelling.
+        Accepts a single integer or a list of integers.
+
+    Returns
+    -------
+    tuple
+        - labeled_array (np.ndarray): integer array where each connected
+          patch of target_values is assigned a unique positive label ID.
+          Background pixels (not in target_values) are labelled 0.
+        - label_freq (Counter): mapping of patch label ID to pixel count,
+          excluding background label 0.
+    """
+    # 1. Standardize targets to a NumPy array
+    if isinstance(target_values, (int, np.integer)):
+        targets = np.array([target_values], dtype=input_array.dtype)
+    else:
+        targets = np.array(target_values, dtype=input_array.dtype)
+
+    # 2. Masking using Numba
+    foreground_mask = _create_mask(input_array, targets)
+
+    # 3. Labeling
+    structure = generate_binary_structure(2, 2) # 8-connectivity
+    labeled_array, _ = label(foreground_mask, structure=structure)
+
+    # 4. Frequency counter
+    label_freq = utils.get_pxl_freq(labeled_array)
+
+    # 5. Clean up background
+    if 0 in label_freq:
+        del label_freq[0]
+
+    return labeled_array, label_freq
+
+
+@njit(cache=True)
+def _create_mask(input_array, targets):
+    """Numba-accelerated mask creation"""
+    nrows, ncols = input_array.shape
+    mask = np.zeros((nrows, ncols), dtype=np.bool_)
+    for i in range(nrows):
+        for j in range(ncols):
+            val = input_array[i, j]
+            # Check if val is in our targets
+            for t in targets:
+                if val == t:
+                    mask[i, j] = True
+                    break
+    return mask

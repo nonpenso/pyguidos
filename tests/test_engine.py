@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from pyguidos import spat
+from pyguidos import engine
 
 # =============================================================================
 # FAD (Fragmentation) Logic Tests
@@ -17,7 +17,7 @@ def test_compute_fad_special_background():
     data = np.full((5, 5), BACKGR_SP3, dtype=np.int16)
     
     # window_size=3
-    result = spat.compute_FAD(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAD(data, window_size=3, handle_missing=1)
     
     # Pixel 3 should map to 105
     assert result[2, 2] == 105
@@ -34,7 +34,7 @@ def test_compute_fad_normalized_with_missing():
     data[1, 0] = BACKGROUND # 1 background pixel
     # Total valid (non-missing) = 1 (FG) + 4 (BG) = 5
     
-    result = spat.compute_FAD(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAD(data, window_size=3, handle_missing=1)
     
     # (1 * 200 + 5) // (2 * 5) = 205 // 10 = 20
     assert result[1, 1] == 20
@@ -49,7 +49,7 @@ def test_compute_fad_fixed_with_missing():
     data[0, :] = BACKGROUND
     data[1, 0] = BACKGROUND
     
-    result = spat.compute_FAD(data, window_size=3, handle_missing=2)
+    result = engine.compute_FAD(data, window_size=3, handle_missing=2)
     
     # (1 * 200 + 9) // (2 * 9) = 209 // 18 = 11.61 -> 12 (due to round half up)
     # Note: 1/9 is ~11.11, but the formula (209//18) results in 11. 
@@ -65,7 +65,7 @@ def test_compute_fad_uniform_foreground():
     data = np.full((10, 10), 2, dtype=np.int16)
     
     # window_size=3, handle_missing=1 (standard FAD)
-    result = spat.compute_FAD(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAD(data, window_size=3, handle_missing=1)
     
     # Internal pixels (not on the very edge) should have a density of 100%
     assert result[5, 5] == 100
@@ -77,7 +77,7 @@ def test_compute_fad_nodata_handling():
     data = np.full((5, 5), 2, dtype=np.int16)
     data[2, 2] = 0  # Inject NoData in the center
     
-    result = spat.compute_FAD(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAD(data, window_size=3, handle_missing=1)
     
     # Input 0 must map to Output 102 (GTB Missing constant)
     assert result[2, 2] == 102
@@ -88,7 +88,7 @@ def test_compute_fad_background_preservation():
     """
     data = np.full((5, 5), 1, dtype=np.int16)
     
-    result = spat.compute_FAD(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAD(data, window_size=3, handle_missing=1)
     
     # Per Guidos convention, background pixels are assigned 101 in the FAD result
     assert result[2, 2] == 101
@@ -97,7 +97,7 @@ def test_compute_fad_background_preservation():
 def test_fad_special_bg_coverage(val, expected):
     data = np.full((3, 3), val, dtype=np.int16)
     data[1, 1] = 2 # Add one foreground so the loop processes
-    res = spat.compute_FAD(data, 3, 1)
+    res = engine.compute_FAD(data, 3, 1)
     # The foreground pixel is processed, but we check if 
     # the special background pixels around it return the right codes
     assert res[0, 0] == expected
@@ -111,15 +111,16 @@ def test_fad_single_pixel_density():
     data = np.zeros((3, 3), dtype=np.int16)
     data[1, 1] = 2 
     
-    res = spat.compute_FAD(data, window_size=3, handle_missing=1)
+    res = engine.compute_FAD(data, window_size=3, handle_missing=1)
     
     # Denominator is 1 (the pixel itself), fg_count is 1. 1/1 = 100%
     assert res[1, 1] == 100
+
 # =============================================================================
 # FAC (Fragmentation) Logic Tests
 # =============================================================================
 
-# Constants for testing (adjust if your spat.py uses different internal names)
+# Constants for testing (adjust if your engine.py uses different internal names)
 MISSING = 0
 BACKGROUND = 1
 FOREGROUND = 2
@@ -130,7 +131,7 @@ def test_compute_fac_perfect_connectivity():
     data = np.full((5, 5), FOREGROUND, dtype=np.int16)
     
     # window_size=3, normalized mode
-    result = spat.compute_FAC(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
     
     # In a 3x3 window, there are 6 horizontal and 6 vertical edges (total 12)
     # If all are FG-FG, (12 * 200 + 12) // (2 * 12) = 2412 // 24 = 100
@@ -141,7 +142,7 @@ def test_compute_fac_zero_connectivity():
     data = np.full((5, 5), BACKGROUND, dtype=np.int16)
     data[2, 2] = FOREGROUND
     
-    result = spat.compute_FAC(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
     
     # Pixel is foreground, but no adjacent neighbors are foreground
     assert result[2, 2] == 0
@@ -157,7 +158,7 @@ def test_compute_fac_fixed_denominator():
     data[1, 1] = BACKGROUND 
     
     # Fixed mode ignores missing/background in denominator, uses total_potential_edges (12)
-    result = spat.compute_FAC(data, window_size=3, handle_missing=2)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=2)
     
     # Math: (10 * 200 + 12) // (2 * 12) = 2012 // 24 = 83.83 -> 83
     assert result[2, 2] == 83
@@ -167,7 +168,7 @@ def test_compute_fac_background_preservation():
     data = np.full((5, 5), FOREGROUND, dtype=np.int16)
     data[2, 2] = BACKGROUND
     
-    result = spat.compute_FAC(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
     
     # Result should be OUT_BACKGROUND (101)
     assert result[2, 2] == 101
@@ -178,7 +179,7 @@ def test_compute_fac_missing_fallback():
     data[1, 1] = FOREGROUND
     
     # In normalized mode, NoData edges aren't counted. Denom becomes 0.
-    result = spat.compute_FAC(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
     
     assert result[1, 1] == 102 # OUT_MISSING
 
@@ -186,7 +187,7 @@ def test_compute_fac_missing_fallback():
 def test_fac_special_bg_coverage(val, expected):
     data = np.full((3, 3), val, dtype=np.int16)
     data[1, 1] = 2 # Add one foreground so the loop processes
-    res = spat.compute_FAC(data, 3, 1)
+    res = engine.compute_FAC(data, 3, 1)
     # The foreground pixel is processed, but we check if 
     # the special background pixels around it return the right codes
     assert res[0, 0] == expected
@@ -196,7 +197,7 @@ def test_fac_zero_denom_coverage():
     # In handle_missing=1, this might lead to a 0 denominator
     data = np.zeros((3, 3), dtype=np.int16)
     data[1, 1] = 2 
-    res = spat.compute_FAC(data, 3, 1)
+    res = engine.compute_FAC(data, 3, 1)
     assert res[1, 1] == 102
 
 # =============================================================================
@@ -210,7 +211,7 @@ def test_compute_lm_pure_forest():
     """
     data = np.full((10, 10), 2, dtype=np.int16)
     
-    result = spat.compute_LM(data, window_size=3)
+    result = engine.compute_LM(data, window_size=3)
     
     # Based on your failure, 170 is the correct 'Interior' code
     assert result[5, 5] == 170
@@ -223,7 +224,7 @@ def test_compute_lm_mixed():
     data = np.ones((10, 10), dtype=np.int16)
     data[:, 5:] = 2 
     
-    result = spat.compute_LM(data, window_size=3)
+    result = engine.compute_LM(data, window_size=3)
     
     # The transition pixels should not be 170 (Interior)
     # They should be an Edge or Transitional class (e.g., 150 or 130)
@@ -234,17 +235,17 @@ def test_compute_lm_poles():
     """Verify the three pure corners of the tri-polar model."""
     # Agriculture Corner (1) -> 180
     data_agr = np.full((5, 5), 1, dtype=np.int16)
-    res_agr = spat.compute_LM(data_agr, window_size=3)
+    res_agr = engine.compute_LM(data_agr, window_size=3)
     assert res_agr[2, 2] == 180
 
     # Forest Corner (2) -> 170
     data_for = np.full((5, 5), 2, dtype=np.int16)
-    res_for = spat.compute_LM(data_for, window_size=3)
+    res_for = engine.compute_LM(data_for, window_size=3)
     assert res_for[2, 2] == 170
 
     # Developed Corner (3) -> 190
     data_dev = np.full((5, 5), 3, dtype=np.int16)
-    res_dev = spat.compute_LM(data_dev, window_size=3)
+    res_dev = engine.compute_LM(data_dev, window_size=3)
     assert res_dev[2, 2] == 190
 
 def test_compute_lm_transitional():
@@ -259,7 +260,7 @@ def test_compute_lm_transitional():
     data = np.full((3, 3), 3, dtype=np.int16)
     data[1, 1] = 2 
     
-    result = spat.compute_LM(data, window_size=3)
+    result = engine.compute_LM(data, window_size=3)
     assert result[1, 1] == 61
 
 def test_compute_lm_missing_data_skip():
@@ -267,7 +268,7 @@ def test_compute_lm_missing_data_skip():
     data = np.full((5, 5), 2, dtype=np.int16)
     data[2, 2] = 0 # Missing data
     
-    result = spat.compute_LM(data, window_size=3)
+    result = engine.compute_LM(data, window_size=3)
     
     # Initialized as np.zeros, should stay 0
     assert result[2, 2] == 0
@@ -281,5 +282,99 @@ def test_lm_coverage_boost():
         [1, 3, 1]
     ], dtype=np.int16)
     # The center pixel must be non-zero to process
-    res = spat.compute_LM(data, window_size=3)
+    res = engine.compute_LM(data, window_size=3)
     assert res[1, 1] > 0
+    
+# =============================================================================
+# Labelling Logic Tests
+# =============================================================================
+
+def test_labelling_array():
+    """Verify labelling and patch counting using the updated target_values logic."""
+
+    # Test Case 1: 8-connectivity (Hardcoded in your function)
+    # Diagonal pixels should be seen as ONE patch because your function 
+    # uses 8-connectivity (generate_binary_structure(2, 2))
+    arr_diag = np.array([
+        [2, 0],
+        [0, 2]
+    ], dtype=np.uint8)
+    
+    labeled_diag, freq_diag = engine.labelling_array(arr_diag, target_values=2)
+    
+    # In 8-connectivity, diagonal pixels are connected
+    assert len(freq_diag) == 1  # Should be 1 patch
+    assert freq_diag[1] == 2    # The patch should have 2 pixels
+
+    # Test Case 2: Multiple target values
+    # If we treat 2 and 3 as foreground, they should merge into one patch if adjacent
+    arr_multi = np.array([
+        [2, 3, 0],
+        [0, 0, 0]
+    ], dtype=np.uint8)
+    
+    _, freq_multi = engine.labelling_array(arr_multi, target_values=[2, 3])
+    
+    assert len(freq_multi) == 1 # 2 and 3 are adjacent, so 1 patch
+    assert sum(freq_multi.values()) == 2
+
+    # Test Case 3: Separated patches
+    arr_sep = np.array([
+        [2, 0, 2],
+        [0, 0, 0]
+    ], dtype=np.uint8)
+    
+    _, freq_sep = engine.labelling_array(arr_sep, target_values=2)
+    assert len(freq_sep) == 2 # Clearly separated by a 0, so 2 patches
+
+# =============================================================================
+# SPA Logic Tests
+# =============================================================================
+
+@pytest.fixture
+def spa_test_grid():
+    """
+    Creates a 20x20 grid:
+    - [0,0]: NoData (0)
+    - [2,2]: Isolated Foreground pixel (Islet)
+    - [5:15, 5:15]: Main Foreground block (Core/Edge)
+    - [10,10]: Background hole inside the main block
+    """
+    grid = np.ones((20, 20), dtype=np.int16)  # Background (1)
+    
+    # 1. Main Block
+    grid[5:15, 5:15] = 2  # Foreground
+    
+    # 2. Background Hole inside the block
+    grid[10, 10] = 1  # Background
+    
+    # 3. Isolated Islet
+    grid[2, 2] = 2  # Foreground[cite: 1]
+    
+    # 4. NoData
+    grid[0, 0] = 0  # Missing[cite: 1]
+    
+    return grid
+
+def test_spa_binary_mode(spa_test_grid):
+    """Tests n_classes=2: Islets and Linear features become 1."""
+    res = engine.compute_spa(spa_test_grid, s=1.0, n_classes=2)
+    
+    # Isolated pixel [2, 2] should be LINEAR (1) in binary mode
+    assert res[2, 2] == 1
+    
+    # Center of main block [8, 8] should be CORE (17)
+    assert res[8, 8] == 17
+
+def test_spa_six_class_mode(spa_test_grid):
+    """Tests n_classes=6: Islets become 9, Holes become 100."""
+    res = engine.compute_spa(spa_test_grid, s=1.0, n_classes=6)
+    
+    # Isolated pixel [2, 2] should be ISLET (9)
+    assert res[2, 2] == 9
+    
+    # Background hole [10, 10] should be flagged as HOLE (100)
+    assert res[10, 10] == 100
+    
+    # Core pixel [8, 8] should still be CORE (17)
+    assert res[8, 8] == 17

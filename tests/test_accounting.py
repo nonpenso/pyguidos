@@ -58,12 +58,12 @@ def test_acc_stats_standalone(acc_result):
     output_tif = acc_result["output paths"]["path tif"]
     
     # Run standalone stats logic on the generated output
-    stats = acc_stats(output_tif, outfile=True)
+    stats = acc_stats(output_tif, stat_files=True)
     
     # Verify .txt report generation
     expected_txt = Path(output_tif).with_suffix('.txt')
     assert expected_txt.exists()
     
     # Verify the stats dictionary structure for patch accounting
-    assert "patch numb" in stats["output stats"]
-    assert "pxl numb" in stats["output stats"]
+    assert "class pxl" in stats["output stats"]
+    assert "class patch" in stats["output stats"]

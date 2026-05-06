@@ -4,7 +4,7 @@ Installation
 Requirements
 ------------
 
-pyGuidos requires **Python >=3.8 and <=3.12** and the following dependencies,
+pyGuidos requires **Python >=3.8** and the following dependencies,
 which are installed automatically with pip:
 
 .. list-table::
@@ -15,34 +15,34 @@ which are installed automatically with pip:
      - Minimum Version
      - Purpose
    * - numpy
-     - >=1.24, <2
+     - >=2.2
      - Array operations
    * - numba
-     - >=0.58.0, <0.61
+     - >0.63
      - NumPy code into machine code
    * - rasterio
-     - >=1.3
+     - >=1.5
      - GeoTIFF reading and writing
    * - scipy
-     - >=1.9
+     - >=1.15
      - Connected component labelling
    * - matplotlib
-     - >=3.5
+     - >=3.10
      - Histogram and ternary plot generation
    * - pyogrio
-     - >=0.7
+     - >=0.10
      - Vector file reading
    * - geopandas
-     - >=0.14
+     - >=1.1
      - Reading vectors as dataframe
    * - shapely
      - >=2.0
      - Geometry validation and reprojection
    * - pyproj
-     - >=3.4
+     - >=3.7
      - Coordinate reference system handling
    * - python-ternary
-     - >=1.0
+     - >=1.0.8
      - Ternary diagram rendering
 
 Installation
@@ -92,9 +92,6 @@ After installation, verify everything is working correctly:
 
 Troubleshooting
 ---------------
-
-**Execution Blocked Error**
-   If you receive a permission error when running a tool like ``mspa()``, your current ``WORK_DIR`` does not allow binary execution. Run ``pyguidos-setup`` to move the workspace to a non-restricted drive.
 
 **Installation stalls on downloading packages**
    You may be behind a corporate proxy. Try:

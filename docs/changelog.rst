@@ -7,6 +7,31 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
 ----
 
+2.2.0 - 2026-05-06
+------------------
+
+Overview
+
+Version 2.2.0 achieves a major milestone with the introduction of "SPA" (Simplified Pattern Analysis), a simplified version of MSPA module, now fully reimplemented in native Python. This release also future-proofs the library by providing full compatibility with the NumPy 2.x ecosystem and official testing for Python up to version 3.14. To improve maintainability and developer access, the internal architecture has been refactored to separate raw numerical computation from statistical reporting, providing more granular access to spatial data via dedicated stats functions.
+
+Added
+
+- spa() Native Implementation: Introduced Simplified Pattern Analysis (SPA), a high-performance Python-native morphological engine.
+- Python 3.14 Support: Official support and CI/CD testing for the latest Python 3.13 and 3.14 releases.
+- NumPy 2.x Compatibility: Updated all internal array logic and C-API interactions to support NumPy 2.0+ promotion rules and metadata structures.
+
+Changed
+
+- Architectural Refactoring: Core logic has been decoupled into "Compute" (raw array processing) and "Export" (statistics and GeoTIFF generation) layers for better performance and modularity.
+- Unified Internal Pipeline: Standardized how frag(), rss(), acc(), and spa() handle data flow, ensuring that the main function and its stats counterpart call the same underlying engine.
+- Numba Optimization: Refined JIT-compilation signatures to maintain high-speed execution across the transition to NumPy 2.x.
+
+Fixed
+
+- Statistical Consistency: Fixed potential discrepancies between file output and dictionary results by unifying the internal calculation calls.
+- Memory Efficiency: Optimized the xxx_stats() calls to reduce memory overhead when processing extremely large GeoTIFFs where only tabular data is required.
+
+
 2.1.0 - 2026-04-21
 ------------------
 

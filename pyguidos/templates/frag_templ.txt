@@ -46,7 +46,7 @@ Frequency of the 5 Foreground classes in Foreground area:
 FAD_AV [%]: {fad_av_idx:.4f}
 AVCON [%]: {avcon_idx:.4f}
 
-Computational time: {comp_time}
+Computational time: 
 
 ================================================================================
 Online guide:

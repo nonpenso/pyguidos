@@ -20,6 +20,7 @@ Foreground: {foregr_pxl}
 PARAMETRES
 ================================================================================
 Window size: {w_size}
+Color scheme: {out_cmap}
 Window area - observation scale (if unit is in metres):
     {window_areaHA} hectares 
     {window_areaAC} acres
@@ -58,7 +59,7 @@ Frequency of the 19 aggregated classes in Foreground:
     19   DD    [0]       [0]       [100]     {DD_val}
 
 
-Computational time: {comp_time}
+Computational time: 
 
 ================================================================================
 Online guide:

@@ -157,7 +157,30 @@ def validate_frag_params(wsize, method):
         sys.exit(f"Fragmentation method must be {allowed_methods} (received '{method}')")
 
 
-def validate_mspa_params(edge_width, connectivity):
+# def validate_mspa_params(edge_width, connectivity):
+#     """
+#     Validates the parameters for the MSPA tool.
+
+#     Parameters
+#     ----------
+#     edge_width : int
+#         Width of the edge zone in pixels. Must be an integer >= 1.
+#     connectivity : int
+#         Pixel connectivity. Must be 4 or 8.
+
+#     Raises
+#     ------
+#     SystemExit
+#         If edge_width is not a positive integer or connectivity
+#         is not 4 or 8.
+#     """
+#     if not isinstance(edge_width, int) or edge_width < 1:
+#         sys.exit(f"The edge width must be an integer number >= 1 (received {edge_width})")
+        
+#     if connectivity not in [4, 8]:
+#         sys.exit(f"The connectivity must be 4 or 8 (received {connectivity})")
+
+def validate_spa_params(edge_width, classes):
     """
     Validates the parameters for the MSPA tool.
 
@@ -165,20 +188,20 @@ def validate_mspa_params(edge_width, connectivity):
     ----------
     edge_width : int
         Width of the edge zone in pixels. Must be an integer >= 1.
-    connectivity : int
-        Pixel connectivity. Must be 4 or 8.
+    classes : int
+        Number of MSPA classes. Must be 2, 3, 5, or 6.
 
     Raises
     ------
     SystemExit
         If edge_width is not a positive integer or connectivity
-        is not 4 or 8.
+        If classes are not 2, 3, 5, or 6.
     """
     if not isinstance(edge_width, int) or edge_width < 1:
         sys.exit(f"The edge width must be an integer number >= 1 (received {edge_width})")
         
-    if connectivity not in [4, 8]:
-        sys.exit(f"The connectivity must be 4 or 8 (received {connectivity})")
+    if classes not in [2, 3, 5, 6]:
+        sys.exit(f"The number of classes must be 2, 3, 5 or 6 (received {classes})")
 
 
 def validate_acc_params(thresholds):

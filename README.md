@@ -4,7 +4,7 @@
 [![pipeline status](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg?ignore_skipped=true)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines)
 [![coverage report](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/coverage.svg?job=run_tests)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html)
 [![docs status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/)
-![version](https://img.shields.io/badge/version-2.1.0-blue.svg)
+![version](https://img.shields.io/badge/version-2.2.0-blue.svg)
 [![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
 **A Python interface to the main GuidosToolbox (GTB) modules for spatial pattern analysis**
@@ -46,8 +46,6 @@ Full API documentation is available at https://jrc-forest.pages.code.europa.eu/g
 
 Requirements
 ============
-> [!CAUTION] Python Version Compatibility 
-This module supports **Python >= 3.8 and <= 3.12**. Python 3.13+ is currently not supported due to dependency constraints.
 
 - Python >= 3.8, <= 3.12
 - numpy >=1.24, <2
@@ -87,15 +85,15 @@ To run the example notebooks or contribute to the source code, you must clone th
 git clone https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 cd pyguidos
 ```
-2. Create and activate a virtual environment using Python 3.12. If you have multiple versions installed, specify the version 3.12.
+2. Create and activate a virtual environment using Python.
   - Windows
   ```bash
-  py -3.12 -m venv myvenv
+  py -m venv myvenv
   myvenv\Scripts\activate
   ```
   - Linux/Mac
   ```bash
-  python3.12 -m venv myvenv
+  python -m venv myvenv
   source myvenv/bin/activate
   ```
 3. Install in editable mode with dependencies:

@@ -1,51 +1,14 @@
 import re
-#import shutil
 import collections
-#import time
 from pathlib import Path
-#import uuid
 
 import numpy as np
-from scipy.ndimage import label, generate_binary_structure
+
 import rasterio
 from rasterio.enums import ColorInterp
 from pyproj import CRS as pyprojCRS
-from numba import njit
+from numba import njit, prange
 
-# from . import WORK_DIR, GLOBAL_CONFIG
-
-# def setup_run_dir():
-#     """
-#     Creates a unique temporary working directory for a single binary
-#     executable run. Silently removes job folders older than
-#     7 days from the work directory.
-
-#     Returns
-#     -------
-#     Path
-#         Path to the newly created temporary run directory,
-#         named 'job_<uuid>' inside the package work/ folder.
-#     """
-#     # Silently clean up folders older than 1 weeks
-#     max_age_seconds = 7 * 24 * 3600
-#     now = time.time()
-#     for old_job in WORK_DIR.glob("job_*"):
-#         if old_job.is_dir():
-#             age = now - old_job.stat().st_mtime
-#             if age > max_age_seconds:
-#                 try:
-#                     shutil.rmtree(old_job)
-#                 except Exception:
-#                     pass  # Silent: never block a new run over cleanup
-
-#     # Create a unique subfolder for this specific run
-#     unique_id = str(uuid.uuid4())[:8]
-#     run_dir = WORK_DIR / f"job_{unique_id}"
-
-#     # 3. Create the directories
-#     run_dir.mkdir(parents=True, exist_ok=True)
-
-#     return run_dir
 
 
 def get_raster_info(intiff_path):
@@ -197,112 +160,95 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
         dst.update_tags(**tags)
 
 
-def get_pxl_freq(array, chunk_size=1000):
+def get_pxl_freq(array):
     """
     Counts pixel value frequencies for both 2D and 3D arrays.
-    Uses np.bincount for uint8 arrays (fast path), and chunked
-    np.unique for larger dtypes such as int32 labeled arrays.
-
+    Optimized for large rasters using Numba.
+    
     Parameters
-    ----------
+    ----------    
     array : np.ndarray
         Input array, either 2D (rows, cols) or 3D (bands, rows, cols).
-        For 3D arrays, only the first band is used.
-    chunk_size : int, optional
-        Number of rows per chunk for the general path. Only used for
-        non-uint8 arrays. Default 1000.
-
-    Returns
-    -------
-    Counter
-        A collections.Counter mapping pixel values to their counts.
-        Zero-count values are excluded.
     """
+    # 1. Handle 3D arrays (take first band)
     data = array[0] if array.ndim == 3 else array
 
-    counts_array = numba_pixel_counts(data)
+    # 2. Determine the "Fast Path" vs "Dynamic Path"
+    # uint8 is guaranteed to be 0-255. 
+    # int16/int32/int64 (labels) need a dynamic size.
+    if data.dtype == np.uint8:
+        counts_array = numba_pixel_counts(data, size=256)
+    else:
+        # For labeled data, we calculate size inside Numba to keep it fast
+        counts_array = numba_pixel_counts(data, size=-1)
+
+    # 3. Convert results to Counter, skipping zero-count values
+    # Note: Using a dictionary comprehension here is efficient for 
+    # building the Counter from the resulting array.
     counts_dict = {i: count for i, count in enumerate(counts_array) if count > 0}
 
     return collections.Counter(counts_dict)
 
 
 @njit(cache=True)
-def numba_pixel_counts(data):
-    """
-    Scans the array once and returns a dictionary of counts.
-    int64 for the counts to prevent overflow on large rasters.
-    """
-    counts_array = np.zeros(256, dtype=np.int64)
-    
+def numba_pixel_counts(data, size=-1):
     flat_data = data.ravel()
+    
+    # Phase 1: Determine size if not provided
+    if size == -1:
+        max_val = 0
+        for i in range(flat_data.size):
+            if flat_data[i] > max_val:
+                max_val = flat_data[i]
+        size = int(max_val) + 1
+    
+    # Phase 2: Allocation and Counting
+    counts_array = np.zeros(size, dtype=np.int64)
     for i in range(flat_data.size):
         val = flat_data[i]
-        # Safety check: only count values within the 0-255 range
-        if 0 <= val <= 255:
+        if val >= 0:
+            # We don't need a boundary check if we calculated size or use 256 for uint8
             counts_array[val] += 1
             
     return counts_array
 
 
-def labelling_array(input_array, target_values):
+@njit("uint8[:,:](uint8[:,:], uint8[:])", parallel=True, cache=True)
+def remap_array(data, mapping):
     """
-    Labels connected clusters of target pixel values using 8-connectivity
-    and returns a frequency Counter of patch sizes. Used internally by
-    acc() and rss() to identify and measure individual foreground patches.
+    Numba-accelerated reclassification of a 2D array using a lookup table (LUT).
+
+    This function utilizes multi-core parallelism to rapidly remap pixel values
+    from an input classification to a target classification. It is designed
+    for high-performance processing of large-scale geospatial rasters.
 
     Parameters
     ----------
-    input_array : np.ndarray
-        2D input array to label.
-    target_values : int or list of int
-        Pixel value(s) to treat as foreground for labelling.
-        Accepts a single integer or a list of integers.
+    data : ndarray (uint8)
+        The input 2D raster array containing the original class codes (e.g., 0-103).
+    mapping : ndarray (uint8)
+        The lookup table (LUT) array of size 256. The index of the array 
+        represents the 'old' class, and the value at that index represents 
+        the 'new' class.
 
     Returns
     -------
-    tuple
-        - labeled_array (np.ndarray): integer array where each connected
-          patch of target_values is assigned a unique positive label ID.
-          Background pixels (not in target_values) are labelled 0.
-        - label_freq (Counter): mapping of patch label ID to pixel count,
-          excluding background label 0.
+    ndarray (uint8)
+        The reclassified 2D array with the same dimensions as the input.
+
     """
-    # 1. Standardize targets to a NumPy array
-    if isinstance(target_values, (int, np.integer)):
-        targets = np.array([target_values], dtype=input_array.dtype)
-    else:
-        targets = np.array(target_values, dtype=input_array.dtype)
-
-    # 2. Masking using Numba
-    foreground_mask = _create_mask(input_array, targets)
-
-    # 3. Labeling
-    structure = generate_binary_structure(2, 2) # 8-connectivity
-    labeled_array, _ = label(foreground_mask, structure=structure)
-
-    # 4. Frequency counter
-    label_freq = get_pxl_freq(labeled_array)
-
-    # 5. Clean up background
-    if 0 in label_freq:
-        del label_freq[0]
-
-    return labeled_array, label_freq
-
-@njit(cache=True)
-def _create_mask(input_array, targets):
-    """Numba-accelerated mask creation"""
-    nrows, ncols = input_array.shape
-    mask = np.zeros((nrows, ncols), dtype=np.bool_)
-    for i in range(nrows):
+    nrows, ncols = data.shape
+    result = np.zeros((nrows, ncols), dtype=np.uint8)
+    
+    # prange distributes the rows across all CPU cores
+    for i in prange(nrows):
         for j in range(ncols):
-            val = input_array[i, j]
-            # Check if val is in our targets
-            for t in targets:
-                if val == t:
-                    mask[i, j] = True
-                    break
-    return mask
+            old_val = data[i, j]
+            # The mapping variable lookup:
+            result[i, j] = mapping[old_val]
+            
+    return result
+
 
 def running_time(start_time, end_time):
     """
@@ -321,6 +267,7 @@ def running_time(start_time, end_time):
         Formatted duration string, e.g. '2m 3.4s', '1h 5m 2.1s',
         or '0.95 seconds'.
     """
+    
     elapsed = end_time - start_time
     hours, rem = divmod(elapsed, 3600)
     minutes, seconds = divmod(rem, 60)
@@ -365,9 +312,7 @@ def generate_text_report(template_path, output_path, data_dict):
 def update_time_line(file_path, time_str):
     """
     Finds the line starting with 'Computational time:' in an existing
-    .txt report and updates it with the final elapsed time. Called after
-    the main analysis completes to replace the placeholder written during
-    the stats step with the true total runtime.
+    .txt report and write the elapsed time. 
 
     Parameters
     ----------
@@ -420,8 +365,7 @@ def get_tool_parameters(tag_description):
     Parameters
     ----------
     tag_description : str
-        Tag string in the format 'GTB_TOOLID, param1 param2 ...'.
-        For example: 'GTB_MSPA, 8 1 1 1' or 'GTB_FOS, FAD 27x27'.
+        Tag string in the format 'GTB_TOOLID, <param1,param2,...>, link'.
 
     Returns
     -------
@@ -453,6 +397,11 @@ def get_tool_parameters(tag_description):
         result["method"] = params[3]
         result["pxlsize"] = params[4]
         result["wsize"] = params[5]
+
+    elif tool_id == "GTB_SPA":
+        # Format: "GTB_SPA, <5,6>"
+        result["edge_width"] = params[0]
+        result["classes"] = params[1]
 
     elif tool_id == "GTB_MSPA":
         # Format: "GTB_MSPA, <8,1,1,1>"

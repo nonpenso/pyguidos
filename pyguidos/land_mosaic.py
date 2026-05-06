@@ -12,7 +12,7 @@ from matplotlib.collections import PatchCollection
 import ternary
 from ternary.helpers import project_point
 
-from . import spat
+from . import engine
 from . import utils
 from . import checks
 from . import TEMPL_DIR
@@ -69,12 +69,12 @@ def landmos(in_tiff,
 
     Output Files
     ------------
-    - <in_name>_lm_<window_size>_103class.tif : 103-class landscape mosaic result
-    - <in_name>_lm_<window_size>.tif          : 19-class remapped result
-    - <in_name>_lm_<window_size>.txt          : statistics report
-    - <in_name>_lm_<window_size>.csv          : per-value pixel counts
-    - <in_name>_lm_<window_size>_heatmap.csv  : ternary diagram data table
-    - <in_name>_lm_<window_size>_heatmap.png  : ternary diagram heatmap
+    - <in_name>_lm_<window_size>_103class_<out_colors>.tif : 103-class landscape mosaic result
+    - <in_name>_lm_<window_size>_19class.tif               : 19-class remapped result
+    - <in_name>_lm_<window_size>.txt                       : statistics report
+    - <in_name>_lm_<window_size>.csv                       : per-value pixel counts
+    - <in_name>_lm_<window_size>_heatmap.csv               : ternary diagram data table
+    - <in_name>_lm_<window_size>_heatmap.png               : ternary diagram heatmap
     """
     start_time = time.time()
 
@@ -100,46 +100,46 @@ def landmos(in_tiff,
 
     try:
         # Compute Landscape Mosaic
-        data_out = spat.compute_LM(input_data, window_size)
+        data_out = engine.compute_LM(input_data, window_size)
 
         # Save 103 classes Geotiff
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/"
-        tag_descr = f"GTB_LM, <{window_size},{out_colors}>, {weblink}"
+        tag_descr103 = f"GTB_LM, <{window_size},{out_colors}>, {weblink}"
         cmap_path = TEMPL_DIR / f"lm_{out_colors}_colormap.txt"
         out_tiff103c = outdir / f"{out_name}_103class_{out_colors}.tif"
-        utils.save_output_geotiff(out_tiff103c, data_out, info['profile'], cmap_path, tag_descr)
+        utils.save_output_geotiff(out_tiff103c, data_out, info['profile'], cmap_path, tag_descr103)
 
-        # Reclassiafy Geotiff 103 -> 19 classes
-        reclass = {}
+        # Remap 103 -> 19 classes
+        mapping_lut = np.zeros(256, dtype=np.uint8)
         with open(TEMPL_DIR / 'lm_103to19.txt' , 'r') as f:
             for line in f:
-                l = [int(x) for x in line.split(' ')]
-                reclass[l[0]]=l[1]
-
-        mapping_array = np.zeros(256, dtype=np.uint8)
-        for old_val, new_val in reclass.items():
-            mapping_array[old_val] = new_val
-        data_19cl = mapping_array[data_out]
-
+                old_v, new_v = map(int, line.split())
+                if old_v < 256:
+                    mapping_lut[old_v] = new_v
+        data_out19cl = utils.remap_array(data_out, mapping_lut)
+    
         # Save 19 classes Geotiff
+        tag_descr19 = f"GTB_LM, <{window_size},->, {weblink}"
+        out_tiff19c = outdir / f"{out_name}_19class.tif"
         cmap_path19 = TEMPL_DIR / "lm_19c_colormap.txt"
-        out_tiff19c = outdir / f"{out_name}.tif"
-        utils.save_output_geotiff(out_tiff19c, data_19cl, info['profile'], cmap_path19, tag_descr)
+        utils.save_output_geotiff(out_tiff19c, data_out19cl, info['profile'], cmap_path19, tag_descr19)
 
         # Statistics and Reporting
         stats_dict = None
         if statists:
-            lm_pixel_freq = utils.get_pxl_freq(data_out)
-            stats_dict = landmos_stats(lm_tiff=out_tiff103c,
-                                       outfile = stat_files,
-                                       outdir=outdir,
-                                       source_tiff=in_tiff,
-                                       lm_freq=lm_pixel_freq,
-                                       source_freq=input_pxl_freq)
+            minfo = utils.get_raster_info(out_tiff103c)
+            lm_pxl_freq = utils.get_pxl_freq(data_out)
+            stats_dict = _get_lm_stats(lm_freq = lm_pxl_freq, 
+                                       tiff_info = minfo, 
+                                       source_freq=input_pxl_freq,
+                                       outfile = stat_files, 
+                                       out_name = out_name, 
+                                       out_dir = outdir, 
+                                       source_tiff = in_tiff)
 
-        # Add 19-class path — known here but not inside landmos_stats()
-        if stats_dict["output paths"]["path tif 19cl"] is None:
-            stats_dict["output paths"]["path tif 19cl"] = str(out_tiff19c)
+        # Add output paths
+        stats_dict["output paths"]["path tif 103cl"] = str(out_tiff103c)
+        stats_dict["output paths"]["path tif 19cl"] = str(out_tiff19c)
         
         # Computational time
         time_str = utils.running_time(start_time, time.time())
@@ -157,7 +157,7 @@ def landmos(in_tiff,
 
 
 
-def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_freq=None, source_freq=None):
+def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
     """
     Computes statistics for an existing Landscape Mosaic result GeoTIFF.
     Can be called independently on a previously generated landscape mosaic
@@ -170,7 +170,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
     lm_tiff : str or Path
         Path to the 103-class Landscape Mosaic result GeoTIFF. Must contain
         a valid GTB_LM metadata tag in the TIFFTAG_IMAGEDESCRIPTION field.
-    outfile : bool, optional
+    stat_files : bool, optional
         If True (default), writes statistics to .txt, .csv and .png files.
     outdir : str or Path, optional
         Directory for output files. Defaults to the input file's directory.
@@ -178,16 +178,6 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
         Path to the original three-class input GeoTIFF used to generate
         the landscape mosaic result. Used to report per-class pixel counts
         in the statistics report. Default None.
-    lm_freq : Counter, optional
-        Pre-computed pixel frequency Counter for the 103-class landscape
-        mosaic result array. If provided, skips reading the GeoTIFF for
-        pixel counting. Passed internally by landmos() to avoid redundant
-        disk reads. Default None.
-    source_freq : Counter, optional
-        Pre-computed pixel frequency Counter for the original input GeoTIFF.
-        If provided, skips reading the source GeoTIFF for pixel counting.
-        Passed internally by landmos() to avoid redundant disk reads.
-        Default None.
 
     Returns
     -------
@@ -206,10 +196,10 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
 
     Output Files
     ------------
-    - <lm_tiff_stem>.txt         : statistics report
-    - <lm_tiff_stem>.csv         : per-value pixel counts and frequencies
-    - <lm_tiff_stem>_heatmap.csv : ternary diagram data table
-    - <lm_tiff_stem>_heatmap.png : ternary diagram heatmap
+    - <lm_tiff_stem>.txt          : statistics report
+    - <lm_tiff_stem>.csv          : per-value pixel counts and frequencies
+    - <lm_tiff_stem>_heatmap.csv  : ternary diagram data table
+    - <lm_tiff_stem>_heatmap.png  : ternary diagram heatmap
     """
     start_time_stat = time.time()
 
@@ -223,24 +213,75 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
     tool_params = utils.get_tool_parameters(minfo["tag"])
     if tool_params.get("tool_id") != "GTB_LM":
         sys.exit(f"ERROR: Input Geotiff is labeled as '{tool_params.get('tool_id')}', "
-            "landmos_stats requires a 'GTB_LM' result file."
-        )
-
-    # Get Landscape Mosaic parameters
-    window_size = int(tool_params["wsize"])
+            "landmos_stats requires a 'GTB_LM' result file.")
+    if tool_params.get("cmap") == "-":
+        sys.exit("ERROR: Input Geotiff is 19-class Landscape Mosaic result file', "
+            "landmos_stats requires 103-class result file.")        
 
     # Define input and output file names
-    out_name = Path(lm_tiff).stem.split('_103class')[0]
+    out_name = Path(lm_tiff).stem
     outdir = Path(outdir) if outdir else lm_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
 
-    # Counting source Geotiff pixels
+    # LM pixel counting
+    with rasterio.open(lm_tiff) as src:
+        lm_data = src.read(1, out_dtype='uint8')
+    lm_pxl_freq = utils.get_pxl_freq(lm_data)    
+
+    # Source pixel counting
+    source_pxl_numb = None
+    if source_tiff:
+        with rasterio.open(source_tiff) as src:
+            source_data = src.read(1)
+        source_pxl_numb = utils.get_pxl_freq(source_data)
+        
+    # Get statistics
+    stats_dict = _get_lm_stats(lm_freq = lm_pxl_freq, 
+                               tiff_info = minfo, 
+                               source_freq=source_pxl_numb,
+                               outfile = stat_files, 
+                               out_name = out_name, 
+                               out_dir = outdir, 
+                               source_tiff = source_tiff)
+    
+    # Add output paths
+    stats_dict["output paths"]["path tif 103cl"] = str(lm_tiff)
+    
+    # Computational time
+    time_str = utils.running_time(start_time_stat, time.time())
+    if stat_files:
+        txt_file = outdir / f'{out_name}.txt'
+        utils.update_time_line(txt_file, time_str)
+
+    return stats_dict    
+    
+   
+def _get_lm_stats(lm_freq, 
+                  tiff_info, 
+                  source_freq=None,
+                  outfile=True, 
+                  out_name=None, 
+                  out_dir=None, 
+                  source_tiff=None):
+    """
+    Get the Landscape Mosaic statistics.    
+    """
+    # Get LM parameters
+    tag = tiff_info["tag"]
+    tool_params = utils.get_tool_parameters(tag)
+    window_size = int(tool_params["wsize"])
+    cmap_type = tool_params["cmap"]
+
+    # Define input and output file names
+    source_tiff = Path(source_tiff) if source_tiff else None
+
+    # Get source pixel counting
     if source_freq:
         source_pxl_numb = source_freq
     else:
         if source_tiff:
             with rasterio.open(source_tiff) as src:
-                source_data = src.read()
+                source_data = src.read(1)
             source_pxl_numb = utils.get_pxl_freq(source_data)
         else:
             source_pxl_numb=None
@@ -250,15 +291,9 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
     class3 = source_pxl_numb[3] if source_pxl_numb else "n/a"
 
     # Landscape Mosaic pixel counting
-    if lm_freq:
-        lm_pixel_freq = lm_freq
-    else:
-        with rasterio.open(lm_tiff) as src:
-            lm_data = src.read()
-        lm_pixel_freq = utils.get_pxl_freq(lm_data)
-
+    lm_pixel_freq = lm_freq
     NoData = lm_pixel_freq[0]
-    foregr = (minfo["rows"] * minfo["cols"]) - NoData
+    foregr = (tiff_info["rows"] * tiff_info["cols"]) - NoData
     lm_pixel_prop = {k: v / foregr * 100 for k, v in lm_pixel_freq.items()}
 
     # Max value
@@ -277,7 +312,8 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             lm_pixel_freq_19[new_class] += count
 
     lm_pixel_prop_19 = Counter({k: v / foregr *100
-                                          for k, v in lm_pixel_freq_19.items()})
+                                for k, v in lm_pixel_freq_19.items()})
+    
     A_rel = lm_pixel_prop_19[1]
     D_rel = lm_pixel_prop_19[2]
     N_rel = lm_pixel_prop_19[3]
@@ -299,9 +335,8 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
     DD_rel = lm_pixel_prop_19[19]
     NoD_rel = lm_pixel_prop_19[0]
 
-
     if outfile:
-
+        
         ### PNG HEATMAP ###
         fig = None
         try:
@@ -502,7 +537,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             ax.set_ylim(-15, 100)
 
             plt.tight_layout()
-            png_file = outdir / f'{out_name}_heatmap.png'
+            png_file = out_dir / f'{out_name}_heatmap.png'
             plt.savefig(png_file, dpi=300, facecolor='white', transparent=False)
             plt.close()
 
@@ -511,7 +546,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
                 plt.close(fig)
 
         ### CSV Export ####
-        csv_file = outdir / f'{out_name}.csv'
+        csv_file = out_dir / f'{out_name}.csv'
         with open(csv_file, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(['pixel_value', 'pixel_count', 'foreground_proportion'])
@@ -522,7 +557,7 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
 
 
         ### CSV Triangle Export ###
-        csv_file_hm = outdir / f'{out_name}_heatmap.csv'
+        csv_file_hm = out_dir / f'{out_name}_heatmap.csv'
         with open(csv_file_hm, 'w', newline='') as f:
             writer = csv.writer(f)
             # Title
@@ -547,13 +582,13 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
 
         content = {
             "input_file": source_tiff.name if source_tiff else "n/a",
-            "epsg_code": minfo["epsg"],
-            "unit_type": 'metres' if minfo["is_projected"] else 'degrees',
-            "resolx": minfo["resX"],
-            "resoly": minfo["resY"],
-            "rows_val": minfo["rows"],
-            "tot_pxl": minfo["rows"] * minfo["cols"],
-            "cols_val": minfo["cols"],
+            "epsg_code": tiff_info["epsg"],
+            "unit_type": 'metres' if tiff_info["is_projected"] else 'degrees',
+            "resolx": tiff_info["resX"],
+            "resoly": tiff_info["resY"],
+            "rows_val": tiff_info["rows"],
+            "tot_pxl": tiff_info["rows"] * tiff_info["cols"],
+            "cols_val": tiff_info["cols"],
             "class1_pxl": class1,
             "class2_pxl": class2,
             "class3_pxl": class3,
@@ -561,8 +596,9 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             "foregr_pxl": foregr,
 
             "w_size": window_size,
-            "window_areaHA": f"{(window_size**2)*minfo['resX']*minfo['resY']/10000:.4f}" if minfo["is_projected"] else '--',
-            "window_areaAC": f"{(window_size**2)*minfo['resX']*minfo['resY']*0.000247105:.4f}" if minfo["is_projected"] else '--',
+            "out_cmap": cmap_type,
+            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["is_projected"] else '--',
+            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["is_projected"] else '--',
 
             "output_file": f'{out_name}.tif',
 
@@ -586,25 +622,18 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
             "AA_val": f'{AA_rel:6.3f}',
             "DD_val": f'{DD_rel:6.3f}',
             "NoD_val": f'{NoD_rel:6.3f}',
-
-            "comp_time": f"{utils.running_time(start_time_stat, time.time())}"
         }
-        txt_file = outdir / f'{out_name}.txt'
+        txt_file = out_dir / f'{out_name}.txt'
         utils.generate_text_report(TEMPL_DIR / 'lm_templ.txt', txt_file, content)
 
     # Statistic dictionaries
     
-    # Try to find the 19-class file in the same folder
-    path_19cl = None
-    tif_19cl = outdir / f"{out_name}.tif"
-    if tif_19cl.exists():
-        path_19cl = str(tif_19cl)
-    
+   
     path_stats_dict = None
     if outfile:
         path_stats_dict = {
-            "path tif 103cl" : str(lm_tiff),
-            "path tif 19cl" : path_19cl,
+            "path tif 103cl" : None,
+            "path tif 19cl" : None,
             "path txt" : str(txt_file),
             "path csv" : str(csv_file),
             "path csv hm" : str(csv_file_hm),
@@ -630,7 +659,6 @@ def landmos_stats(lm_tiff, outfile = True, outdir = None, source_tiff=None, lm_f
     return stats_dict
 
 
-
 # Frequency visialization
 def frq_str(frq):
     if frq is None or frq == 0:
@@ -639,6 +667,7 @@ def frq_str(frq):
         return f"{frq:.1f}"
     else:
         return '<0.1'
+
 
 # Color visualization:
 def use_color(key, max_key):

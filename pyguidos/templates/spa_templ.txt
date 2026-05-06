@@ -1,0 +1,46 @@
+SIMPLIFIED PATTERN ANALYSIS (SPA)
+
+=========================================================
+INPUT FILE
+=========================================================
+Input image: {input_file}
+EPSG: {epsg_code}
+Unit: {unit_type}
+Pixel size (x,y): {resolx}, {resoly} {unit_type}
+Rows: {rows_val}
+Columns: {cols_val}
+Total pixels: {tot_pxl}
+Foreground [pixel=2]: {foreg_pxl}
+Background [pixel=1]: {backg_pxl}
+Missing/Nodata [pixel=0]: {miss_pxl}
+
+=========================================================
+PARAMETRES
+=========================================================
+Edge width: {edge_w}
+Number of classes: {clas_n}
+
+=========================================================
+RESULTS
+=========================================================
+Output image: {output_file}
+
+---------------------------------------------------------
+MSPA CLASS     PXL VALUE   PXL NUMBER    FOREGR.[%]
+
+{table_rows}
+
+Core-Opening     100       {cor_opn_val:>10}
+Background         0       {bgr_val:>10}
+Missing data     129       {ndata_val:>10}
+
+
+Integral Foreground: {int_frgr}
+Porosity [%]: {poros_val}
+
+Computational time: 
+
+=========================================================
+Online guides:
+https://ies-ows.jrc.ec.europa.eu/gtb/GTB/MSPA_Guide.pdf
+https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Pattern-Morphology.pdf
