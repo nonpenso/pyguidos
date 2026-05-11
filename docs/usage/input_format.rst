@@ -42,7 +42,7 @@ binary GeoTIFF with the following pixel values:
 
 .. note::
     Values 3 and 4 are only accepted by Fragmentation, Accounting and RSS.
-    MSPA strictly requires only values 0, 1 and 2.
+    SPA strictly requires only values 0, 1 and 2.
 
 
 Landscape Mosaic Maps
@@ -95,7 +95,7 @@ All pyGuidos output GeoTIFFs follow the GuidosToolbox (GTB) convention:
 
 - **Single-band uint8 GeoTIFF** with a colour palette
 - **NoData is not set** in the TIFF header -- instead a specific pixel
-  value encodes Missing/NoData by convention (e.g. 129 for MSPA, 102 for
+  value encodes Missing/NoData by convention (e.g. 129 for SPA, 102 for
   Fragmentation)
 - Output file name includes the input file name followed by the **used tool and
   the parameters**

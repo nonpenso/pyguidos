@@ -71,6 +71,9 @@ def frag(
     - <in_name>_<method>_<window_size>.png  : foreground pixel histogram
     """
     start_time = time.time()
+    
+    # Log
+    utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
     # Validate parametres
     checks.validate_frag_params(window_size, method)
@@ -91,13 +94,23 @@ def frag(
 
     # Input Geotiff validations
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=True)
+    
+    # Log
+    utils.log_msg(verb, "[    OK     ]  Input raster verified.")
 
     try:
+        # Log
+        utils.log_msg(verb, "[   START   ]  Computing Fragmentation...")
+        
         # Compute Fragmentation
         if method.lower() == 'fad':
             data_out = engine.compute_FAD(input_data, window_size, 1)
         elif method.lower() == 'fac':
             data_out = engine.compute_FAC(input_data, window_size, 1)
+ 
+        # Log
+        utils.log_msg(verb, "[    OK     ]  Fragmentation computed.")
+        utils.log_msg(verb, "[   START   ]  Generating statistics and saving GeoTIFF...")  
  
         # Save Final Geotiff with Palette and Tags
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/"
@@ -118,10 +131,11 @@ def frag(
                                          out_dir = outdir, 
                                          source_tiff = in_tiff)    
 
-        # Computational time
+        # Computational time and log
         time_str = utils.running_time(start_time, time.time())
-        if verb:
-            print(f"\nFragmentation completed in {time_str}")
+        utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.") 
+        utils.log_msg(verb, f"\n>>> Fragmentation task finished in {time_str}") 
+        
         if statists:
             txt_file = txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)

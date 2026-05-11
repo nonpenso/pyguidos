@@ -77,6 +77,9 @@ def landmos(in_tiff,
     - <in_name>_lm_<window_size>_heatmap.png               : ternary diagram heatmap
     """
     start_time = time.time()
+    
+    # Log
+    utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
     # Validate parametres
     checks.validate_wsize(window_size)
@@ -97,8 +100,14 @@ def landmos(in_tiff,
 
     # Input Geotiff validations
     checks.validate_lm_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'])
+    
+    # Log
+    utils.log_msg(verb, "[    OK     ]  Input raster verified.")
 
     try:
+        # Log
+        utils.log_msg(verb, "[   START   ]  Computing Landscape Mosaic...")
+        
         # Compute Landscape Mosaic
         data_out = engine.compute_LM(input_data, window_size)
 
@@ -117,6 +126,10 @@ def landmos(in_tiff,
                 if old_v < 256:
                     mapping_lut[old_v] = new_v
         data_out19cl = utils.remap_array(data_out, mapping_lut)
+        
+        # Log
+        utils.log_msg(verb, "[    OK     ]  Landscape Mosaic computed.")
+        utils.log_msg(verb, "[   START   ]  Generating statistics and saving GeoTIFF...")  
     
         # Save 19 classes Geotiff
         tag_descr19 = f"GTB_LM, <{window_size},->, {weblink}"
@@ -141,10 +154,11 @@ def landmos(in_tiff,
         stats_dict["output paths"]["path tif 103cl"] = str(out_tiff103c)
         stats_dict["output paths"]["path tif 19cl"] = str(out_tiff19c)
         
-        # Computational time
+        # Computational time and log
         time_str = utils.running_time(start_time, time.time())
-        if verb:
-            print(f"\nLand Mosaic completed in {time_str}")
+        utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.") 
+        utils.log_msg(verb, f"\n>>> Fragmentation task finished in {time_str}") 
+        
         if statists:
             txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)

@@ -201,7 +201,7 @@ statistics without rerunning the analysis:
 
     stats = pg.frag_stats(
         frag_tiff="output/my_map_fad_27.tif",
-        outfile=True,
+        stat_files=True,
         outdir="output/",
         source_tiff="my_map.tif"
     )

@@ -322,7 +322,7 @@ statistics without rerunning the analysis:
 
     stats = pg.landmos_stats(
         lm_tiff="output/my_landcover_lm_33_103class.tif",
-        outfile=True,
+        stat_files=True,
         outdir="output/",
         source_tiff="my_landcover.tif"
     )

@@ -146,6 +146,13 @@ result = pg.landmos(
     window_size=33
 )
 
+# Simplified Pattern Analysis (SPA)
+result = pg.spa(
+    in_tiff="my_map.tif",
+    edge_width=1,
+    classes=6
+)
+
 # Foreground Patch Size Accounting
 result = pg.acc(
     in_tiff="my_map.tif",

@@ -460,6 +460,15 @@ def get_gtb_nodata(tiff_path):
     return info["profile"].get("nodata") or 0
 
 
+def log_msg(verbose, message):
+    """
+    Print function log. If verbose is False, it passes silently.
+    """
+    if not verbose:
+        return
+
+    print(message, flush=True)
+
 # def reset_workspace():
 #     """Deletes the workspace configuration so it can be re-defined on next import."""
 #     if GLOBAL_CONFIG.exists():

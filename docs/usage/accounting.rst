@@ -246,7 +246,7 @@ statistics without rerunning the analysis:
 
     stats = pg.acc_stats(
         acc_tiff="output/my_map_acc.tif",
-        outfile=True,
+        stat_files=True,
         outdir="output/",
         source_tiff="my_map.tif"
     )

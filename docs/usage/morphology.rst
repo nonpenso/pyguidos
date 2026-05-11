@@ -65,7 +65,7 @@ The following table describes the byte values and categories for each level:
     :align: center
     :alt: MSPA classes
 
-    Derived SPA maps with 2, 3, 5 and 6 classes.
+    Derived SPA maps with 2, 3, 5 and 6 classes and edge width 1.
 
 
 Usage
