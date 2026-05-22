@@ -43,27 +43,27 @@ grouped into 5 classes and colour-coded in the output map:
    * - Foreground cover class
      - FOS range
      - Fragmentation
-	   - Connectivity
+     - Connectivity
    * - **Rare**
      - 0 -- 10%
      - Very low
-	   - Very high
+     - Very high
    * - **Patchy**
      - 10 -- 40%
      - Low 
-	   - High
+     - High
    * - **Transitional**
      - 40 -- 60%
      - Medium 
-	   - Medium
+     - Medium
    * - **Dominant**
      - 60 -- 90%
      - High 
-	   - Low
+     - Low
    * - **Interior**
      - 90 -- 100%
      - Very high 
-	   - Very low
+     - Very low
 
 
 Usage
