@@ -150,7 +150,6 @@ def frag(
         raise # Still show the error
 
 
-
 def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
     """
     Computes statistics for an existing Fragmentation result GeoTIFF. Can be
