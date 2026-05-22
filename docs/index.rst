@@ -20,7 +20,8 @@ pyGuidos
 a scientific software suite developed at the European Commission Joint Research Centre (JRC) for the 
 spatial pattern analysis of raster images.
 
-pyGuidos provides programmatic access to the main GTB analytical tools, enabling reproducible 
+pyGuidos follows the logic of the GTB-based command-line modules `GuidosToolbox Workbench <https://gwbdoc.readthedocs.io/en/latest/>`_ 
+providing programmatic access to the main GTB analytical tools, enabling reproducible 
 landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 .. note::
@@ -41,7 +42,7 @@ If you are new to pyGuidos, we recommend following these steps:
       import pyguidos as pg
       pg.info()
 
-3. **User Guide**: Browse the :doc:`usage/index` for detailed examples of SPA, Fragmentation, and other analysis tools.
+3. **User Guide**: Browse the :doc:`usage/index` for detailed examples of Landscape Mosaic, Fragmentation, and other analysis tools.
 
 
 Citation

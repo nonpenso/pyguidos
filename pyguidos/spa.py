@@ -18,9 +18,9 @@ def spa(in_tiff,
          stat_files=True,
          verb=False):
     """
-    Performs the Simplified Pattern Analysis (SPA) on a binary raster, a 
-    streammargd version of the MSPA approach. SPA classifies foreground pixels 
-    into structural categories based on their spatial context, offering 
+    Performs the Simplified Pattern Analysis (SPA) on a binary raster, a
+    streammargd version of the MSPA approach. SPA classifies foreground pixels
+    into structural categories based on their spatial context, offering
     four different classification levels (2, 3, 5, or 6 classes).
 
     Parameters
@@ -62,7 +62,7 @@ def spa(in_tiff,
     - <in_name>_mspa_<connectivity>_<edge_width>_<trans>_<i_e>.txt : statistics report
     """
     start_time = time.time()
-    
+
     # Log
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
@@ -85,20 +85,16 @@ def spa(in_tiff,
 
     # Input Geotiff validations
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=False)
-    
+
     # Log
     utils.log_msg(verb, "[    OK     ]  Input raster verified.")
 
     try:
         # Log
         utils.log_msg(verb, "[   START   ]  Computing SPA...")
-        
+
         # Compute SPA
         spa_array = engine.compute_spa(input_data, edge_width, classes)
-        
-        # Log
-        utils.log_msg(verb, "[    OK     ]  SPA computed.")
-        utils.log_msg(verb, "[   START   ]  Generating statistics and saving GeoTIFF...")  
 
         # Save Final Geotiff with Palette and Tags
         weblink = 'https://forest.jrc.ec.europa.eu/en/activities/lpa'
@@ -107,26 +103,33 @@ def spa(in_tiff,
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, spa_array, info['profile'], cmap_path, tag_descr)
 
+        # Log
+        utils.log_msg(verb, "[    OK     ]  SPA computed.")
+
         # Statistics and Reporting
         stats_dict = None
         if statists:
+            # Log
+            utils.log_msg(verb, "[   START   ]  Generating statistics and saving GeoTIFF...")
+
             minfo = utils.get_raster_info(out_tiff)
             spa_pxl_freq = utils.get_pxl_freq(spa_array)
             stats_dict = _get_spa_stats(spa_freq = spa_pxl_freq,
                                         tiff_info = minfo,
                                         outfile = stat_files,
-                                        out_name=out_name, 
+                                        out_name=out_name,
                                         out_dir = outdir,
                                         source_tiff = in_tiff)
 
-        # Computational time and log
+        # Computational time
         time_str = utils.running_time(start_time, time.time())
-        utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.") 
-        utils.log_msg(verb, f"\n>>> SPA task finished in {time_str}") 
-        
         if statists:
-            txt_file = outdir / f'{out_name}.txt'
+            txt_file = txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)
+            utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.")
+
+        # Log
+        utils.log_msg(verb, f"\n>>> SPA task finished in {time_str}")
 
         return stats_dict
 
@@ -197,14 +200,14 @@ def spa_stats(spa_tiff, stat_files = True, outdir = None, source_tiff=None):
     with rasterio.open(spa_tiff) as src:
         spa_data = src.read(1)
     spa_pxl_freq = utils.get_pxl_freq(spa_data)
-    
+
     # Get statistics
-    stats_dict = _get_spa_stats(spa_freq = spa_pxl_freq, 
-                                tiff_info = minfo, 
-                                outfile = stat_files, 
-                                out_name = out_name, 
-                                out_dir = outdir, 
-                                source_tiff = source_tiff)    
+    stats_dict = _get_spa_stats(spa_freq = spa_pxl_freq,
+                                tiff_info = minfo,
+                                outfile = stat_files,
+                                out_name = out_name,
+                                out_dir = outdir,
+                                source_tiff = source_tiff)
 
     # Computational time
     time_str = utils.running_time(start_time_stat, time.time())
@@ -215,21 +218,21 @@ def spa_stats(spa_tiff, stat_files = True, outdir = None, source_tiff=None):
     return stats_dict
 
 
-def _get_spa_stats(spa_freq, 
-                   tiff_info, 
-                   outfile=True, 
-                   out_name=None, 
-                   out_dir=None, 
+def _get_spa_stats(spa_freq,
+                   tiff_info,
+                   outfile=True,
+                   out_name=None,
+                   out_dir=None,
                    source_tiff=None):
     """
-    Get the SPA statistics.    
+    Get the SPA statistics.
     """
-    
+
     # Get SPA parameters
     tool_params = utils.get_tool_parameters(tiff_info["tag"])
     edge_width = tool_params["edge_width"]
     classes = tool_params["classes"]
-    
+
     # Define input and output file names
     source_tiff = Path(source_tiff) if source_tiff else None
 
@@ -278,11 +281,11 @@ def _get_spa_stats(spa_freq,
                     "5 Margin (1)" : marg,
                     "6 Core-opening (100)": cor_opn,
                     "7 Background (0)" : bgrnd,
-                    "8 Missing (129)" : ndata}  
-    
+                    "8 Missing (129)" : ndata}
+
     if outfile:
         ### TXT Template Reporting ###
-        
+
         if classes == '2':
             r1 = f"Contiguous        17       {core:>10}    {core/fgrnd*100:7.2f}"
             r2 = f"Margin             1       {marg:>10}    {marg/fgrnd*100:7.2f}"
@@ -304,7 +307,7 @@ def _get_spa_stats(spa_freq,
             r4 = f"Islet              9       {isle:>10}    {isle/fgrnd*100:7.2f}"
             r5 = f"Margin             1       {marg:>10}    {marg/fgrnd*100:7.2f}"
             table_body = "\n".join([r1,r2,r3,r4,r5])
-            
+
         content = {
             "input_file": source_tiff.name if source_tiff else "n/a",
             "epsg_code": tiff_info["epsg"],

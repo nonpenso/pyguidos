@@ -35,29 +35,35 @@ Fragmentation Classes
 The result of a FOS analysis is a map with the same spatial extent as the input,
 where each foreground pixel receives a value in the range [0, 100] reflecting the
 FAD or FAC metric in its local neighbourhood. These continuous values are then
-aggregated into 5 classes and colour-coded in the output map:
+grouped into 5 classes and colour-coded in the output map:
 
 .. list-table::
    :header-rows: 1
 
-   * - Class
+   * - Foreground cover class
      - FOS range
-     - Description
+     - Fragmentation
+	 - Connectivity
    * - **Rare**
      - 0 -- 10%
-     - Very low foreground density
+     - Very low
+	 - Very high
    * - **Patchy**
      - 10 -- 40%
-     - Low foreground density
+     - Low 
+	 - High
    * - **Transitional**
      - 40 -- 60%
-     - Medium foreground density
+     - Medium 
+	 - Medium
    * - **Dominant**
      - 60 -- 90%
-     - High foreground density
+     - High 
+	 - Low
    * - **Interior**
      - 90 -- 100%
-     - Very high foreground density
+     - Very high 
+	 - Very low
 
 
 Usage

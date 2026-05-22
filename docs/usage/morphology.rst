@@ -24,7 +24,7 @@ The following table describes the byte values and categories for each level:
      - Class Name
    * - **2 classes**
      - 17, 1
-     - Contiguous, Linear
+     - Contiguous, Margin
    * - **3 classes**
      - 17, 1, 100
      - Core, Margin, Core Opening
@@ -33,7 +33,7 @@ The following table describes the byte values and categories for each level:
      - Core, Edge, Perforation, Margin, Core Opening
    * - **6 classes**
      - 17, 3, 5, 9, 1, 100
-     - Core, Edge, Perforation, Islet, Linear, Core Opening
+     - Core, Edge, Perforation, Islet, Margin, Core Opening
 
 .. note::
     In all modes, Background is represented by value **0**, and No Data is represented by **129**.

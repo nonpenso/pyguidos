@@ -65,7 +65,7 @@ def acc(
     - <in_name>_acc.txt : statistics report
     """
     start_time = time.time()
-    
+
     # Log
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
@@ -88,14 +88,14 @@ def acc(
 
     # Input Geotiff validations
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=True)
-    
+
     # Log
     utils.log_msg(verb, "[    OK     ]  Input raster verified.")
 
     try:
         # Log
         utils.log_msg(verb, "[   START   ]  Computing Accounting...")
-        
+
         # Get patch size frequencies
         labeled_array, lab_pxl_freq = engine.labelling_array(input_data, 2)
 
@@ -123,10 +123,6 @@ def acc(
             default=reclass_array
         ).astype(np.uint8, casting='unsafe')
 
-        # Log
-        utils.log_msg(verb, "[    OK     ]  Accounting computed.")
-        utils.log_msg(verb, "[   START   ]  Generating statistics and saving GeoTIFF...")        
-
         # Save Final Geotiff with Palette and Tags
         thresh_list = ",".join([str(x) for x in thresholds])
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/"
@@ -134,27 +130,34 @@ def acc(
         cmap_path = TEMPL_DIR / "acc_colormap.txt"
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, out_array, info['profile'], cmap_path, tag_descr)
-        
+
+        # Log
+        utils.log_msg(verb, "[    OK     ]  Accounting computed.")
+
         # Statistics and Reporting
         if statists:
+            # Log
+            utils.log_msg(verb, "[   START   ]  Generating statistics...")
+
             minfo = utils.get_raster_info(out_tiff)
             acc_pxl_freq = utils.get_pxl_freq(out_array)
-            stats_dict = _get_acc_stats(acc_freq = acc_pxl_freq, 
-                                        lab_freq = lab_pxl_freq, 
+            stats_dict = _get_acc_stats(acc_freq = acc_pxl_freq,
+                                        lab_freq = lab_pxl_freq,
                                         tiff_info = minfo,
-                                        outfile=stat_files, 
-                                        out_name=out_name, 
-                                        out_dir=outdir, 
+                                        outfile=stat_files,
+                                        out_name=out_name,
+                                        out_dir=outdir,
                                         source_tiff=in_tiff)
 
-        # Computational time and log
+        # Computational time
         time_str = utils.running_time(start_time, time.time())
-        utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.") 
-        utils.log_msg(verb, f"\n>>> Accounting task finished in {time_str}") 
-
         if statists:
             txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)
+            utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.")
+
+        # Log
+        utils.log_msg(verb, f"\n>>> Accounting task finished in {time_str}")
 
         return stats_dict
 
@@ -225,16 +228,16 @@ def acc_stats(acc_tiff, stat_files=True, outdir=None, source_tiff=None):
     with rasterio.open(acc_tiff) as src:
         acc_data = src.read(1)
     acc_pxl_freq = utils.get_pxl_freq(acc_data)
-    
+
     # Get statistics
-    stats_dict = _get_acc_stats(acc_freq = acc_pxl_freq, 
-                                lab_freq = None, 
-                                tiff_info = minfo, 
-                                outfile = stat_files, 
-                                out_name = out_name, 
-                                out_dir = outdir, 
+    stats_dict = _get_acc_stats(acc_freq = acc_pxl_freq,
+                                lab_freq = None,
+                                tiff_info = minfo,
+                                outfile = stat_files,
+                                out_name = out_name,
+                                out_dir = outdir,
                                 source_tiff = source_tiff)
-    
+
     # Computational time
     time_str = utils.running_time(start_time_stat, time.time())
     if stat_files:
@@ -246,15 +249,15 @@ def acc_stats(acc_tiff, stat_files=True, outdir=None, source_tiff=None):
 
 #############
 
-def _get_acc_stats(acc_freq, 
-                   tiff_info, 
+def _get_acc_stats(acc_freq,
+                   tiff_info,
                    lab_freq=None,
-                   outfile=True, 
-                   out_name=None, 
-                   out_dir=None, 
+                   outfile=True,
+                   out_name=None,
+                   out_dir=None,
                    source_tiff=None):
     """
-    Get the Accounting statistics.    
+    Get the Accounting statistics.
     """
     # Get ACC parameters
     tag = tiff_info["tag"]
@@ -286,7 +289,7 @@ def _get_acc_stats(acc_freq,
                 patch_class = get_class(pixel_count, thresholds)
                 class_pch[patch_class] += 1
                 patch_sizes.append(pixel_count)
-    
+
         tot_pch = len(patch_sizes)
         avg_size = np.mean(patch_sizes)
         avg_size_txt = f"{avg_size:.1f}"

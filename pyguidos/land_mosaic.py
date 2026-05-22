@@ -77,7 +77,7 @@ def landmos(in_tiff,
     - <in_name>_lm_<window_size>_heatmap.png               : ternary diagram heatmap
     """
     start_time = time.time()
-    
+
     # Log
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
@@ -100,14 +100,14 @@ def landmos(in_tiff,
 
     # Input Geotiff validations
     checks.validate_lm_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'])
-    
+
     # Log
     utils.log_msg(verb, "[    OK     ]  Input raster verified.")
 
     try:
         # Log
         utils.log_msg(verb, "[   START   ]  Computing Landscape Mosaic...")
-        
+
         # Compute Landscape Mosaic
         data_out = engine.compute_LM(input_data, window_size)
 
@@ -126,42 +126,45 @@ def landmos(in_tiff,
                 if old_v < 256:
                     mapping_lut[old_v] = new_v
         data_out19cl = utils.remap_array(data_out, mapping_lut)
-        
-        # Log
-        utils.log_msg(verb, "[    OK     ]  Landscape Mosaic computed.")
-        utils.log_msg(verb, "[   START   ]  Generating statistics and saving GeoTIFF...")  
-    
+
         # Save 19 classes Geotiff
         tag_descr19 = f"GTB_LM, <{window_size},->, {weblink}"
         out_tiff19c = outdir / f"{out_name}_19class.tif"
         cmap_path19 = TEMPL_DIR / "lm_19c_colormap.txt"
         utils.save_output_geotiff(out_tiff19c, data_out19cl, info['profile'], cmap_path19, tag_descr19)
 
+        # Log
+        utils.log_msg(verb, "[    OK     ]  Landscape Mosaic computed.")
+
         # Statistics and Reporting
         stats_dict = None
         if statists:
+            # Log
+            utils.log_msg(verb, "[   START   ]  Generating statistics...")
+
             minfo = utils.get_raster_info(out_tiff103c)
             lm_pxl_freq = utils.get_pxl_freq(data_out)
-            stats_dict = _get_lm_stats(lm_freq = lm_pxl_freq, 
-                                       tiff_info = minfo, 
+            stats_dict = _get_lm_stats(lm_freq = lm_pxl_freq,
+                                       tiff_info = minfo,
                                        source_freq=input_pxl_freq,
-                                       outfile = stat_files, 
-                                       out_name = out_name, 
-                                       out_dir = outdir, 
+                                       outfile = stat_files,
+                                       out_name = out_name,
+                                       out_dir = outdir,
                                        source_tiff = in_tiff)
 
         # Add output paths
         stats_dict["output paths"]["path tif 103cl"] = str(out_tiff103c)
         stats_dict["output paths"]["path tif 19cl"] = str(out_tiff19c)
-        
-        # Computational time and log
+
+        # Computational time
         time_str = utils.running_time(start_time, time.time())
-        utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.") 
-        utils.log_msg(verb, f"\n>>> Fragmentation task finished in {time_str}") 
-        
         if statists:
-            txt_file = outdir / f'{out_name}.txt'
+            txt_file = txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)
+            utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.")
+
+        # Log
+        utils.log_msg(verb, f"\n>>> Landscape Mosaic task finished in {time_str}")
 
         return stats_dict
 
@@ -230,7 +233,7 @@ def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
             "landmos_stats requires a 'GTB_LM' result file.")
     if tool_params.get("cmap") == "-":
         sys.exit("ERROR: Input Geotiff is 19-class Landscape Mosaic result file', "
-            "landmos_stats requires 103-class result file.")        
+            "landmos_stats requires 103-class result file.")
 
     # Define input and output file names
     out_name = Path(lm_tiff).stem
@@ -240,7 +243,7 @@ def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
     # LM pixel counting
     with rasterio.open(lm_tiff) as src:
         lm_data = src.read(1, out_dtype='uint8')
-    lm_pxl_freq = utils.get_pxl_freq(lm_data)    
+    lm_pxl_freq = utils.get_pxl_freq(lm_data)
 
     # Source pixel counting
     source_pxl_numb = None
@@ -248,37 +251,37 @@ def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
         with rasterio.open(source_tiff) as src:
             source_data = src.read(1)
         source_pxl_numb = utils.get_pxl_freq(source_data)
-        
+
     # Get statistics
-    stats_dict = _get_lm_stats(lm_freq = lm_pxl_freq, 
-                               tiff_info = minfo, 
+    stats_dict = _get_lm_stats(lm_freq = lm_pxl_freq,
+                               tiff_info = minfo,
                                source_freq=source_pxl_numb,
-                               outfile = stat_files, 
-                               out_name = out_name, 
-                               out_dir = outdir, 
+                               outfile = stat_files,
+                               out_name = out_name,
+                               out_dir = outdir,
                                source_tiff = source_tiff)
-    
+
     # Add output paths
     stats_dict["output paths"]["path tif 103cl"] = str(lm_tiff)
-    
+
     # Computational time
     time_str = utils.running_time(start_time_stat, time.time())
     if stat_files:
         txt_file = outdir / f'{out_name}.txt'
         utils.update_time_line(txt_file, time_str)
 
-    return stats_dict    
-    
-   
-def _get_lm_stats(lm_freq, 
-                  tiff_info, 
+    return stats_dict
+
+
+def _get_lm_stats(lm_freq,
+                  tiff_info,
                   source_freq=None,
-                  outfile=True, 
-                  out_name=None, 
-                  out_dir=None, 
+                  outfile=True,
+                  out_name=None,
+                  out_dir=None,
                   source_tiff=None):
     """
-    Get the Landscape Mosaic statistics.    
+    Get the Landscape Mosaic statistics.
     """
     # Get LM parameters
     tag = tiff_info["tag"]
@@ -327,7 +330,7 @@ def _get_lm_stats(lm_freq,
 
     lm_pixel_prop_19 = Counter({k: v / foregr *100
                                 for k, v in lm_pixel_freq_19.items()})
-    
+
     A_rel = lm_pixel_prop_19[1]
     D_rel = lm_pixel_prop_19[2]
     N_rel = lm_pixel_prop_19[3]
@@ -350,7 +353,7 @@ def _get_lm_stats(lm_freq,
     NoD_rel = lm_pixel_prop_19[0]
 
     if outfile:
-        
+
         ### PNG HEATMAP ###
         fig = None
         try:
@@ -641,8 +644,8 @@ def _get_lm_stats(lm_freq,
         utils.generate_text_report(TEMPL_DIR / 'lm_templ.txt', txt_file, content)
 
     # Statistic dictionaries
-    
-   
+
+
     path_stats_dict = None
     if outfile:
         path_stats_dict = {
