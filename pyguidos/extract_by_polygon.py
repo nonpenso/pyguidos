@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 
 import pyogrio
-import geopandas as gdp
+#import geopandas as gdp
 import rasterio
 from rasterio.mask import mask as rio_mask
 from rasterio.crs import CRS

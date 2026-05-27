@@ -135,6 +135,7 @@ def acc(
         utils.log_msg(verb, "[    OK     ]  Accounting computed.")
 
         # Statistics and Reporting
+        stats_dict = None
         if statists:
             # Log
             utils.log_msg(verb, "[   START   ]  Generating statistics...")

@@ -49,9 +49,6 @@ def landmos(in_tiff,
     out_colors : str, optional
         Color scheme for the 103-class output colormap: 'agr', 'ant', 'bgr',
         'dev', 'div', 'nat'. Default 'bgr'.
-    return_array : bool, optional
-        If True, includes the 103-class output numpy array in the result.
-        Default False.
     verb : bool, optional
         If True, prints progress messages. Default False.
 
@@ -151,15 +148,14 @@ def landmos(in_tiff,
                                        out_name = out_name,
                                        out_dir = outdir,
                                        source_tiff = in_tiff)
-
-        # Add output paths
-        stats_dict["output paths"]["path tif 103cl"] = str(out_tiff103c)
-        stats_dict["output paths"]["path tif 19cl"] = str(out_tiff19c)
+            # Add output paths
+            stats_dict["output paths"]["path tif 103cl"] = str(out_tiff103c)
+            stats_dict["output paths"]["path tif 19cl"] = str(out_tiff19c)
 
         # Computational time
         time_str = utils.running_time(start_time, time.time())
         if statists:
-            txt_file = txt_file = outdir / f'{out_name}.txt'
+            txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)
             utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.")
 
@@ -232,7 +228,7 @@ def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
         sys.exit(f"ERROR: Input Geotiff is labeled as '{tool_params.get('tool_id')}', "
             "landmos_stats requires a 'GTB_LM' result file.")
     if tool_params.get("cmap") == "-":
-        sys.exit("ERROR: Input Geotiff is 19-class Landscape Mosaic result file', "
+        sys.exit("ERROR: Input Geotiff is 19-class Landscape Mosaic result file, "
             "landmos_stats requires 103-class result file.")
 
     # Define input and output file names
