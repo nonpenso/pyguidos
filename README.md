@@ -48,7 +48,7 @@ Full API documentation is available at https://jrc-forest.pages.code.europa.eu/g
 Requirements
 ============
 
-- Python >= 3.8
+- Python >= 3.10
 - numpy >2.0
 - rasterio >=1.4
 - scipy >=1.15
