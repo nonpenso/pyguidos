@@ -269,7 +269,7 @@ def _get_frag_stats(frag_freq,
     inter = sum(frag_freq[i] for i in range(90, 101))
 
     fgrnd = rare + patchy + trans + domin + inter
-    ruarea = fgrnd + frag_freq[101]
+    ruarea = fgrnd + bgrnd + bgr3 + bgr4
     sum_prod = sum(v * frag_freq[v] for v in range(101))
 
     fad_av = sum_prod / fgrnd
