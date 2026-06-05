@@ -378,3 +378,70 @@ def test_spa_six_class_mode(spa_test_grid):
     
     # Core pixel [8, 8] should still be CORE (17)
     assert res[8, 8] == 17
+
+
+# =============================================================================
+# FRAGMENTATION CHANGE Logic Tests
+# =============================================================================
+
+@pytest.fixture
+def empty_matrix():
+    """Creates a clean 107x107 confusion matrix accumulator."""
+    return np.zeros((107, 107), dtype=np.int64)
+
+def test_fos_change_tiers_and_stats(empty_matrix):
+    """Verifies all 7 categorical outcome tiers and checks matrix statistics computation."""
+    # We set up a 1x8 grid where each index tests a distinct logic path
+    # Indices:  0    1    2    3    4    5    6    7
+    chunk_a = np.array([[101, 101,  50,  80, 102, 105, 106, 120]], dtype=np.uint8)
+    chunk_b = np.array([[101,  30, 101,  60,  10,  20, 101, 120]], dtype=np.uint8)
+    
+    # Run with compute_stats = True
+    out = engine.compute_fos_change(chunk_a, chunk_b, empty_matrix, compute_stats=True)
+
+    # Tier 1: a == 101 and b == 101 -> 252
+    assert out[0, 0] == 252
+
+    # Tier 2: a == 101 and b <= 100 -> 250
+    assert out[0, 1] == 250
+
+    # Tier 3: a <= 101 and b == 101 -> 251
+    assert out[0, 2] == 251
+
+    # Tier 4: a <= 100 and b <= 100 -> 100 + a - b
+    # 100 + 80 - 60 = 120
+    assert out[0, 3] == 120
+
+    # Tier 5: a == 102 or b == 102 -> 254
+    assert out[0, 4] == 254
+
+    # Tier 6: a or b in (105, 106) -> 253
+    assert out[0, 5] == 253  # a is 105
+    assert out[0, 6] == 253  # b is 101, but a is 106
+
+    # Tier 7: else -> 102 (Uncaught values, e.g., 120)
+    assert out[0, 7] == 102
+
+    # Verify confusion matrix statistics counter
+    # Coordinates (101, 101) should be incremented once from index 0
+    assert empty_matrix[101, 101] == 1
+    # Coordinates (50, 101) from index 2
+    assert empty_matrix[50, 101] == 1
+    
+    # FIXED ASSERTION:
+    # This proves that index 7 (value 120) was completely bypassed by the guard condition.
+    assert np.sum(empty_matrix) == 7
+
+def test_fos_change_bypass_stats(empty_matrix):
+    """Verifies that matrix statistics tracking is completely skipped when compute_stats=False."""
+    chunk_a = np.array([[50]], dtype=np.uint8)
+    chunk_b = np.array([[50]], dtype=np.uint8)
+
+    # Run with compute_stats = False
+    out = engine.compute_fos_change(chunk_a, chunk_b, empty_matrix, compute_stats=False)
+
+    # Output calculation should still occur (100 + 50 - 50 = 100)
+    assert out[0, 0] == 100
+
+    # Matrix element MUST remain unmodified (0)
+    assert empty_matrix[50, 50] == 0

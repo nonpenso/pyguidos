@@ -1,6 +1,8 @@
 import sys
 import numpy as np
 
+from . import utils
+
 
 def validate_wsize(wsize):
     """
@@ -255,3 +257,59 @@ def validate_acc_params(thresholds):
 
     # Return sorted list for the next step of the process
     return sorted(list(unique_thresholds))
+
+
+
+def validate_fchmaps_input(metadata1, metadata2):
+    """
+    Validates that two GeoTIFF metadata dictionaries are spatially identical
+    and share the same Fragmentation analysis parameters.
+
+    Parameters:
+    ----------
+    metadata1 : dict
+        The custom metadata dictionary of the first GeoTIFF layer.
+    metadata2 : dict
+        The custom metadata dictionary of the second GeoTIFF layer.
+
+    Raises:
+    ------
+    SystemExit
+        If the files are not Guidos outputs, and the tool IDs, fragmentation 
+        configurations, or spatial grids do not match perfectly.
+    """
+    # Parse and extract custom tools parameters from the analysis tags
+    tag1 = utils.get_tool_parameters(metadata1["tag"])
+    tag2 = utils.get_tool_parameters(metadata2["tag"])
+    
+    # Verify if BOTH files come from GTB tool
+    if tag1 == "--" or tag2 == "--":
+        sys.exit(
+            "ERROR: One or both inputs are not Guidos outputs. "
+            "Both inputs must be valid Fragmentation outputs from Guidos spatial analysis."
+        )
+
+    # Verify that BOTH files come from the correct GTB tool: GTB_FOS
+    if tag1.get("tool_id") != "GTB_FOS" or tag2.get("tool_id") != "GTB_FOS":
+        sys.exit(
+            "ERROR: Both input GeoTIFFs must be Fragmentation outputs "
+            f"(Expected: 'GTB_FOS', Got: '{tag1.get('tool_id')}' and '{tag2.get('tool_id')}')."
+        )
+
+    # Verify internal tool analysis parameters match perfectly
+    tool_params = ["tiftype", "connect", "method", "wsize"]
+    for p in tool_params:
+        if tag1.get(p) != tag2.get(p):
+            sys.exit(
+                "ERROR: The two input GeoTIFFs have mismatching Fragmentation parameters. "
+                f"Parameter '{p}' must be identical. Got: {tag1.get(p)} and {tag2.get(p)}."
+            )
+
+    # Verify geospatial and structural grid characteristics are identical
+    spatial_params = ["rows", "cols", "bands", "resX", "resY", "epsg", "bounds"]
+    for s in spatial_params:
+        if metadata1.get(s) != metadata2.get(s):
+            sys.exit(
+                "ERROR: The two input GeoTIFFs must share the same geospatial extent and projection. "
+                f"Mismatch found in parameter '{s}': {metadata1.get(s)} vs {metadata2.get(s)}."
+            )

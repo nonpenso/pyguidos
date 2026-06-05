@@ -16,7 +16,7 @@ DATA_DIR = MODULE_ROOT / "data"
 
 
 # Package metadata
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
@@ -70,6 +70,7 @@ _setup_numba()
 # ================================================================================
 # Import Tools and Results
 from .fragmentation import frag, frag_stats
+from .fragmentation_change import frag_change
 from .land_mosaic import landmos, landmos_stats
 from .spa import spa, spa_stats
 from .accounting import acc, acc_stats
@@ -100,6 +101,12 @@ def info(tool: str = None):
             "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/fragmentation.html",
             "sheet": "https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf"
         },
+        "frag_change": {
+            "title": "Fragmentation change",
+            "desc": "Calculates the change of two Fragmentation output tiff files.",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/fragmentation_change.html",
+            "sheet": "https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf"
+        },        
         "landmos": {
             "title": "Landscape Mosaic",
             "desc": "Tri-modal landscape classification (Agriculture, Natural, Developed).",
@@ -151,7 +158,7 @@ def info(tool: str = None):
 # Exported names
 __all__ = [
            "spa", "spa_stats",
-           "frag", "frag_stats",
+           "frag", "frag_stats", "frag_change",
            "landmos", "landmos_stats",
            "acc", "acc_stats",
            "rss",

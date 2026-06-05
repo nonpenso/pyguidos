@@ -4,7 +4,7 @@ Installation
 Requirements
 ------------
 
-pyGuidos requires **Python >=3.8** and the following dependencies,
+pyGuidos requires **Python >=3.10** and the following dependencies,
 which are installed automatically with pip:
 
 .. list-table::

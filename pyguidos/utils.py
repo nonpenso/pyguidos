@@ -139,14 +139,7 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
         color_map = colormap_input
     # Check if it's a Path or String (Spatcon style)
     elif isinstance(colormap_input, (str, Path)):
-        cmap_path = Path(colormap_input)
-        with open(cmap_path, 'r') as f:
-            for line in f:
-                parts = line.split()
-                if len(parts) >= 4:
-                    val = int(parts[0])
-                    r, g, b = int(parts[1]), int(parts[2]), int(parts[3])
-                    color_map[val] = (r, g, b, 255)
+        _, color_map = get_colormap(Path(colormap_input))
 
     # Ensure data is 3D (bands, rows, cols) for rasterio writing
     if data.ndim == 2:
@@ -158,6 +151,43 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
         dst.colorinterp = [ColorInterp.palette]
         dst.write_colormap(1, color_map)
         dst.update_tags(**tags)
+
+def get_colormap(cmap_path):
+    """
+    Get from TXT templates the colormpas for plotting in Matplotlib 
+    and to save in GeoTiffs.
+    
+    Parameters
+    ----------    
+    cmap_path : Path
+        The path to a colormap .txt file with space-separated
+        columns: value r g b.
+    
+    Returns
+    -------
+    dict, dict
+        Two dictionaries with the sequence of R, G, B values to use for
+        Matplotlib or to save into GeoTiff.
+        
+    """
+    plot_color_map = {}
+    tiff_color_map = {}
+    with open(cmap_path, 'r') as f:
+        for line in f:
+            parts = line.split()
+
+            if len(parts) >= 4:
+                val = int(parts[0])
+			
+                # For GeoTiff colormap
+                r, g, b = int(parts[1]), int(parts[2]), int(parts[3])
+                tiff_color_map[val] = (r, g, b, 255)
+				
+                # Normalize 0-255 to 0.0-1.0 for Matplotlib
+                rp, gp, bp = int(parts[1])/255, int(parts[2])/255, int(parts[3])/255
+                plot_color_map[val] = (rp, gp, bp)
+
+    return plot_color_map, tiff_color_map
 
 
 def get_pxl_freq(array):

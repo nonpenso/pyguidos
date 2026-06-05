@@ -24,8 +24,8 @@ def frag(
     ):
     """
     Performs Fragmentation analysis on a binary raster computing the proportion
-    of foreground pixels within each window [0-100], classifying landscape 
-    fragmentation into 5 classes: Rare, Patchy, Transitional, Dominant, 
+    of foreground pixels within each window [0-100], classifying landscape
+    fragmentation into 5 classes: Rare, Patchy, Transitional, Dominant,
     and Interior.
 
     Parameters
@@ -71,7 +71,7 @@ def frag(
     - <in_name>_<method>_<window_size>.png  : foreground pixel histogram
     """
     start_time = time.time()
-    
+
     # Log
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
@@ -94,24 +94,20 @@ def frag(
 
     # Input Geotiff validations
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=True)
-    
+
     # Log
     utils.log_msg(verb, "[    OK     ]  Input raster verified.")
 
     try:
         # Log
         utils.log_msg(verb, "[   START   ]  Computing Fragmentation...")
-        
+
         # Compute Fragmentation
         if method.lower() == 'fad':
             data_out = engine.compute_FAD(input_data, window_size, 1)
         elif method.lower() == 'fac':
             data_out = engine.compute_FAC(input_data, window_size, 1)
- 
-        # Log
-        utils.log_msg(verb, "[    OK     ]  Fragmentation computed.")
-        utils.log_msg(verb, "[   START   ]  Generating statistics and saving GeoTIFF...")  
- 
+
         # Save Final Geotiff with Palette and Tags
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/"
         tag_descr = f"GTB_FOS, <Binary,-1,8,{method.upper()}_5,{info['resX']},{window_size}>, {weblink}"
@@ -119,33 +115,39 @@ def frag(
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, data_out, info['profile'], cmap_path, tag_descr)
 
+        # Log
+        utils.log_msg(verb, "[    OK     ]  Fragmentation computed.")
+
         # Statistics and Reporting
         stats_dict = None
         if statists:
+            # Log
+            utils.log_msg(verb, "[   START   ]  Generating statistics...")
+
             frag_pxl_freq = utils.get_pxl_freq(data_out)
             minfo = utils.get_raster_info(out_tiff)
-            stats_dict = _get_frag_stats(frag_freq = frag_pxl_freq, 
-                                         tiff_info = minfo, 
-                                         outfile = stat_files, 
-                                         out_name = out_name, 
-                                         out_dir = outdir, 
-                                         source_tiff = in_tiff)    
+            stats_dict = _get_frag_stats(frag_freq = frag_pxl_freq,
+                                         tiff_info = minfo,
+                                         outfile = stat_files,
+                                         out_name = out_name,
+                                         out_dir = outdir,
+                                         source_tiff = in_tiff)
 
-        # Computational time and log
+        # Computational time
         time_str = utils.running_time(start_time, time.time())
-        utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.") 
-        utils.log_msg(verb, f"\n>>> Fragmentation task finished in {time_str}") 
-        
         if statists:
             txt_file = txt_file = outdir / f'{out_name}.txt'
             utils.update_time_line(txt_file, time_str)
+            utils.log_msg(verb, "[    OK     ]  Statistics complete and files saved.")
+
+        # Log
+        utils.log_msg(verb, f"\n>>> Fragmentation task finished in {time_str}")
 
         return stats_dict
 
     except Exception as e:
         print(f"Error during run: {e}")
         raise # Still show the error
-
 
 
 def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
@@ -214,14 +216,14 @@ def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
     with rasterio.open(frag_tiff) as src:
         frag_data = src.read(1)
     frag_pxl_freq = utils.get_pxl_freq(frag_data)
-    
+
     # Get statistics
-    stats_dict = _get_frag_stats(frag_freq = frag_pxl_freq, 
-                                 tiff_info = minfo, 
-                                 outfile = stat_files, 
-                                 out_name = out_name, 
-                                 out_dir = outdir, 
-                                 source_tiff = source_tiff)    
+    stats_dict = _get_frag_stats(frag_freq = frag_pxl_freq,
+                                 tiff_info = minfo,
+                                 outfile = stat_files,
+                                 out_name = out_name,
+                                 out_dir = outdir,
+                                 source_tiff = source_tiff)
 
     # Computational time
     time_str = utils.running_time(start_time_stat, time.time())
@@ -234,22 +236,22 @@ def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
 
 #############
 
-def _get_frag_stats(frag_freq, 
-                    tiff_info, 
-                    outfile=True, 
-                    out_name=None, 
-                    out_dir=None, 
+def _get_frag_stats(frag_freq,
+                    tiff_info,
+                    outfile=True,
+                    out_name=None,
+                    out_dir=None,
                     source_tiff=None):
     """
-    Get the Fragmentation statistics.    
+    Get the Fragmentation statistics.
     """
-    
+
     # Get Frag parameters
     tag = tiff_info["tag"]
     tool_params = utils.get_tool_parameters(tag)
     method,fclasses = tool_params["method"].split('_')
     window_size = int(tool_params["wsize"])
-    
+
     # Define input and output file names
     source_tiff = Path(source_tiff) if source_tiff else None
 
@@ -267,7 +269,7 @@ def _get_frag_stats(frag_freq,
     inter = sum(frag_freq[i] for i in range(90, 101))
 
     fgrnd = rare + patchy + trans + domin + inter
-    ruarea = fgrnd + frag_freq[101]
+    ruarea = fgrnd + bgrnd + bgr3 + bgr4
     sum_prod = sum(v * frag_freq[v] for v in range(101))
 
     fad_av = sum_prod / fgrnd
@@ -292,15 +294,7 @@ def _get_frag_stats(frag_freq,
 
         # Create the colormap
         cmap_path = TEMPL_DIR / "frag_colormap.txt"
-        colors = {}
-        with open(cmap_path, 'r') as f:
-            for line in f:
-                parts = line.split()
-                if len(parts) >= 4:
-                    val = int(parts[0])
-                    # Normalize 0-255 to 0.0-1.0 for Matplotlib
-                    r, g, b = int(parts[1])/255, int(parts[2])/255, int(parts[3])/255
-                    colors[val] = (r, g, b)
+        colors, _ = utils.get_colormap(cmap_path)
         bar_colors = [colors.get(v) for v in pixel_values]
 
         # Create the figure with bar chart
@@ -348,11 +342,16 @@ def _get_frag_stats(frag_freq,
             "output_file": f"{out_name}.tif",
             "rep_unit_pxl": ruarea,
             "foreg_area_rel": (fgrnd / ruarea * 100),
-            "rare_val": (rare / fgrnd * 100),
-            "patch_val": (patchy / fgrnd * 100),
-            "trans_val": (trans / fgrnd * 100),
-            "domin_val": (domin / fgrnd * 100),
-            "inter_val": (inter / fgrnd * 100),
+            "rare_val": f"{rare:>9}",
+            "patch_val": f"{patchy:>9}",
+            "trans_val": f"{trans:>9}",
+            "domin_val": f"{domin:>9}",
+            "inter_val": f"{inter:>9}",
+            "rare_pro": f"{(rare / fgrnd) * 100:7.4f}",
+            "patch_pro": f"{(patchy / fgrnd) * 100:7.4f}",
+            "trans_pro": f"{(trans / fgrnd) * 100:7.4f}",
+            "domin_pro": f"{(domin / fgrnd) * 100:7.4f}",
+            "inter_pro": f"{(inter / fgrnd) * 100:7.4f}",            
             "fad_av_idx": fad_av,
             "avcon_idx": avcon,
         }

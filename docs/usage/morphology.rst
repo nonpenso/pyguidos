@@ -24,7 +24,7 @@ The following table describes the byte values and categories for each level:
      - Class Name
    * - **2 classes**
      - 17, 1
-     - Contiguous, Linear
+     - Contiguous, Margin
    * - **3 classes**
      - 17, 1, 100
      - Core, Margin, Core Opening
@@ -48,22 +48,22 @@ The following table describes the byte values and categories for each level:
 .. figure:: ../_image/SPA_CL2.png
     :width: 80%
     :align: center
-    :alt: MSPA classes
+    :alt: SPA 2 classes
     
 .. figure:: ../_image/SPA_CL3.png
     :width: 80%
     :align: center
-    :alt: MSPA classes
+    :alt: SPA 3 classes
 
 .. figure:: ../_image/SPA_CL5.png
     :width: 80%
     :align: center
-    :alt: MSPA classes
+    :alt: SPA 5 classes
 
 .. figure:: ../_image/SPA_CL6.png
     :width: 80%
     :align: center
-    :alt: MSPA classes
+    :alt: SPA 6 classes
 
     Derived SPA maps with 2, 3, 5 and 6 classes and edge width 1.
 

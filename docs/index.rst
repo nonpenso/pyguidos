@@ -9,8 +9,8 @@ pyGuidos
    :target: https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html
    :alt: Coverage Status
 
-.. image:: https://img.shields.io/badge/version-2.2.0-blue
-   :alt: Version 2.2.0
+.. image:: https://img.shields.io/badge/version-2.3.0-blue
+   :alt: Version 2.3.0
 
 .. image:: https://img.shields.io/badge/license-EUPL--1.2-orange
    :target: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
@@ -24,7 +24,7 @@ pyGuidos provides programmatic access to the main GTB analytical tools, enabling
 landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 .. note::
-   This documentation describes **pyGuidos version 2.2.0**. For older versions, 
+   This documentation describes **pyGuidos version 2.3.0**. For older versions, 
    please refer to the legacy documentation branch.
 
 

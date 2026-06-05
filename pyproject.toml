@@ -2,7 +2,7 @@
 
 [project]
 name = "pyguidos" 
-version = "2.2.0"
+version = "2.3.0"
 authors = [
   { name="Giovanni Caudullo", email="giovanni.caudullo@ext.ec.europa.eu" },
   { name="Peter Vogt", email="peter.vogt@ec.europa.eu" },
@@ -39,7 +39,7 @@ dependencies = [
     "rasterio>=1.4",
     "scipy>=1.15",
     "scikit-image>=0.26.0",
-    "matplotlib>=3.10.9",
+    "matplotlib>=3.10",
     "pyogrio>=0.10",
     "geopandas>=1.1.0",
     "shapely>=2.0.7",

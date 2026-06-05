@@ -587,3 +587,69 @@ def _create_mask(input_array, targets):
                     mask[i, j] = True
                     break
     return mask
+
+
+###############################
+# ---- FOS CHANGE FUNCTION ----
+###############################
+
+
+@njit("uint8[:,:](uint8[:,:], uint8[:,:], int64[:,:], boolean)", cache=True)
+def compute_fos_change(chunk_a, chunk_b, local_matrix, compute_stats):
+    """
+    Processes a matching spatial window chunk from two tracking rasters to 
+    evaluate a 7-tier matrix overlay logic and concurrently update change statistics.
+
+    Parameters
+    ----------
+    chunk_a : ndarray of shape (nrows, ncols), dtype=uint8
+        A 2D window slice extracted from the initial time-step GeoTIFF (Time A).
+    chunk_b : ndarray of shape (nrows, ncols), dtype=uint8
+        A 2D window slice extracted from the subsequent time-step GeoTIFF (Time B).
+    local_matrix : ndarray of shape (107, 107), dtype=int64
+        A global or block-level confusion matrix accumulator tracking pixel-by-pixel 
+        class transitions between Time A and Time B. Modified in-place.
+    compute_stats : bool
+        Flag indicating whether to calculate transition statistics. If False, the 
+        conditional block updating `local_matrix` is bypassed completely.
+
+    Returns
+    -------
+    out : ndarray of shape (nrows, ncols), dtype=uint8
+        The calculated categorical change layer grid for the current window chunk, 
+        where cell values represent explicit transition metrics (e.g., 250-254 for 
+        exclusions/background dynamics, or localized delta values).
+    """
+
+    nrows, ncols = chunk_a.shape
+    out = np.zeros((nrows, ncols), dtype=np.uint8)
+
+    # Standard range is optimal for block-window streaming
+    for i in range(nrows):
+        for j in range(ncols):
+            a_val = chunk_a[i, j]
+            b_val = chunk_b[i, j]
+
+            # Track global statistics concurrently
+            if compute_stats:
+                if a_val <= 106 and b_val <= 106:
+                    local_matrix[a_val, b_val] += 1
+
+            # Your exact 7-tier matrix overlay logic
+            if a_val == 101 and b_val == 101:
+                out[i, j] = 252
+            elif a_val == 101 and b_val <= 100:
+                out[i, j] = 250
+            elif a_val <= 101 and b_val == 101:
+                out[i, j] = 251
+            elif a_val <= 100 and b_val <= 100:
+                out[i, j] = 100 + a_val - b_val
+            elif a_val == 102 or b_val == 102:
+                out[i, j] = 254
+            elif a_val in (105, 106) or b_val in (105, 106):
+                out[i, j] = 253
+            else:
+                out[i, j] = 102
+
+    return out
+
