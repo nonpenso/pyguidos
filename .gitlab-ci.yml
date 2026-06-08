@@ -33,15 +33,15 @@ run_tests:
     paths:
       - htmlcov/
     expire_in: 1 week
-  only:
-    refs:
-      - develop-v2
-      - main
-    changes:
-      - "pyguidos/**/*"
-      - "tests/**/*"
-      - ".gitlab-ci.yml"
-      - "pyproject.toml"
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: always
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop-v2"
+      changes:
+        - "pyguidos/**/*"
+        - "tests/**/*"
+        - ".gitlab-ci.yml"
+        - "pyproject.toml"
 
 # 2. Build and Deploy Documentation (GitLab Pages)
 pages:
