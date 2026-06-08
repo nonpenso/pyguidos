@@ -73,3 +73,22 @@ pages:
   only:
     - develop-v2
     - main
+
+# 3. Build and Publish Package to PyPI
+publish_pypi:
+  stage: deploy
+  tags:
+    - shared-docker
+  needs:
+    - job: run_tests
+      artifacts: false 
+  script:
+    - apt-get update && apt-get install -y libexpat1
+    - pip install --upgrade pip
+    - pip install build twine
+    - python -m build
+    - TWINE_USERNAME=__token__ TWINE_PASSWORD=${PYPI_TOKEN} python3 -m twine upload dist/*
+  only:
+    - tags 
+  except:
+    - branches
