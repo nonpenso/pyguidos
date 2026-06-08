@@ -141,10 +141,10 @@ result = pg.frag(
     window_size=27
 )
 
-# Fragmentation analysis
+# Fragmentation change
 result = pg.frag_change(
-    in_tiff1="my_map2018_frag_fad_27.tif",
-    in_tiff2="my_map2025_frag_fad_27.tif"
+    in_tiff_t1="my_map2018_frag_fad_27.tif",
+    in_tiff_t2="my_map2025_frag_fad_27.tif"
 )
 
 # Landscape Mosaic

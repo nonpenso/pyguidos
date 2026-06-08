@@ -7,26 +7,55 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
 ----
 
+
+2.3.0 - 2026-06-08
+------------------
+
+**Overview**
+
+Version 2.3.0 introduces advanced temporal analysis capabilities to the ``pyguidos`` suite with the implementation of the ``frag_change`` module. This new engine allows users to perform multi-temporal fragmentation comparisons across different time periods, generating not only spatial change trajectories but also rigorous statistical reporting (including delta matrices and confusion matrices) and visual chart summaries.
+
+**Added**
+
+- **``frag_change()`` function** -- Introduced a dedicated multi-temporal spatial engine to calculate fragmentation transitions between two distinct time periods using standardized input GeoTIFFs.
+- New ``get_colormap()`` utility function for consistent colormap loading across modules.
+- New ``validate_fchmaps_input()`` validator for temporal fragmentation change inputs.
+
+**Changed**
+
+- Performance: Pre-clamped window bounds in compute_FAD and compute_FAC Numba kernels, eliminating per-pixel boundary checks in the inner loop.
+- Refactored ``save_output_geotiff()`` to use the new ``get_colormap()`` utility, reducing code duplication.
+- Removed unused ``geopandas`` import from ``extract_by_polygon.py``.
+
+**Fixed**
+
+- Fixed crash in ``landmos()`` when ``statists=False`` (attempted dict access on ``None``).
+- Fixed malformed error message string in ``landmos_stats()``.
+- Corrected `matplotlib` version pin from ``>=3.10.9`` to ``>=3.10``.
+
+
+----
+
 2.2.0 - 2026-05-06
 ------------------
 
-Overview
+**Overview**
 
 Version 2.2.0 achieves a major milestone with the introduction of "SPA" (Simplified Pattern Analysis), a simplified version of MSPA module, now fully reimplemented in native Python. This release also future-proofs the library by providing full compatibility with the NumPy 2.x ecosystem and official testing for Python up to version 3.14. To improve maintainability and developer access, the internal architecture has been refactored to separate raw numerical computation from statistical reporting, providing more granular access to spatial data via dedicated stats functions.
 
-Added
+**Added**
 
 - SPA Native Implementation: Introduced Simplified Pattern Analysis (SPA) with the function ``spa()``, a high-performance Python-native morphological engine.
 - Python 3.14 Support: Official support and CI/CD testing for the latest Python 3.13 and 3.14 releases.
 - NumPy 2.x Compatibility: Updated all internal array logic and C-API interactions to support NumPy 2.0+ promotion rules and metadata structures.
 
-Changed
+**Changed**
 
 - Architectural Refactoring: Core logic has been decoupled into "Compute" (raw array processing) and "Export" (statistics and GeoTIFF generation) layers for better performance and modularity.
 - Unified Internal Pipeline: Standardized how ``frag()``, ``rss()``, ``acc()``, ``landmos()`` and spa() handle data flow, ensuring that the main function and its stats counterpart call the same underlying engine.
 - Numba Optimization: Refined JIT-compilation signatures to maintain high-speed execution across the transition to NumPy 2.x.
 
-Fixed
+**Fixed**
 
 - Statistical Consistency: Fixed potential discrepancies between file output and dictionary results by unifying the internal calculation calls.
 - Memory Efficiency: Optimized the ``xxx_stats()`` calls to reduce memory overhead when processing extremely large GeoTIFFs where only tabular data is required.

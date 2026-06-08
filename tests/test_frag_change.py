@@ -159,7 +159,7 @@ def test_get_frag_change_stats_reporting(
     # Verify report dictionary generation outputs
     assert "output paths" in stats
     assert "input stats" in stats
-    assert stats["output stats"]["Conn change freq"]["4 Insign/no change"] == 10
+    assert stats["output stats"]["Frag change freq"]["4 Insign/no change"] == 10
     
     # Verify reporting files are created
     mock_file_io.assert_called()

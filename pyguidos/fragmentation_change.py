@@ -412,8 +412,7 @@ def _get_frag_change_stats(frag_chan_tiff,
             "path tif" : str(out_dir / f"{out_name}.tif"),
             "path txt" : str(txt_file),
             "path csv" : str(csv_file),
-            "path png" : str(png_file)
-    }
+            "path png" : str(png_file)}
     input_stats_dict = {
         "A foregr pxl" : fgrnd_A,
         "A backgr pxl" : bgrnd_A,
@@ -424,8 +423,7 @@ def _get_frag_change_stats(frag_chan_tiff,
         "B backgr pxl" : bgrnd_B,
         "B backgr3 pxl" : bgsp3_B,
         "B backgr4 pxl" : bgsp4_B,
-        "B missing pxl" : miss_B,        
-    }
+        "B missing pxl" : miss_B}
     class_freq = {
         "A1 rare pxl" : rare_A,
         "A2 patch pxl" : patchy_A,
@@ -436,8 +434,7 @@ def _get_frag_change_stats(frag_chan_tiff,
         "B2 patch pxl" : patchy_B,
         "B3 trans pxl" : trans_B,
         "B4 domin pxl" : domin_B,
-        "B5 inter pxl" : inter_B
-    }
+        "B5 inter pxl" : inter_B}
     change_freq = {
         "1 Frag High decrease" : H_decr,
         "2 Frag Medium decrease" : M_decr,
@@ -445,8 +442,7 @@ def _get_frag_change_stats(frag_chan_tiff,
         "4 Insign/no change" : Insign,
         "5 Frag Low increase" : L_incr,
         "6 Frag Medium increase" : M_incr,
-        "7 Frag High increase" : H_incr,
-    }
+        "7 Frag High increase" : H_incr}
     output_stats_dict = {
         "class freq" : class_freq,
         "Frag change freq" : change_freq,
@@ -455,13 +451,11 @@ def _get_frag_change_stats(frag_chan_tiff,
         "A fad_av" : fad_av_A,
         "A avcon" : avcon_A,
         "B fad_av" : fad_av_B,
-        "B avcon" : avcon_B    
-    }
+        "B avcon" : avcon_B}
     stats_dict = {
         "output paths" : path_stats_dict,
         "input stats" : input_stats_dict,
-        "output stats" : output_stats_dict
-    }
+        "output stats" : output_stats_dict}
 
     return stats_dict
 
