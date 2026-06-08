@@ -103,12 +103,23 @@ def frag_change(
         change_matrix = np.zeros((107, 107), dtype=np.int64)
         with rasterio.open(in_tiff1) as src_a, rasterio.open(in_tiff2) as src_b:
             out_profile = info1["profile"]
-            out_profile.update(tiled=True)
+            out_profile.update(
+                tiled=True,
+                blockxsize=256,
+                blockysize=256,
+                compress='lzw',
+                predictor=2
+            )
         
             # BigTIFF threshold optimization
             estimated_gb = (info1["rows"] * info1["cols"]) / (1024**3)
             out_profile.update(bigtiff="YES" if estimated_gb > 3.8 else "NO")
-        
+            
+            # Remove any leftover corrupt output file
+            if out_tiff.exists():
+                out_tiff.unlink()
+            
+            # Open the output GeoTIFF
             with rasterio.open(out_tiff, "w", **out_profile) as dst:
                 for ij, window in src_a.block_windows():
                     chunk_a = src_a.read(1, window=window)
@@ -351,7 +362,10 @@ def _get_frag_change_stats(frag_chan_tiff,
 			"LM_02": f"{ch_matrix_land[0,2]:>9}",
 			"LM_12": f"{ch_matrix_land[1,2]:>9}",
 			"LM_22": f"{ch_matrix_land[2,2]:>9}",
-            "Uarea": Uarea_AB,
+            "FG_com" : ch_matrix_land[0,0],
+            "UA_com": Uarea_AB,
+            "FG_gain": ch_matrix_land[1,0],
+            "FG_loss": ch_matrix_land[0,1],
 			
 			"R_valA": f"{rare_A:>9}",
 			"P_valA": f"{patchy_A:>9}",

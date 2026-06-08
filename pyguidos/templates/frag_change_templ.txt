@@ -60,10 +60,10 @@ Land cover change matrix:
     A-Backgr.   {LM_10}    {LM_11}    {LM_12}
     A-Missing   {LM_20}    {LM_21}    {LM_22}
 
-Common unchanged foreground FORCOM: {LM_00}
-Common unchanged unit area AREACOM: {Uarea}
-Foreground gain: {LM_10}
-Foreground loss: {LM_01}
+Common unchanged foreground FORCOM: {FG_com}
+Common unchanged unit area AREACOM: {UA_com}
+Foreground gain: {FG_gain}
+Foreground loss: {FG_loss}
 
 
 FOS Classes status:
