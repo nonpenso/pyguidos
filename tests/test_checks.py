@@ -7,6 +7,8 @@ Run with: pytest tests/test_checks.py -v
 
 import pytest
 import numpy as np
+from unittest.mock import patch
+
 from pyguidos import checks
 
 
@@ -215,50 +217,38 @@ class TestValidateFragParams:
 # validate_mspa_params
 # =============================================================================
 
-# class TestValidateMspaParams:
+def test_validate_spa_params_success():
+    """Verifies that validation passes silently for valid edge width and class numbers combinations."""
+    # Test all valid classes options with a proper edge width
+    for valid_class in [2, 3, 5, 6]:
+        checks.validate_spa_params(edge_width=1, classes=valid_class)
+        checks.validate_spa_params(edge_width=10, classes=valid_class)
 
-#     def test_valid_connectivity_8(self):
-#         """Valid edge_width=1 with connectivity=8."""
-#         assert checks.validate_mspa_params(1, 8) is None
 
-#     def test_valid_connectivity_4(self):
-#         """Valid edge_width=1 with connectivity=4."""
-#         assert checks.validate_mspa_params(1, 4) is None
+def test_validate_spa_params_invalid_edge_width():
+    """Ensures a SystemExit is thrown if edge_width is less than 1 or not an integer."""
+    # Case 1: Edge width is 0 (violates >= 1)
+    with pytest.raises(SystemExit) as exc_info:
+        checks.validate_spa_params(edge_width=0, classes=2)
+    assert "The edge width must be an integer number >= 1" in str(exc_info.value)
 
-#     def test_valid_larger_edge_width(self):
-#         """Valid larger edge_width values."""
-#         for ew in [2, 3, 5, 10]:
-#             assert checks.validate_mspa_params(ew, 8) is None
+    # Case 2: Edge width is a float
+    with pytest.raises(SystemExit) as exc_info:
+        checks.validate_spa_params(edge_width=1.5, classes=2)
+    assert "The edge width must be an integer number >= 1" in str(exc_info.value)
 
-#     def test_invalid_connectivity_raises(self):
-#         """Connectivity values other than 4 or 8 must be rejected."""
-#         with pytest.raises(SystemExit):
-#             checks.validate_mspa_params(1, 6)
 
-#     def test_invalid_connectivity_1_raises(self):
-#         """Connectivity=1 must be rejected."""
-#         with pytest.raises(SystemExit):
-#             checks.validate_mspa_params(1, 1)
+def test_validate_spa_params_invalid_classes():
+    """Ensures a SystemExit is thrown if classes is not one of 2, 3, 5, or 6."""
+    # Case 1: Classes out of bound (e.g., 4 or 7)
+    with pytest.raises(SystemExit) as exc_info:
+        checks.validate_spa_params(edge_width=2, classes=4)
+    assert "The number of classes must be 2, 3, 5 or 6" in str(exc_info.value)
 
-#     def test_invalid_edge_width_zero_raises(self):
-#         """Edge width of 0 must be rejected."""
-#         with pytest.raises(SystemExit):
-#             checks.validate_mspa_params(0, 8)
-
-#     def test_invalid_edge_width_negative_raises(self):
-#         """Negative edge width must be rejected."""
-#         with pytest.raises(SystemExit):
-#             checks.validate_mspa_params(-1, 8)
-
-#     def test_invalid_edge_width_float_raises(self):
-#         """Float edge width must be rejected."""
-#         with pytest.raises(SystemExit):
-#             checks.validate_mspa_params(1.5, 8)
-
-#     def test_invalid_edge_width_string_raises(self):
-#         """String edge width must be rejected."""
-#         with pytest.raises(SystemExit):
-#             checks.validate_mspa_params("1", 8)
+    # Case 2: String value instead of an expected integer option
+    with pytest.raises(SystemExit) as exc_info:
+        checks.validate_spa_params(edge_width=2, classes="6")
+    assert "The number of classes must be 2, 3, 5 or 6" in str(exc_info.value)
 
 
 # =============================================================================
@@ -336,3 +326,112 @@ class TestValidateAccParams:
         """6 values with duplicates reducing to 5 unique must pass."""
         result = checks.validate_acc_params([10, 10, 100, 1000, 10000, 100000])
         assert len(result) == 5
+
+
+
+# =============================================================================
+# validate fragmentation change input
+# =============================================================================
+
+@pytest.fixture
+def base_metadata():
+    """Generates a valid dictionary of base spatial and structural characteristics."""
+    return {
+        "tag": "VALID_TAG_A",
+        "rows": 100,
+        "cols": 100,
+        "bands": 1,
+        "resX": 10.0,
+        "resY": 10.0,
+        "epsg": 4326,
+        "bounds": (0, 0, 1000, 1000)
+    }
+
+@pytest.fixture
+def base_tool_params():
+    """Generates matching base tool parameters for a successful validation path."""
+    return {
+        "tool_id": "GTB_FOS",
+        "tiftype": "1",
+        "connect": "8",
+        "method": "fixed",
+        "wsize": "27"
+    }
+
+
+def test_validate_fchmaps_input_success(base_metadata, base_tool_params):
+    """Verifies that validation completes silently when both metadata structures are completely identical."""
+    meta1 = base_metadata.copy()
+    meta2 = base_metadata.copy()
+    meta2["tag"] = "VALID_TAG_B" # Tags can differ as long as parsed parameters match
+
+    # Mock utils.get_tool_parameters to return identical valid profiles
+    with patch("pyguidos.utils.get_tool_parameters") as mock_get_params:
+        mock_get_params.side_effect = [base_tool_params.copy(), base_tool_params.copy()]
+        
+        # This should execute seamlessly without throwing any exceptions or exits
+        checks.validate_fchmaps_input(meta1, meta2)
+
+
+def test_validate_fchmaps_input_invalid_guidos_tag(base_metadata, base_tool_params):
+    """Ensures a SystemExit is thrown if one or both inputs fail the initial Guidos output validation."""
+    meta1 = base_metadata.copy()
+    meta2 = base_metadata.copy()
+
+    with patch("pyguidos.utils.get_tool_parameters") as mock_get_params:
+        # Simulate that the second file doesn't have a valid Guidos tag
+        mock_get_params.side_effect = [base_tool_params, "--"]
+        
+        with pytest.raises(SystemExit) as exc_info:
+            checks.validate_fchmaps_input(meta1, meta2)
+        
+        assert "not Guidos outputs" in str(exc_info.value)
+
+
+def test_validate_fchmaps_input_wrong_tool_id(base_metadata, base_tool_params):
+    """Ensures a SystemExit is thrown if the tool_id is not 'GTB_FOS'."""
+    meta1 = base_metadata.copy()
+    meta2 = base_metadata.copy()
+    
+    wrong_tool_params = base_tool_params.copy()
+    wrong_tool_params["tool_id"] = "GTB_SPA" # Wrong tool type
+
+    with patch("pyguidos.utils.get_tool_parameters") as mock_get_params:
+        mock_get_params.side_effect = [base_tool_params, wrong_tool_params]
+        
+        with pytest.raises(SystemExit) as exc_info:
+            checks.validate_fchmaps_input(meta1, meta2)
+        
+        assert "Expected: 'GTB_FOS'" in str(exc_info.value)
+
+
+def test_validate_fchmaps_input_mismatching_tool_param(base_metadata, base_tool_params):
+    """Ensures a SystemExit is thrown if a fragmentation analysis setting (e.g., wsize) differs."""
+    meta1 = base_metadata.copy()
+    meta2 = base_metadata.copy()
+    
+    different_tool_params = base_tool_params.copy()
+    different_tool_params["wsize"] = "13" # Mismatching window size parameter
+
+    with patch("pyguidos.utils.get_tool_parameters") as mock_get_params:
+        mock_get_params.side_effect = [base_tool_params, different_tool_params]
+        
+        with pytest.raises(SystemExit) as exc_info:
+            checks.validate_fchmaps_input(meta1, meta2)
+        
+        assert "Parameter 'wsize' must be identical" in str(exc_info.value)
+
+
+def test_validate_fchmaps_input_mismatching_spatial_param(base_metadata, base_tool_params):
+    """Ensures a SystemExit is thrown if a spatial setting (e.g., bounding box) doesn't match."""
+    meta1 = base_metadata.copy()
+    meta2 = base_metadata.copy()
+    meta2["bounds"] = (0, 0, 500, 500) # Alter spatial limits for file B
+
+    with patch("pyguidos.utils.get_tool_parameters") as mock_get_params:
+        mock_get_params.side_effect = [base_tool_params, base_tool_params]
+        
+        with pytest.raises(SystemExit) as exc_info:
+            checks.validate_fchmaps_input(meta1, meta2)
+        
+        assert "Mismatch found in parameter 'bounds'" in str(exc_info.value)

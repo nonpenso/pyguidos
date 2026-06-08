@@ -58,10 +58,12 @@ def compute_FAD(data, window_size, handle_missing):
     radius = window_size // 2
 
     for i in prange(nrows):
+        r0 = max(0, i - radius)
+        r1 = min(nrows, i + radius + 1)
+
         for j in range(ncols):
             pixel_val = data[i, j]
-            
-            # 1. Preserve Background (Standard and Special)
+
             if pixel_val == BACKGROUND:
                 result[i, j] = OUT_BACKGROUND
                 continue
@@ -71,32 +73,31 @@ def compute_FAD(data, window_size, handle_missing):
             if pixel_val == BACKGR_SP4:
                 result[i, j] = OUT_BACKGR_SP4
                 continue
-            
-            # 2. Process Foreground
+
             if pixel_val == FOREGROUND:
+                c0 = max(0, j - radius)
+                c1 = min(ncols, j + radius + 1)
+
                 fg_count = 0
                 non_missing_count = 0
-                
-                for wi in range(i - radius, i + radius + 1):
-                    for wj in range(j - radius, j + radius + 1):
-                        if 0 <= wi < nrows and 0 <= wj < ncols:
-                            val = data[wi, wj]
-                            if val == FOREGROUND:
-                                fg_count += 1
-                            
-                            # Treat SP3 and SP4 as valid background (non-missing)
-                            if val != MISSING_IN:
-                                non_missing_count += 1
+
+                for wi in range(r0, r1):
+                    for wj in range(c0, c1):
+                        # No boundary check needed — already clamped
+                        val = data[wi, wj]
+                        if val == FOREGROUND:
+                            fg_count += 1
+                        if val != MISSING_IN:
+                            non_missing_count += 1
 
                 denom = non_missing_count if handle_missing == 1 else (window_size * window_size)
-                
+
                 if denom > 0:
-                    #pf = int((fg_count / denom) * 100.0 + 0.5)
                     pf = (fg_count * 200 + denom) // (2 * denom)
                     result[i, j] = np.uint8(min(pf, 100))
                 else:
                     result[i, j] = OUT_MISSING
-                    
+
     return result
 
 
@@ -140,6 +141,10 @@ def compute_FAC(data, window_size, handle_missing):
     total_potential_edges = 2 * window_size * (window_size - 1)
 
     for i in prange(nrows):
+        # Pre-clamp row bounds once per row
+        r0 = max(0, i - radius)
+        r1 = min(nrows, i + radius + 1)
+
         for j in range(ncols):
             pixel_val = data[i, j]
 
@@ -158,21 +163,18 @@ def compute_FAC(data, window_size, handle_missing):
             if pixel_val != FOREGROUND:
                 continue
 
+            # Pre-clamp column bounds once per pixel
+            c0 = max(0, j - radius)
+            c1 = min(ncols, j + radius + 1)
+
             fg_fg_edges = 0
             total_edges = 0
 
-            r0, r1 = i - radius, i + radius + 1
-            c0, c1 = j - radius, j + radius + 1
-
             # --- Horizontal Scan ---
             for wi in range(r0, r1):
-                if wi < 0 or wi >= nrows: continue
                 for wj in range(c0, c1 - 1):
-                    if wj < 0 or wj + 1 >= ncols: continue 
-                    
                     v1, v2 = data[wi, wj], data[wi, wj + 1]
                     if handle_missing == 1:
-                        # Treat SP3/SP4 as valid for the connectivity denominator
                         if v1 != MISSING_IN and v2 != MISSING_IN:
                             total_edges += 1
                             if v1 == FOREGROUND and v2 == FOREGROUND:
@@ -184,9 +186,6 @@ def compute_FAC(data, window_size, handle_missing):
             # --- Vertical Scan ---
             for wi in range(r0, r1 - 1):
                 for wj in range(c0, c1):
-                    if wj < 0 or wj >= ncols: continue
-                    if wi < 0 or wi + 1 >= nrows: continue
-
                     v1, v2 = data[wi, wj], data[wi + 1, wj]
                     if handle_missing == 1:
                         if v1 != MISSING_IN and v2 != MISSING_IN:
@@ -199,7 +198,6 @@ def compute_FAC(data, window_size, handle_missing):
 
             denom = total_edges if handle_missing == 1 else total_potential_edges
             if denom > 0:
-                #pff = int((fg_fg_edges / denom) * 100.0 + 0.5)
                 pff = (fg_fg_edges * 200 + denom) // (2 * denom)
                 result[i, j] = np.uint8(min(pff, 100))
             else:
@@ -587,3 +585,69 @@ def _create_mask(input_array, targets):
                     mask[i, j] = True
                     break
     return mask
+
+
+###############################
+# ---- FOS CHANGE FUNCTION ----
+###############################
+
+
+@njit("uint8[:,:](uint8[:,:], uint8[:,:], int64[:,:], boolean)", cache=True)
+def compute_fos_change(chunk_a, chunk_b, local_matrix, compute_stats):
+    """
+    Processes a matching spatial window chunk from two tracking rasters to 
+    evaluate a 7-tier matrix overlay logic and concurrently update change statistics.
+
+    Parameters
+    ----------
+    chunk_a : ndarray of shape (nrows, ncols), dtype=uint8
+        A 2D window slice extracted from the initial time-step GeoTIFF (Time A).
+    chunk_b : ndarray of shape (nrows, ncols), dtype=uint8
+        A 2D window slice extracted from the subsequent time-step GeoTIFF (Time B).
+    local_matrix : ndarray of shape (107, 107), dtype=int64
+        A global or block-level confusion matrix accumulator tracking pixel-by-pixel 
+        class transitions between Time A and Time B. Modified in-place.
+    compute_stats : bool
+        Flag indicating whether to calculate transition statistics. If False, the 
+        conditional block updating `local_matrix` is bypassed completely.
+
+    Returns
+    -------
+    out : ndarray of shape (nrows, ncols), dtype=uint8
+        The calculated categorical change layer grid for the current window chunk, 
+        where cell values represent explicit transition metrics (e.g., 250-254 for 
+        exclusions/background dynamics, or localized delta values).
+    """
+
+    nrows, ncols = chunk_a.shape
+    out = np.zeros((nrows, ncols), dtype=np.uint8)
+
+    # Standard range is optimal for block-window streaming
+    for i in range(nrows):
+        for j in range(ncols):
+            a_val = chunk_a[i, j]
+            b_val = chunk_b[i, j]
+
+            # Track global statistics concurrently
+            if compute_stats:
+                if a_val <= 106 and b_val <= 106:
+                    local_matrix[a_val, b_val] += 1
+
+            # Your exact 7-tier matrix overlay logic
+            if a_val == 101 and b_val == 101:
+                out[i, j] = 252
+            elif a_val == 101 and b_val <= 100:
+                out[i, j] = 250
+            elif a_val <= 101 and b_val == 101:
+                out[i, j] = 251
+            elif a_val <= 100 and b_val <= 100:
+                out[i, j] = 100 + a_val - b_val
+            elif a_val == 102 or b_val == 102:
+                out[i, j] = 254
+            elif a_val in (105, 106) or b_val in (105, 106):
+                out[i, j] = 253
+            else:
+                out[i, j] = 102
+
+    return out
+

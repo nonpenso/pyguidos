@@ -4,7 +4,7 @@
 [![pipeline status](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg?ignore_skipped=true)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines)
 [![coverage report](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/coverage.svg?job=run_tests)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html)
 [![docs status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/)
-![version](https://img.shields.io/badge/version-2.2.0-blue.svg)
+![version](https://img.shields.io/badge/version-2.3.0-blue.svg)
 [![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
 **A Python interface to the main GuidosToolbox (GTB) modules for spatial pattern analysis**
@@ -29,6 +29,7 @@ Modules
 | Function | Description |
 |---|---|
 | `frag()` | Fragmentation analysis |
+| `frag_change()` | Fragmentation change |
 | `landmos()` | Landscape Mosaic |
 | `spa()` | Simplified Pattern Analysis |
 | `acc()` | Foreground Patch Size Accounting |
@@ -138,6 +139,12 @@ result = pg.frag(
     in_tiff="my_map.tif",
     method="FAD",
     window_size=27
+)
+
+# Fragmentation change
+result = pg.frag_change(
+    in_tiff_t1="my_map2018_frag_fad_27.tif",
+    in_tiff_t2="my_map2025_frag_fad_27.tif"
 )
 
 # Landscape Mosaic

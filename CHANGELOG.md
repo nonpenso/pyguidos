@@ -8,6 +8,28 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.3.0] - 2026-06-08
+
+### Overview
+Version 2.3.0 introduces advanced temporal analysis capabilities to the `pyguidos` suite with the implementation of the "frag_change" module. This new engine allows users to perform multi-temporal fragmentation comparisons across different time periods, generating not only spatial change trajectories but also rigorous statistical reporting (including delta matrices and confusion matrices) and visual chart summaries.
+
+### Added
+- **`frag_change()` function**: Introduced a dedicated multi-temporal spatial engine to calculate fragmentation transitions between two distinct time periods using standardized input GeoTIFFs.
+- New `get_colormap()` utility function for consistent colormap loading across modules.
+- New `validate_fchmaps_input()` validator for temporal fragmentation change inputs.
+
+### Changed
+- Performance: Pre-clamped window bounds in compute_FAD and compute_FAC Numba kernels, eliminating per-pixel boundary checks in the inner loop.
+- Refactored `save_output_geotiff()` to use the new `get_colormap()` utility, reducing code duplication.
+- Removed unused `geopandas` import from `extract_by_polygon.py`.
+
+### Fixed
+- Fixed crash in `landmos()` when `statists=False` (attempted dict access on `None`).
+- Fixed malformed error message string in `landmos_stats()`.
+- Corrected `matplotlib` version pin from `>=3.10.9` to `>=3.10`.
+
+---
+
 ## [2.2.0] - 2026-05-06
 
 ### Overview

@@ -190,10 +190,10 @@ The :func:`frag` function returns a :class:`dict`. The structure is nested as fo
 
     # Output file paths
     print(result["output paths"])
-    # {'path tif': 'output/my_map_fad_27.tif',
-    #  'path txt': 'output/my_map_fad_27.txt',
-    #  'path csv': 'output/my_map_fad_27.csv',
-    #  'path png': 'output/my_map_fad_27.png'}
+    # {'path tif': 'output/my_map_frag_fad_27.tif',
+    #  'path txt': 'output/my_map_frag_fad_27.txt',
+    #  'path csv': 'output/my_map_frag_fad_27.csv',
+    #  'path png': 'output/my_map_frag_fad_27.png'}
 
 
 
@@ -206,7 +206,7 @@ statistics without rerunning the analysis:
 .. code-block:: python
 
     stats = pg.frag_stats(
-        frag_tiff="output/my_map_fad_27.tif",
+        frag_tiff="output/my_map_frag_fad_27.tif",
         stat_files=True,
         outdir="output/",
         source_tiff="my_map.tif"

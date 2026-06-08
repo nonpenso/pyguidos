@@ -300,3 +300,59 @@ def test_citation():
     assert "Vogt P." in text
     
 
+def test_get_colormap_valid_parsing(tmp_path):
+    """Verifies that get_colormap parses space-separated strings and normalizes values for Matplotlib."""
+    # Create a mock color configuration text file
+    cmap_file = tmp_path / "mock_colormap.txt"
+    cmap_file.write_text(
+        "0   255 0   0\n"    # Value 0: Red
+        "100 0   255 128\n"  # Value 100: Translucent Greenish
+        "255 255 255 255\n" # Value 255: White
+    )
+
+    plot_map, tiff_map = utils.get_colormap(cmap_file)
+
+    # 1. Test GeoTiff colormap structure (Expected scale: 0-255 with an explicit alpha channel of 255)
+    assert tiff_map[0] == (255, 0, 0, 255)
+    assert tiff_map[100] == (0, 255, 128, 255)
+    assert tiff_map[255] == (255, 255, 255, 255)
+
+    # 2. Test Matplotlib colormap structure (Expected scale: normalized 0.0 - 1.0 floats, 3 elements)
+    assert plot_map[0] == (1.0, 0.0, 0.0)
+    assert pytest.approx(plot_map[100][1]) == 1.0       # Green channel = 255/255
+    assert pytest.approx(plot_map[100][2]) == 128/255   # Blue channel = 128/255
+    assert plot_map[255] == (1.0, 1.0, 1.0)
+
+
+def test_get_colormap_ignores_invalid_lines(tmp_path):
+    """Ensures get_colormap skips corrupted rows (less than 4 components) without throwing exceptions."""
+    cmap_file = tmp_path / "corrupted_colormap.txt"
+    cmap_file.write_text(
+        "10  255 255 255\n"  # Valid line
+        "20  128 128\n"      # Invalid (Missing blue channel, length 3)
+        "comment_line\n"     # Invalid (Length 1)
+    )
+
+    plot_map, tiff_map = utils.get_colormap(cmap_file)
+
+    # Valid line must exist
+    assert 10 in tiff_map
+    # Malformed inputs must be seamlessly bypassed without breaking execution
+    assert 20 not in tiff_map
+
+
+def test_log_msg_output(capsys):
+    """Checks that log_msg prints outputs cleanly when verbose=True and flushes buffer."""
+    utils.log_msg(verbose=True, message="Pipeline initiated successfully.")
+    
+    # capsys captures stdout/stderr buffers
+    captured = capsys.readouterr()
+    assert captured.out == "Pipeline initiated successfully.\n"
+
+
+def test_log_msg_silent_when_false(capsys):
+    """Ensures log_msg remains entirely silent when verbose=False."""
+    utils.log_msg(verbose=False, message="Hidden administrative metric details.")
+    
+    captured = capsys.readouterr()
+    assert captured.out == ""

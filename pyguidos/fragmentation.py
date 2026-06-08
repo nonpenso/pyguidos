@@ -294,15 +294,7 @@ def _get_frag_stats(frag_freq,
 
         # Create the colormap
         cmap_path = TEMPL_DIR / "frag_colormap.txt"
-        colors = {}
-        with open(cmap_path, 'r') as f:
-            for line in f:
-                parts = line.split()
-                if len(parts) >= 4:
-                    val = int(parts[0])
-                    # Normalize 0-255 to 0.0-1.0 for Matplotlib
-                    r, g, b = int(parts[1])/255, int(parts[2])/255, int(parts[3])/255
-                    colors[val] = (r, g, b)
+        colors, _ = utils.get_colormap(cmap_path)
         bar_colors = [colors.get(v) for v in pixel_values]
 
         # Create the figure with bar chart
@@ -350,11 +342,16 @@ def _get_frag_stats(frag_freq,
             "output_file": f"{out_name}.tif",
             "rep_unit_pxl": ruarea,
             "foreg_area_rel": (fgrnd / ruarea * 100),
-            "rare_val": (rare / fgrnd * 100),
-            "patch_val": (patchy / fgrnd * 100),
-            "trans_val": (trans / fgrnd * 100),
-            "domin_val": (domin / fgrnd * 100),
-            "inter_val": (inter / fgrnd * 100),
+            "rare_val": f"{rare:>9}",
+            "patch_val": f"{patchy:>9}",
+            "trans_val": f"{trans:>9}",
+            "domin_val": f"{domin:>9}",
+            "inter_val": f"{inter:>9}",
+            "rare_pro": f"{(rare / fgrnd) * 100:7.4f}",
+            "patch_pro": f"{(patchy / fgrnd) * 100:7.4f}",
+            "trans_pro": f"{(trans / fgrnd) * 100:7.4f}",
+            "domin_pro": f"{(domin / fgrnd) * 100:7.4f}",
+            "inter_pro": f"{(inter / fgrnd) * 100:7.4f}",            
             "fad_av_idx": fad_av,
             "avcon_idx": avcon,
         }

@@ -1,0 +1,118 @@
+FRAGMENTATION CHANGE ANALYSIS 
+Using Fixed Observation Scale (FOS)
+Fragmentation is complementary to Connectivity: Fragmentation = 100% - Connectivity
+
+================================================================================
+INPUT FILE
+================================================================================
+Input image A: {input_file1}
+Input image B: {input_file2}
+EPSG: {epsg_code}
+Unit: {unit_type}
+Pixel size (x,y): {resolx}, {resoly} {unit_type}
+Rows: {rows_val}
+Columns: {cols_val}
+Total pixels: {tot_pxl}
+
+IMAGE A
+Foreground [pixel=2]: {foreg_pxl_A}
+Background [pixel=1]: {backg_pxl_A}
+Special background [pixel=3]: {spec3_pxl_A}
+Special background [pixel=4]: {spec4_pxl_A}
+Missing/Nodata [pixel=0]: {miss_pxl_A}
+
+IMAGE B
+Foreground [pixel=2]: {foreg_pxl_B}
+Background [pixel=1]: {backg_pxl_B}
+Special background [pixel=3]: {spec3_pxl_B}
+Special background [pixel=4]: {spec4_pxl_B}
+Missing/Nodata [pixel=0]: {miss_pxl_B}
+
+
+================================================================================
+PARAMETRES
+================================================================================
+Method: {used_method}
+Window size [pixels]: {window_size} x {window_size}
+Window area - observation scale (if unit is in metres):
+    {window_areaHA} hectares 
+    {window_areaAC} acres
+
+
+================================================================================
+RESULTS
+================================================================================
+Output image: {output_file}
+
+
+Land cover status:
+---------------------------------------------------------------------------------
+    LAND COVER  FOS VALUE        A - PXL      B - PXL    PXL CHANGE
+    Foreground  [0-100]        {fg_valA}    {fg_valB}     {fg_ch}
+    Background  [101,105,106]  {bg_valA}    {bg_valB}     {bg_ch}
+    Missing     [102]          {ms_valA}    {ms_valA}     {ms_ch}
+
+
+Land cover change matrix:
+---------------------------------------------------------------------------------
+    A -> B      B-Foregr.    B-Backgr.    B-Missing
+    A-Foregr.   {LM_00}    {LM_01}    {LM_02}
+    A-Backgr.   {LM_10}    {LM_11}    {LM_12}
+    A-Missing   {LM_20}    {LM_21}    {LM_22}
+
+Common unchanged foreground FORCOM: {FG_com}
+Common unchanged unit area AREACOM: {UA_com}
+Foreground gain: {FG_gain}
+Foreground loss: {FG_loss}
+
+
+FOS Classes status:
+---------------------------------------------------------------------------------
+    CLASS         PXL VALUES     A - PXL      B - PXL    PXL CHANGE
+    Rare          [0-9]        {R_valA}    {R_valB}     {R_ch} 
+    Patchy        [10-39]      {P_valA}    {P_valB}     {P_ch}
+    Transitional  [40-59]      {T_valA}    {T_valB}     {T_ch}
+    Dominant      [60-89]      {D_valA}    {D_valB}     {D_ch}
+    Interior      [90-100]     {I_valA}    {I_valB}     {I_ch}
+
+
+FOS Classes change matrix (contrained to AREACOM)
+---------------------------------------------------------------------------------
+    A -> B    B-Bkgr    B-Rare    B-Patc    B-Tran    B-Domi    B-Inte
+    A-Bkgr {CM_00} {CM_01} {CM_02} {CM_03} {CM_04} {CM_05}
+    A-Rare {CM_10} {CM_11} {CM_12} {CM_13} {CM_14} {CM_15}
+    A-Patc {CM_20} {CM_21} {CM_22} {CM_23} {CM_24} {CM_25}
+    A-Tran {CM_30} {CM_31} {CM_32} {CM_33} {CM_34} {CM_35}
+    A-Domi {CM_40} {CM_41} {CM_42} {CM_43} {CM_44} {CM_45}
+    A-Inte {CM_50} {CM_51} {CM_52} {CM_53} {CM_54} {CM_55}
+
+Unchanged class status [pxl]: {diag_val}
+Changed class status [pxl]: {up_dw_val}
+Decreased Fragmentation [pxl]: {up_val}
+Increased Fragmentation [pxl]: {dw_val}
+
+
+Connectivity indices:
+---------------------------------------------------------------------------------
+    INDEX             A           B       ABS DIFF[PXL]   REL DIFF[%]
+    AVCON  (%)     {AV_valA}     {AV_valB}       {AV_abs}       {AV_rel}
+    FAD_AV (%)     {FD_valA}     {FD_valB}       {FD_abs}       {FD_rel}
+
+
+Fragmentation/Connectivity change: total pexels and FORCOM proportion
+---------------------------------------------------------------------------------
+  FRAGMENTATION    CONNECTIVITY     PXL VALUE DELTA FOS         PXL      FORCOM %
+  High decrease    High increase    [0-79]    [+21 +100]  {HI_val}       {HI_rel}
+  Medium decrease  Medium increase  [80-89]   [+11 +20]   {MI_val}       {MI_rel}
+  Low decrease     Low increase     [90-98]   [+2 +10]    {LI_val}       {LI_rel}
+  Insign/no change Insign/no change [99-101]  [-1 +1]     {IN_val}       {IN_rel}
+  Low increase     Low decrease     [102-110] [-10 -2]    {LD_val}       {LD_rel}
+  Medium increase  Medium decrease  [111-120] [-20 -11]   {MD_val}       {MD_rel}
+  High increase    High decrease    [121-200] [-100 -21]  {HD_val}       {HD_rel}
+
+
+Computational time: 
+
+================================================================================
+Online guide:
+https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf
