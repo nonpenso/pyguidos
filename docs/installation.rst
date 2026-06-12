@@ -51,8 +51,8 @@ which are installed automatically with pip:
 Installation
 ------------
 
-**Standard Installation (not yet available)**
-   Install the latest stable release from PyPI:
+**Standard Installation**
+   Install the latest stable release from `PyPI<https://pypi.org/project/pyguidos>`_:
 
    .. code-block:: console
 

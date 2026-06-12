@@ -8,6 +8,29 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
+2.3.1 - 2026-06-12
+------------------
+
+**Overview**
+
+Version 2.3.1 is a patch release that fixes critical bugs in the ``frag_change()`` module introduced in 2.3.0, adds example data and a notebook for fragmentation change analysis, and improves overall robustness.
+
+**Added**
+
+- Example notebook: New ``04_fragmentation_change.ipynb`` demonstrating multi-temporal fragmentation change analysis using Corsica CLC 2000 and CLC 2018 data.
+- Example data: Added ``CLC2000_corsica_FNF.tif`` (Forest/Non-Forest map from Corine Land Cover 2000) to the bundled example dataset.
+
+**Fixed**
+
+- Fixed critical indentation bug in ``_get_frag_change_stats()`` where the statistics dictionary was only constructed when ``out_file=True``, causing the function to return ``None`` silently otherwise.
+- Fixed ``frag_change()`` crash when output file already exists from a previous failed run (``TIFFReadDirectory: Cannot handle zero number of tiles``). Corrupt leftover files are now removed before writing.
+- Fixed ``frag_change()`` crash on tiled output writing by adding explicit ``blockxsize`` and ``blockysize`` parameters to the output profile.
+- Fixed ``frag_change()`` mutating the input profile dictionary by adding a ``.copy()`` before updating.
+
+
+----
+
+
 2.3.0 - 2026-06-08
 ------------------
 

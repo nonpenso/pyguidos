@@ -5,9 +5,6 @@ include README.md
 include LICENSE
 include pyproject.toml
 
-# Include binary executables
-recursive-include pyguidos/progs *
-
 # Include template files
 recursive-include pyguidos/templates *
 

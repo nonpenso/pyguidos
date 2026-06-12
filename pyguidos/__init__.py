@@ -16,7 +16,7 @@ DATA_DIR = MODULE_ROOT / "data"
 
 
 # Package metadata
-__version__ = "2.3.0"
+__version__ = "2.3.1"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 # Global Numba Setup

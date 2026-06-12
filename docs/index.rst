@@ -1,20 +1,31 @@
 pyGuidos
 ========
 
-.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg?ignore_skipped=true
+.. |pipeline| image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg?ignore_skipped=true
    :target: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines
    :alt: Pipeline Status
 
-.. image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/coverage.svg?job=run_tests
+.. |coverage| image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/coverage.svg?job=run_tests
    :target: https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html
-   :alt: Coverage Status
+   :alt: Coverage Report
 
-.. image:: https://img.shields.io/badge/version-2.3.0-blue
-   :alt: Version 2.3.0
+.. |docs| image:: https://img.shields.io/badge/docs-latest-brightgreen.svg
+   :target: https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/
+   :alt: Documentation Status
 
-.. image:: https://img.shields.io/badge/license-EUPL--1.2-orange
+.. |pypi| image:: https://img.shields.io/pypi/v/pyguidos.svg
+   :target: https://pypi.org/project/pyguidos/
+   :alt: PyPI Version
+
+.. |downloads| image:: https://static.pepy.tech/badge/pyguidos
+   :target: https://pepy.tech/project/pyguidos
+   :alt: Downloads Counter
+
+.. |license| image:: https://img.shields.io/badge/license-EUPL--1.2-orange.svg
    :target: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
-   :alt: License
+   :alt: EUPL-1.2 License
+
+|pipeline| |coverage| |docs| |pypi| |downloads| |license|
 
 **pyGuidos** is a Python interface to the main modules of `GuidosToolbox <https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/>`_ (GTB), 
 a scientific software suite developed at the European Commission Joint Research Centre (JRC) for the 
@@ -25,7 +36,7 @@ providing programmatic access to the main GTB analytical tools, enabling reprodu
 landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 .. note::
-   This documentation describes **pyGuidos version 2.3.0**. For older versions, 
+   This documentation describes **pyGuidos version 2.3.1**. For older versions, 
    please refer to the legacy documentation branch.
 
 

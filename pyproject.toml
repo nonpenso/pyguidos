@@ -2,12 +2,12 @@
 
 [project]
 name = "pyguidos" 
-version = "2.3.0"
+version = "2.3.1"
 authors = [
   { name="Giovanni Caudullo", email="giovanni.caudullo@ext.ec.europa.eu" },
   { name="Peter Vogt", email="peter.vogt@ec.europa.eu" },
 ]
-description = "Python interface to GuidosToolbox (GTB) for spatial pattern analysis"
+description = "Python interface to main GuidosToolbox (GTB) modules for spatial pattern analysis"
 readme = "README.md" 
 license = {text = "EUPL-1.2"}
 requires-python = ">=3.10"
@@ -86,6 +86,3 @@ testpaths = [
     "tests",
 ]
 python_files = "test_*.py"
-
-[project.scripts]
-pyguidos-setup = "pyguidos.setup_cli:configure_workspace"

@@ -4,7 +4,8 @@
 [![pipeline status](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg?ignore_skipped=true)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines)
 [![coverage report](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/coverage.svg?job=run_tests)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html)
 [![docs status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/)
-![version](https://img.shields.io/badge/version-2.3.0-blue.svg)
+[![PyPI version](https://img.shields.io/pypi/v/pyguidos.svg)](https://pypi.org/project/pyguidos/)
+[![Downloads](https://static.pepy.tech/badge/pyguidos)](https://pepy.tech/project/pyguidos)
 [![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
 **A Python interface to the main GuidosToolbox (GTB) modules for spatial pattern analysis**
@@ -15,11 +16,12 @@ Overview
 
 ``pyguidos`` is a Python interface to the main modules of [GuidosToolbox](https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/) (GTB), a scientific software package for pattern spatial analysis of raster images. This Python module provides programmatic access to the core GTB analytical tools, enabling reproducible landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
-### Repository Contents
-* **`/docs`**: Documentation files.
-* **`/notebooks`**: Jupyter notebooks to use the module and visualise results.
-* **`/pyguidos`**: script repository.
-* **`/tests`**: Unit and integration tests for analytical tools, input validation (checks), and utility functions.
+### Git Repository Contents
+If you are cloning the source code directly from the official [GitLab repository](https://code.europa.eu/jrc-forest/guidos/pyguidos), the repository includes the following components for development, testing, and demonstration:
+* **`/pyguidos`**: The core package directory containing the source code, geospatial monitoring algorithms, and Numba-optimized modules (This is what is installed via `pip`).
+* **`/docs`**: Source files for automated Sphinx HTML documentation platform.
+* **`/notebooks`**: Interactive Jupyter notebooks demonstrating data visualization and workflow examples.
+* **`/tests`**: Comprehensive unit and integration test suites validating input parameters and mathematical integrity.
 
 ---
 
@@ -69,14 +71,14 @@ Requirements
 Installation
 ============
 
-### 1. Standard Installation (not yet available)
+### 1. Standard Installation
 For general use, install the latest stable version directly via `pip`:
 ```bash
 pip install pyguidos
 ```
 
 ### 2. Development installation
-To install the latest development version directly from the GitLab repository without cloning:
+To install the latest development version directly from the [GitLab repository](https://code.europa.eu/jrc-forest/guidos/pyguidos) without cloning:
 ```bash
 pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 ```
