@@ -52,7 +52,7 @@ Installation
 ------------
 
 **Standard Installation**
-   Install the latest stable release from `PyPI<https://pypi.org/project/pyguidos>`_:
+   Install the latest stable release from `PyPI <https://pypi.org/project/pyguidos>`_:
 
    .. code-block:: console
 
