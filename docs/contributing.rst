@@ -1,5 +1,5 @@
-Contributing to pyGuidos
-========================
+Contributing
+============
 
 Thank you for your interest in contributing to ``pyguidos``! We welcome contributions from the scientific and geospatial software communities, including bug fixes, optimization enhancements, documentation updates, and new analytical wrappers.
 
@@ -12,10 +12,9 @@ Development Infrastructure
 
 The project uses a dual-forge system to balance institutional integrity with open accessibility:
 
-1. **Official Upstream Workspace (``code.europa.eu``):** This is the authoritative repository platform of the European Commission. The core CI/CD pipelines, automated testing, documentation generation, and official PyPI package distributions happen here. Account registration is restricted to internal EU personnel.
+1. **Official Upstream Workspace ``code.europa.eu``:** This is the authoritative repository platform of the European Commission. The core CI/CD pipelines, automated testing, documentation generation, and official PyPI package distributions happen here. Account registration is restricted to internal EU personnel.
 2. **Community Portal Mirror (GitHub):** A fully transparent, public mirror is hosted at `GitHub <https://github.com/nonpenso/pyguidos>`_. This portal serves as our public-facing front desk. **All external code contributions, bug tracking, and journal peer-review communications happen exclusively through this mirror.**
 
----
 
 Reporting Bugs and Feature Requests
 -----------------------------------
@@ -26,7 +25,6 @@ If you find a bug, encounter calculation anomalies, or wish to propose an featur
 * **Do** visit the public `GitHub Issue Tracker <https://github.com/nonpenso/pyguidos/issues>`_ and open a new ticket.
 * Please provide a minimal reproducible example (MRE), along with your OS version, Python version, and ``pyguidos`` version string.
 
----
 
 Development Workflow
 --------------------
