@@ -36,8 +36,23 @@ providing programmatic access to the main GTB analytical tools, enabling reprodu
 landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 .. note::
-   This documentation describes **pyGuidos version 2.3.1**. For older versions, 
+   This documentation describes **pyGuidos version 2.3.2**. For older versions, 
    please refer to the legacy documentation branch.
+
+
+Project Infrastructure & Community
+----------------------------------
+
+The official upstream development workspace for ``pyguidos`` is hosted on `code.europa.eu <https://code.europa.eu/jrc-forest/guidos/pyguidos>`_, the open-source repository platform of the European Commission. Because this institutional forge restricts issue creation and merge requests to authorized internal accounts (EU Login), public community collaboration is mirrored to GitHub.
+
+.. critical::
+   **Bug reports and feature fequests**
+   
+   To ensure an open, friction-free environment for the global scientific and GIS community, please do not use the code.europa.eu tracker for feedback. Instead, use our public **GitHub Mirror**:
+   
+   * To report code anomalies or file tickets, visit the public `GitHub Issue Tracker <https://github.com/nonpenso/pyguidos/issues>`_.
+   
+   * To submit patches or open-source optimizations, please open a Pull Request against our public `GitHub Repository Mirror <https://github.com/nonpenso/pyguidos>`_. Approved code updates will be vetted by the maintainers and integrated into the primary downstream build cycle.
 
 
 Getting Started
@@ -45,7 +60,7 @@ Getting Started
 
 If you are new to pyGuidos, we recommend following these steps:
 
-1. **Installation**: Follow the :doc:`installation` guide to set up the library and the GTB engines.
+1. **Installation**: Follow the :doc:`installation` guide to set up the library.
 2. **Interactive Help**: Use the built-in helper to explore available tools:
 
    .. code-block:: python
@@ -98,4 +113,5 @@ For more details, see the `official EUPL page <https://joinup.ec.europa.eu/colle
 
    installation
    usage/index
+   contributing
    changelog

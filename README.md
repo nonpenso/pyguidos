@@ -16,8 +16,10 @@ Overview
 
 ``pyguidos`` is a Python interface to the main modules of [GuidosToolbox](https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/) (GTB), a scientific software package for pattern spatial analysis of raster images. This Python module provides programmatic access to the core GTB analytical tools, enabling reproducible landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
-### Git Repository Contents
-If you are cloning the source code directly from the official [GitLab repository](https://code.europa.eu/jrc-forest/guidos/pyguidos), the repository includes the following components for development, testing, and demonstration:
+### Repository Architecture & Contents
+The official upstream home of `pyguidos` is hosted on [code.europa.eu](https://code.europa.eu/jrc-forest/guidos/pyguidos), the European Commission's institutional open-source repository platform (powered by a GitLab instance). To foster a completely open community, a synchronized mirror is maintained on [GitHub](https://github.com/nonpenso/pyguidos). 
+
+If you browse the source files directly via either platform, the repository includes:
 * **`/pyguidos`**: The core package directory containing the source code, geospatial monitoring algorithms, and Numba-optimized modules (This is what is installed via `pip`).
 * **`/docs`**: Source files for automated Sphinx HTML documentation platform.
 * **`/notebooks`**: Interactive Jupyter notebooks demonstrating data visualization and workflow examples.
@@ -78,7 +80,7 @@ pip install pyguidos
 ```
 
 ### 2. Development installation
-To install the latest development version directly from the [GitLab repository](https://code.europa.eu/jrc-forest/guidos/pyguidos) without cloning:
+To install the latest development version directly from the official upstream repository on [code.europa.eu](https://code.europa.eu/jrc-forest/guidos/pyguidos) without cloning:
 ```bash
 pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 ```
@@ -180,7 +182,7 @@ pg.extract_by_polygon(
 )
 ```
 
-Example data and Jupyter notebooks with worked examples are available in the [project repository](https://code.europa.eu/jrc-forest/guidos/pyguidos).
+Example data and Jupyter notebooks with worked examples are available in the `/notebooks` directory of the [code.europa.eu primary repository](https://code.europa.eu/jrc-forest/guidos/pyguidos).
 
 ---
 
@@ -207,26 +209,23 @@ pg.citation()
 
 ---
 
-Contributing
-============
+Contributing & Issue Tracking
+=============================
 
-Contributions are welcome. Please follow these steps:
+The primary development workspace for `pyguidos` is officially hosted on **code.europa.eu**. Because this institutional ecosystem requires an EU Login to post issues or submit code, we manage all public interaction transparently via our public **GitHub mirror** to guarantee open participation.
 
-1. Fork the repository on [GitLab](https://code.europa.eu/jrc-forest/guidos/pyguidos)
-2. Create a new branch for your feature or fix:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. Make your changes and ensure existing tests pass:
-   ```bash
-   pytest tests/
-   ```
-4. Submit a merge request with a clear description of the changes and
-   their motivation.
+### Bug Reports & Feature Requests
+If you encounter a bug, have an installation issue, or wish to request an analytical feature, please do not use code.europa.eu. Instead, submit a ticket via the public [GitHub Issue Tracker](https://github.com/nonpenso/pyguidos/issues). This includes the peer-review audits associated with journal submissions.
 
-Please open an issue before starting work on significant changes, to allow discussion of the approach.
+### Code Contributions
+Contributions are highly welcome. To submit bug fixes, patches, or optimization code:
 
-For bug reports, please include the pyGuidos version, Python version, operating system, and a minimal reproducible example.
+1. Fork the public community mirror on [GitHub](https://github.com/nonpenso/pyguidos).
+2. Create a new branch for your feature or fix (`git checkout -b feature/your-feature-name`).
+3. Make your changes and ensure existing tests pass cleanly (`NUMBA_DISABLE_JIT=1 pytest tests/`).
+4. Submit a **Pull Request** on the GitHub mirror. 
+
+For a complete, step-by-step developer walkthrough—including environment isolation setups, code formatting guidelines, and advanced testing parameters—please refer to our comprehensive [Official Development & Contributing Guide](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/contributing.html).
 
 ---
 

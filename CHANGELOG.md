@@ -5,6 +5,20 @@ All notable changes to pyGuidos are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
+## [2.3.2] - 2026-06-12
+
+### Overview
+Version 2.3.2 is a documentation and project governance patch release. It explicitly defines the project's open-source infrastructure architecture, linking the official upstream European Commission platform (`code.europa.eu`) with the public community interaction ecosystem on GitHub to streamline user engagement and journal peer-review audits.
+
+### Added
+- **Developer Documentation**: Added a comprehensive, standalone `contributing.rst` guide inside the Sphinx documentation suite outlining development environment isolation, Numba-specific testing protocols, and the dual-forge contribution workflow.
+- **Cross-Referencing**: Integrated deep linking between the installation guides, the main `index.rst` homepage, and the developer contribution protocols.
+
+### Changed
+- **Ecosystem Transparency**: Overhauled the core `README.md` and Sphinx `index.rst` templates to clearly differentiate the institutional role of `code.europa.eu` (powered by GitLab) from the public community portal on GitHub.
+- **Issue Tracking Realignment**: Explicitly routed public bug reporting, installation troubleshooting, and community Pull Requests away from internal Commission trackers directly to the public GitHub issue matrix.
 
 ---
 
@@ -22,7 +36,6 @@ Version 2.3.1 is a patch release that fixes critical bugs in the `frag_change()`
 - Fixed `frag_change()` crash when output file already exists from a previous failed run (`TIFFReadDirectory: Cannot handle zero number of tiles`). Corrupt leftover files are now removed before writing.
 - Fixed `frag_change()` crash on tiled output writing by adding explicit `blockxsize` and `blockysize` parameters to the output profile.
 - Fixed `frag_change()` mutating the input profile dictionary by adding a `.copy()` before updating.
-
 
 ---
 

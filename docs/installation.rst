@@ -58,15 +58,15 @@ Installation
 
        $ pip install pyguidos
 
-**Git Installation**
-   To install the latest development version directly from the repository:
+**Development installation**
+   To install the latest development version directly from the official upstream repository on **code.europa.eu** without cloning:
 
    .. code-block:: console
 
        $ pip install git+https://code.europa.eu/jrc-forest/guidos/pyguidos.git
 
-**Git Editable Installation**
-   If you want to use the notebooks and contribute or modify the source code, clone the repository
+**Editable Installation (Recommended for Testing)**
+   If you want to use the notebooks or modify the source code, clone the repository
    and install in editable mode:
 
    .. code-block:: console
@@ -81,6 +81,14 @@ Installation
 
        $ cd notebooks
        $ jupyter notebook
+
+   .. seealso::
+   
+      If you installed the package in editable mode with the intention of submitting bug
+      fixes, optimizing computational loops, or adding wrappers, please proceed to our
+      comprehensive :doc:`contributing` guide. It outlines our dual-forge orchestration
+      between ``code.europa.eu`` and GitHub, local testing parameters, and pull request
+      submission criteria.
 
 
 Verify Installation

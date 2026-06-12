@@ -5,6 +5,28 @@ All notable changes to pyGuidos are documented here.
 The format follows `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_
 and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+
+----
+
+
+2.3.2 - 2026-06-12
+------------------
+
+**Overview**
+
+Version 2.3.2 is a documentation and project governance patch release. It explicitly defines the project's open-source infrastructure architecture, clarifying the connection between the official upstream European Commission platform (``code.europa.eu``) and the public community interaction ecosystem on GitHub to streamline user engagement and journal peer-review audits.
+
+**Added**
+
+- **Developer Documentation**: Added a comprehensive, standalone :doc:`contributing` guide inside the Sphinx documentation suite outlining development environment isolation, Numba-specific testing protocols, and the dual-forge contribution workflow.
+- **Cross-Referencing**: Integrated deep linking between the installation guides, the main ``index.rst`` homepage, and the developer contribution protocols.
+
+**Changed**
+
+- **Ecosystem Transparency**: Overhauled the core ``README.md`` and Sphinx ``index.rst`` templates to clearly differentiate the institutional role of ``code.europa.eu`` (powered by GitLab) from the public community portal on GitHub.
+- **Issue Tracking Realignment**: Explicitly routed public bug reporting, installation troubleshooting, and community Pull Requests away from internal Commission trackers directly to the public GitHub issue matrix.
+
+
 ----
 
 
