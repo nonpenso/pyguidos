@@ -511,15 +511,16 @@ def log_msg(verbose, message):
 def citation():
     """Prints the recommended scientific citations for pyguidos."""
     cite_text = """
-============================================================
+=============================================================
 RECOMENDED CITATIONS FOR PYGUIDOS
-============================================================
+=============================================================
 
-Caudullo G., Vogt P., 2026. PyGuidos, A cross-platform Python 
-interface to GuidosToolbox for landscape pattern analysis. 
-JOSS XX(XX), XXXX. https://doi.org/joss.XXXXXX
+Caudullo G., Vogt P., 2026. pyGuidos: A cross-platform Python 
+interface to GuidosToolbox Workbench for pattern analysis 
+of raster maps. JOSS XX(XX), XXXX. 
+https://doi.org/joss.XXXXXX
 
-============================================================
+=============================================================
     """
     print(cite_text)
     return cite_text

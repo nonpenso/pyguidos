@@ -138,11 +138,27 @@ Usage Examples
 ```python
 import pyguidos as pg
 
-# Fragmentation analysis
+# Fragmentation analysis (FAD)
 result = pg.frag(
     in_tiff="my_map.tif",
     method="FAD",
     window_size=27
+)
+
+# Fragmentation analysis (FAC with 8-connectivity)
+result = pg.frag(
+    in_tiff="my_map.tif",
+    method="FAC",
+    window_size=27,
+    connectivity=8
+)
+
+# Fragmentation analysis (FED - Foreground Edge Density)
+result = pg.frag(
+    in_tiff="my_map.tif",
+    method="FED",
+    window_size=27,
+    connectivity=4
 )
 
 # Fragmentation change
@@ -196,8 +212,8 @@ software and this package:
   - Vogt P. and Riitters K. (2017). GuidosToolbox: universal digital image object analysis. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: [10.1080/22797254.2017.1330650](https://doi.org/10.1080/22797254.2017.1330650)
 
 **pyGuidos:**
-  - Caudullo G. and Vogt P. (2026). PyGuidos, A cross-platform Python 
-interface to GuidosToolbox for landscape pattern analysis. In press.
+  - Caudullo G. and Vogt P. (2026). pyGuidos: A cross-platform Python 
+interface to GuidosToolbox Workbench for pattern analysis of raster maps. In press.
 
 ### Interactive Citation
 You can get the plain-text citations directly in your Python console:

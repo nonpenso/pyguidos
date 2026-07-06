@@ -22,10 +22,10 @@ def validate_wsize(wsize):
     """
     if not isinstance(wsize, int):
         sys.exit(f"The window size must be an integer number (received {type(wsize).__name__})")
-    
+
     if wsize < 3:
         sys.exit(f"The window size must be >= 3 (received {wsize})")
-    
+
     if wsize % 2 == 0:
         sys.exit(f"The window size must be an odd number (received {wsize}). Try {wsize+1} or {wsize-1}.")
 
@@ -33,7 +33,7 @@ def validate_wsize(wsize):
 def validate_fmap_input(present_values, bands, dtype, allow_34=False):
     """
     Validates the pixel values and data type of a binary or multi-class
-    input GeoTIFF. Ensures mandatory values are present and no 
+    input GeoTIFF. Ensures mandatory values are present and no
     unexpected values exist.
 
     Parameters
@@ -56,19 +56,19 @@ def validate_fmap_input(present_values, bands, dtype, allow_34=False):
         If band are more than 1, if mandatory values 1 and 2 are missing,
         or if invalid pixel values are present.
     """
-    # Check number of bands 
+    # Check number of bands
     if bands != 1:
         sys.exit(f"ERROR: Input GeoTIFF must be single-band, but has {bands} bands.")
 
     # Check Data Type
     if not np.issubdtype(dtype, np.integer):
         sys.exit(f"ERROR: Input GeoTIFF must be Integer type (e.g. uint8, int32, etc.). "
-                 f"Found: {dtype}. Float rasters are not supported.")        
+                 f"Found: {dtype}. Float rasters are not supported.")
 
     # Setup Sets
     present_set = set(present_values)
     mandatory = {1, 2}
-    
+
     # Logic: If allow_34 is True, allowed is {0,1,2,3,4}. Otherwise {0,1,2}.
     allowed = {0, 1, 2, 3, 4} if allow_34 else {0, 1, 2}
 
@@ -105,20 +105,20 @@ def validate_lm_input(present_values, bands, dtype):
         If any of the mandatory values 1, 2 or 3 are missing, or if
         values other than 0, 1, 2 and 3 are present.
     """
-    # Check number of bands 
+    # Check number of bands
     if bands != 1:
         sys.exit(f"ERROR: Input GeoTIFF must be single-band, but has {bands} bands.")
 
     # Check Data Type
     if not np.issubdtype(dtype, np.integer):
         sys.exit(f"ERROR: Input GeoTIFF must be Integer type (e.g. uint8, int32, etc.). "
-                 f"Found: {dtype}. Float rasters are not supported.")    
+                 f"Found: {dtype}. Float rasters are not supported.")
 
     # Setup Sets
     present_set = set(present_values)
     mandatory = {1, 2, 3}
     allowed = {0, 1, 2, 3}
-    
+
     # Check for Mandatory Values
     missing = mandatory - present_set
     if missing:
@@ -126,14 +126,14 @@ def validate_lm_input(present_values, bands, dtype):
             f"Input Geotiff requires classes 1, 2, and 3. Missing: {missing}. "
             "Ensure your map contains all three (e.g., Natural, Agriculture, Developed)."
         )
-    
+
     # Check for Invalid Values
     invalid = present_set - allowed
     if invalid:
         sys.exit(f"Input Geotiff contains invalid values: {sorted(list(invalid))}.")
 
 
-def validate_frag_params(wsize, method):
+def validate_frag_params(wsize, method, connectivity=4):
     """
     Validates the parameters for the Fragmentation tool.
     Delegates window size validation to validate_wsize().
@@ -143,20 +143,26 @@ def validate_frag_params(wsize, method):
     wsize : int
         Window size in pixels. Must be an odd integer >= 3.
     method : str
-        Fragmentation method. Must be 'FAD' or 'FAC'.
+        Fragmentation method. Must be 'FAD', 'FAC', or 'FED'.
+    connectivity : int, optional
+        Pixel connectivity for FAC and FED methods. Must be 4 or 8.
+        Default 4.
 
     Raises
     ------
-    TypeError
-        If wsize is not an integer.
-    ValueError
-        If wsize is invalid or method is not in the allowed list.
+    SystemExit
+        If wsize is invalid, method is not in the allowed list,
+        or connectivity is not 4 or 8.
     """
     validate_wsize(wsize)
-    
-    allowed_methods = ['FAD', 'FAC']
+
+    allowed_methods = ['FAD', 'FAC', 'FED']
     if method not in allowed_methods:
         sys.exit(f"Fragmentation method must be {allowed_methods} (received '{method}')")
+
+    if method in ['FAC', 'FED']:
+        if connectivity not in [4, 8]:
+            sys.exit(f"Connectivity must be 4 or 8 (received {connectivity})")
 
 
 # def validate_mspa_params(edge_width, connectivity):
@@ -178,20 +184,20 @@ def validate_frag_params(wsize, method):
 #     """
 #     if not isinstance(edge_width, int) or edge_width < 1:
 #         sys.exit(f"The edge width must be an integer number >= 1 (received {edge_width})")
-        
+
 #     if connectivity not in [4, 8]:
 #         sys.exit(f"The connectivity must be 4 or 8 (received {connectivity})")
 
 def validate_spa_params(edge_width, classes):
     """
-    Validates the parameters for the MSPA tool.
+    Validates the parameters for the SPA tool.
 
     Parameters
     ----------
     edge_width : int
         Width of the edge zone in pixels. Must be an integer >= 1.
     classes : int
-        Number of MSPA classes. Must be 2, 3, 5, or 6.
+        Number of SPA classes. Must be 2, 3, 5, or 6.
 
     Raises
     ------
@@ -201,7 +207,7 @@ def validate_spa_params(edge_width, classes):
     """
     if not isinstance(edge_width, int) or edge_width < 1:
         sys.exit(f"The edge width must be an integer number >= 1 (received {edge_width})")
-        
+
     if classes not in [2, 3, 5, 6]:
         sys.exit(f"The number of classes must be 2, 3, 5 or 6 (received {classes})")
 
@@ -275,13 +281,13 @@ def validate_fchmaps_input(metadata1, metadata2):
     Raises:
     ------
     SystemExit
-        If the files are not Guidos outputs, and the tool IDs, fragmentation 
+        If the files are not Guidos outputs, and the tool IDs, fragmentation
         configurations, or spatial grids do not match perfectly.
     """
     # Parse and extract custom tools parameters from the analysis tags
     tag1 = utils.get_tool_parameters(metadata1["tag"])
     tag2 = utils.get_tool_parameters(metadata2["tag"])
-    
+
     # Verify if BOTH files come from GTB tool
     if tag1 == "--" or tag2 == "--":
         sys.exit(

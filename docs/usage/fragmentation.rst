@@ -6,14 +6,17 @@ foreground pattern indices within a user-defined moving window. Each foreground
 pixel is assigned a value based on the local neighbourhood composition, providing
 a spatially explicit measure of landscape fragmentation.
 
-Two methods are available:
+Three methods are available:
 
 - **FAD** (Foreground Area Density): computes within each window the proportion
   of foreground pixels relative to the total number of window pixels.
 - **FAC** (Foreground Area Clustering): computes within each window the proportion
-  of common adjacencies (shared vertical or horizontal pixel edges) between
-  foreground pixels relative to the total number of adjacencies inside the
-  moving window.
+  of common adjacencies (shared pixel edges) between foreground pixels relative
+  to the total number of adjacencies inside the moving window. Supports both
+  4-connected (horizontal + vertical) and 8-connected (adds diagonal) adjacency.
+- **FED** (Foreground Edge Density): computes a weighted edge density where
+  foreground–foreground pairs score 1.0, foreground–background pairs score 0.5,
+  and background–background pairs score 0.0. Supports both 4- and 8-connectivity.
 
 Further details about Fragmentation analysis are available in the
 `Connectivity/Fragmentation product sheet
@@ -25,8 +28,11 @@ Further details about Fragmentation analysis are available in the
     :align: center
     :alt: FOS methods
 
-    Comparison of FAD and FAC methods exemplified for a 5x5 moving window 
-    on a binary input map where black pixels are the foreground.
+    Comparison of FAD, FAC, and FED methods exemplified for a 5x5 moving window
+    on a binary input map where black pixels are the foreground. FAD computes
+    the proportion of foreground pixels. FAC computes the proportion of
+    foreground-foreground adjacencies. FED computes the weighted foreground
+    edges (FG-FG = 1, FG-BG = 0.5) relative to all edges.
 
 
 Fragmentation Classes
@@ -73,6 +79,7 @@ Usage
 
     import pyguidos as pg
 
+    # FAD - Foreground Area Density
     result = pg.frag(
         in_tiff="my_map.tif",
         method="FAD",
@@ -81,6 +88,22 @@ Usage
         statists=True,
         stat_files=True,
         verb=False
+    )
+
+    # FAC - Foreground Area Clustering (8-connected)
+    result = pg.frag(
+        in_tiff="my_map.tif",
+        method="FAC",
+        window_size=27,
+        connectivity=8
+    )
+
+    # FED - Foreground Edge Density (4-connected)
+    result = pg.frag(
+        in_tiff="my_map.tif",
+        method="FED",
+        window_size=27,
+        connectivity=4
     )
 
 
@@ -101,11 +124,15 @@ Parameters
    * - ``method``
      - str
      - --
-     - Fragmentation method: ``'FAD'`` or ``'FOS'``
+     - Fragmentation method: ``'FAD'``, ``'FAC'``, or ``'FED'``
    * - ``window_size``
      - int
      - --
      - Moving window size in pixels, odd integer >= 3
+   * - ``connectivity``
+     - int
+     - 4
+     - Pixel connectivity for FAC and FED: 4 or 8. Ignored for FAD.
    * - ``outdir``
      - str or Path
      - None

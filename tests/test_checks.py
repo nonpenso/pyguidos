@@ -212,6 +212,32 @@ class TestValidateFragParams:
         with pytest.raises(SystemExit):
             checks.validate_frag_params(27.0, 'FAD')
 
+    def test_valid_fed(self):
+        """Valid FED method with valid window size."""
+        assert checks.validate_frag_params(27, 'FED') is None
+
+    def test_valid_fac_connectivity_8(self):
+        """FAC with connectivity=8 should pass."""
+        assert checks.validate_frag_params(27, 'FAC', 8) is None
+
+    def test_valid_fed_connectivity_4(self):
+        """FED with connectivity=4 should pass."""
+        assert checks.validate_frag_params(27, 'FED', 4) is None
+
+    def test_invalid_connectivity_fac(self):
+        """FAC with invalid connectivity must be rejected."""
+        with pytest.raises(SystemExit):
+            checks.validate_frag_params(27, 'FAC', 6)
+
+    def test_invalid_connectivity_fed(self):
+        """FED with invalid connectivity must be rejected."""
+        with pytest.raises(SystemExit):
+            checks.validate_frag_params(27, 'FED', 3)
+
+    def test_fad_ignores_connectivity(self):
+        """FAD should pass regardless of connectivity value (it's ignored)."""
+        assert checks.validate_frag_params(27, 'FAD', 8) is None
+
 
 # =============================================================================
 # validate_mspa_params

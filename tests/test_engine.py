@@ -200,6 +200,153 @@ def test_fac_zero_denom_coverage():
     res = engine.compute_FAC(data, 3, 1)
     assert res[1, 1] == 102
 
+
+# =============================================================================
+# FAC 8-Connectivity Tests
+# =============================================================================
+
+def test_compute_fac_8conn_perfect():
+    """A solid block of foreground should yield 100% in 8-connected mode."""
+    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=8)
+    assert result[2, 2] == 100
+
+
+def test_compute_fac_8conn_diagonal_only():
+    """
+    A checkerboard pattern: in 4-conn no FG-FG edges exist,
+    but in 8-conn diagonal FG-FG pairs should be counted.
+    """
+    data = np.full((5, 5), BACKGROUND, dtype=np.int16)
+    # Place foreground in a diagonal pattern
+    data[1, 1] = FOREGROUND
+    data[2, 2] = FOREGROUND
+    data[3, 3] = FOREGROUND
+
+    # 4-connected: center pixel has no horizontal/vertical FG neighbours
+    res_4 = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=4)
+    assert res_4[2, 2] == 0  # no 4-connected FG-FG edges
+
+    # 8-connected: diagonal FG-FG pairs should yield > 0
+    res_8 = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=8)
+    assert res_8[2, 2] > 0
+
+
+def test_compute_fac_8conn_higher_than_4conn():
+    """For a foreground block, 8-conn total_potential_edges is larger,
+    so the percentage may differ from 4-conn."""
+    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data[0, 0] = BACKGROUND
+
+    res_4 = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=4)
+    res_8 = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=8)
+
+    # Both should produce valid values
+    assert 0 <= res_4[2, 2] <= 100
+    assert 0 <= res_8[2, 2] <= 100
+
+
+# =============================================================================
+# FED (Foreground Edge Density) Logic Tests
+# =============================================================================
+
+def test_compute_fed_all_foreground():
+    """All FG: every pair is FG-FG (score 1.0), should yield 100%."""
+    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
+    assert result[2, 2] == 100
+
+
+def test_compute_fed_isolated_foreground():
+    """
+    Single FG pixel surrounded by BG: all pairs involving the center
+    are FG-BG (0.5 each). No FG-FG pairs exist.
+    """
+    data = np.full((5, 5), BACKGROUND, dtype=np.int16)
+    data[2, 2] = FOREGROUND
+
+    result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
+
+    # Should be > 0 (FG-BG edges contribute 0.5) but < 100
+    assert 0 < result[2, 2] < 100
+
+
+def test_compute_fed_all_background_around_fg():
+    """
+    3x3 window: center is FG, 8 neighbours are BG.
+    4-connected: 12 total edges.
+    FG-BG edges: center shares 4 edges with BG neighbours → 4 × 0.5 = 2.0
+    BG-BG edges: remaining 8 edges → 0
+    weighted_num (integer): 4 × 1 = 4 (since weight 0.5 × 2 = 1 in integer math)
+    Plus BG-BG pairs that don't involve center also have BG-BG = 0
+    Result = 4 * 100 / (2 * 12) = 400 / 24 ≈ 16-17%
+    """
+    data = np.full((3, 3), BACKGROUND, dtype=np.int16)
+    data[1, 1] = FOREGROUND
+
+    result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
+
+    # FG-BG contributes, but less than full connectivity
+    assert 0 < result[1, 1] < 50
+
+
+def test_compute_fed_background_preserved():
+    """Background pixels should output 101."""
+    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data[2, 2] = BACKGROUND
+    result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
+    assert result[2, 2] == 101
+
+
+def test_compute_fed_missing_preserved():
+    """Missing pixels should output 102."""
+    data = np.full((3, 3), MISSING, dtype=np.int16)
+    data[1, 1] = FOREGROUND
+    result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
+    # All pairs involve missing → total_edges=0 → OUT_MISSING
+    assert result[1, 1] == 102
+
+
+@pytest.mark.parametrize("val,expected", [(3, 105), (4, 106)])
+def test_fed_special_bg_coverage(val, expected):
+    """Special background values should be preserved."""
+    data = np.full((3, 3), val, dtype=np.int16)
+    data[1, 1] = FOREGROUND
+    res = engine.compute_FED(data, 3, 1, connectivity=4)
+    assert res[0, 0] == expected
+
+
+def test_compute_fed_8conn_higher_than_4conn():
+    """
+    8-connected considers more pairs (diagonals), so for the same
+    data the result should generally differ from 4-connected.
+    """
+    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data[0, :] = BACKGROUND
+    data[:, 0] = BACKGROUND
+
+    res_4 = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
+    res_8 = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=8)
+
+    # Both should produce valid values
+    assert 0 <= res_4[2, 2] <= 100
+    assert 0 <= res_8[2, 2] <= 100
+
+
+def test_compute_fed_vs_fac_relationship():
+    """
+    FED should always be >= FAC for the same input, because FED gives
+    partial credit (0.5) to FG-BG edges while FAC only counts FG-FG.
+    """
+    data = np.full((7, 7), BACKGROUND, dtype=np.int16)
+    data[2:5, 2:5] = FOREGROUND
+
+    fac_result = engine.compute_FAC(data, window_size=5, handle_missing=1, connectivity=4)
+    fed_result = engine.compute_FED(data, window_size=5, handle_missing=1, connectivity=4)
+
+    # FED >= FAC for foreground pixels (FED gets credit for boundary edges)
+    assert fed_result[3, 3] >= fac_result[3, 3]
+
 # =============================================================================
 # Landscape Mosaic (LM) Logic Tests
 # =============================================================================

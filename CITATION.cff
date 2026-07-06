@@ -8,8 +8,8 @@ authors:
     given-names: "Peter"
     affiliation: "European Commission, Joint Research Centre"
 title: "pyguidos: A Python interface to main modules of GuidosToolbox"
-version: 2.2.0
-date-released: 2026-05-06
+version: 2.4.0
+date-released: 2026-07-03
 url: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
 repository-code: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
 abstract: >-
@@ -34,7 +34,7 @@ preferred-citation:
       given-names: "Giovanni"
     - family-names: "Vogt"
       given-names: "Peter"
-  title: "pyguidos"
+  title: "pyGuidos: A cross-platform Python interface to GuidosToolbox Workbench for pattern analysis of raster maps"
   journal: "JOSS"
   year: 2026
   volume: XX, XX

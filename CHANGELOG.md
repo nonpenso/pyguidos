@@ -7,6 +7,27 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.4.0] - 2026-07-03
+
+### Overview
+Version 2.4.0 extends the fragmentation analysis module with two significant enhancements: the Foreground Edge Density (FED) method and configurable pixel connectivity (4- or 8-connected) for both FAC and FED. These additions enable more nuanced characterisation of landscape fragmentation patterns by accounting for edge interactions and diagonal adjacency.
+
+### Added
+- **`FED` (Foreground Edge Density) method**: New fragmentation metric that scores pixel pairs based on foreground–foreground (weight 1.0), foreground–background (weight 0.5), and background–background (weight 0.0) interactions within the moving window. Available via `pg.frag(method='FED', ...)`.
+- **`connectivity` parameter**: New optional parameter for `frag()` accepting values 4 (default, horizontal + vertical pairs) or 8 (adds diagonal pairs). Applies to both FAC and FED methods; ignored for FAD.
+- New `compute_FED()` Numba kernel in `engine.py` with full parallel execution and pre-clamped bounds.
+- **`layer` parameter** for `extract_by_polygon()`: supports multi-layer vector files (GeoPackage, FileGDB). Exits with a clear error listing available layers if a multi-layer file is detected and no layer is specified.
+
+### Changed
+- `compute_FAC()` now accepts a `connectivity` parameter (4 or 8) instead of being hardcoded to 4-connected. The 8-connected mode adds NW-SE and NE-SW diagonal edge scanning.
+- `validate_frag_params()` in `checks.py` updated to accept `'FED'` as a valid method and validate the `connectivity` parameter.
+- GeoTIFF metadata tag format updated to encode the connectivity value instead of the hardcoded `8`.
+- `extract_by_polygon()` no longer attempts CRS reprojection. Instead, it checks that vector and raster bounding boxes overlap and exits with a clear error if they do not.
+- Configured PyPI Trusted Publisher in `.gitlab-ci.yml` for automated, token-free package publishing.
+- Reordered example notebooks: Fragmentation Change is now Notebook 03, Regional Analysis is Notebook 04. Updated all cross-references accordingly.
+
+---
+
 ## [2.3.2] - 2026-06-12
 
 ### Overview

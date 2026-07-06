@@ -20,12 +20,13 @@ Usage
     import pyguidos as pg
 
     pg.extract_by_polygon(
-        vector_path="regions.shp",
+        vector_path="regions.gpkg",
         geotiff_path="my_map.tif",
         output_dir="output/",
         id_field="NAME",
         name_prefix="region_",
-        nodata_value=None
+        nodata_value=None,
+        layer=None
     )
 
 
@@ -63,6 +64,12 @@ Parameters
      - int
      - None
      - Value for pixels outside the polygon mask
+   * - ``layer``
+     - str
+     - None
+     - Layer name for multi-layer vector files (e.g., GeoPackage, FileGDB).
+       If None, reads the first layer. Exits with an error if multiple
+       layers are detected and this parameter is not specified.
 
 
 Output Files
@@ -108,8 +115,13 @@ The function automatically handles several geometry issues:
 - **Empty geometries** are skipped with a warning message
 - **Geometries outside the raster extent** are skipped with a warning
   message
-- **CRS mismatch** between shapefile and raster is handled automatically
-  by reprojecting the polygon geometries to the raster CRS
+- **Bounding box mismatch** between vector and raster is detected
+  and the function exits with an error if they do not overlap
+
+.. warning::
+    The vector file and the raster file must share the same coordinate
+    reference system. If they do not overlap spatially, the function
+    will exit with an error asking you to verify both CRS.
 
 .. tip::
     The ``id_field`` value is used as the output filename. Spaces are

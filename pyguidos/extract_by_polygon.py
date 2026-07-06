@@ -3,15 +3,12 @@ from pathlib import Path
 import sys
 
 import pyogrio
-#import geopandas as gdp
 import rasterio
 from rasterio.mask import mask as rio_mask
-from rasterio.crs import CRS
 from rasterio.transform import Affine
 from rasterio.enums import ColorInterp
-from shapely.geometry import mapping, Polygon, MultiPolygon
-from pyproj import Transformer
-import pyproj
+from shapely.geometry import box, mapping, Polygon, MultiPolygon
+
 from . import utils
 
 
@@ -25,14 +22,14 @@ def extract_by_polygon(
     output_dir: str,
     id_field: str,
     name_prefix: str = "",
-    nodata_value: int = None
+    nodata_value: int = None,
+    layer: str = None
     ) -> None:
     """
     Extracts and saves a separate GeoTIFF for each polygon feature in a
     shapefile, clipping and masking the input raster to each polygon's
     extent and shape. Preserves the original colormap and GTB metadata
-    tags from the input GeoTIFF. Automatically reprojects polygon
-    geometries to the raster CRS if needed.
+    tags from the input GeoTIFF.
 
     Parameters
     ----------
@@ -58,6 +55,12 @@ def extract_by_polygon(
         (default), the value is automatically resolved from the GTB tag
         of the input GeoTIFF, or from the tiff nodata header, or
         defaults to 0 if neither is available.
+    layer : str, optional
+        Name of the layer to read from multi-layer vector files
+        (e.g., GeoPackage, FileGDB). If None (default), reads the first
+        layer. If the file contains multiple layers and this parameter
+        is not specified, the function will exit with an error listing
+        the available layer names.
 
     Returns
     -------
@@ -77,18 +80,27 @@ def extract_by_polygon(
         sys.exit(f"ERROR: Vector format '{vector_path.suffix}' is not supported. "
                  f"Supported formats: {sorted(SUPPORTED_VECTOR_FORMATS)}")
 
+    # Check for multi-layer vector files
+    layers = pyogrio.list_layers(str(vector_path))
+    if len(layers) > 1 and layer is None:
+        layer_names = [l[0] for l in layers]
+        sys.exit(f"ERROR: Vector file contains multiple layers: {layer_names}. "
+                 f"Please specify one using the 'layer' parameter.")
+
     # Resolve nodata value
     if nodata_value is None:
         nodata_value = utils.get_gtb_nodata(geotiff_path)
 
     with rasterio.open(geotiff_path) as src:
 
-        # Check raster CRS
+        # Check raster CRS and Bbox
         raster_crs = src.crs
         if raster_crs is None:
             sys.exit("ERROR: Input GeoTIFF has not a defined Projection. "
                      "Please assign a coordinate reference system before using extract_by_polygon().")
+        raster_bbox = box(*src.bounds)
 
+        # Get Resolution and Tags
         res_x, res_y = src.res
         in_tags = src.tags()
         tag_descr = in_tags.get('TIFFTAG_IMAGEDESCRIPTION') or '--'
@@ -97,29 +109,21 @@ def extract_by_polygon(
         except ValueError:
             cmap = None
 
-        # Read Vector metadata
-        info = pyogrio.read_info(str(vector_path))
+        # Check Vector CRS and Bbox
+        info = pyogrio.read_info(str(vector_path), layer=layer)
         raw_crs = info.get("crs")
         if not raw_crs:
             sys.exit("ERROR: Input vector file has not a defined Projection. "
                      "Please assign a coordinate reference system before using extract_by_polygon().")
-        try:
-            intermediate_crs = pyproj.CRS(raw_crs)
-            vector_crs = CRS.from_wkt(intermediate_crs.to_wkt())
-        except Exception as e:
-            print(f"Failed to parse CRS: {e}")
-            # Fallback to a default or handle error
-            vector_crs = None
+        vector_bbox = box(*info["total_bounds"])
+
+        # Check if Vector and Raster Bbox overlap
+        if not raster_bbox.intersects(vector_bbox):
+            sys.exit("ERROR: Input vector and raster files do not overlap. "
+                     "Please check both coordinate reference systems before using extract_by_polygon().")
 
         # Read vector file
-        vector_df = pyogrio.read_dataframe(str(vector_path))
-
-        # Check if reprojection is needed
-        needs_reproject = raster_crs != vector_crs
-        transformer = None
-        if needs_reproject:
-            transformer = Transformer.from_crs(vector_crs, raster_crs, always_xy=True)
-
+        vector_df = pyogrio.read_dataframe(str(vector_path), layer=layer)
         for idx, row in vector_df.iterrows():
             # --- Determine output filename ---
             if id_field in vector_df.columns:
@@ -154,11 +158,7 @@ def extract_by_polygon(
                     print(f"  [SKIP] Feature '{outname}': Geometry is empty. Skipping.")
                     continue
 
-            # --- Reproject geometry to raster CRS if needed ---
-            if needs_reproject:
-                geom = _reproject_geometry(geom, transformer)
-
-            # --- Check bounding box intersects raster ---
+            # --- Check feature bbox intersects raster ---
             raster_bounds = src.bounds
             if not _bounds_intersect(geom.bounds, raster_bounds):
                 print(f"  [SKIP] Feature '{outname}': geometry does not intersect raster extent.")
@@ -220,17 +220,9 @@ def extract_by_polygon(
                 dst.update_tags(**tags)
 
 
-
-
 # ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
-
-def _reproject_geometry(geom, transformer):
-    """Reproject a Shapely geometry using a pyproj Transformer."""
-    from shapely.ops import transform
-    return transform(transformer.transform, geom)
-
 
 def _bounds_intersect(bounds_a, bounds_b):
     """Return True if two bounding boxes (minx, miny, maxx, maxy) intersect."""

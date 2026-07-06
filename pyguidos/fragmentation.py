@@ -17,6 +17,7 @@ def frag(
     in_tiff,
     method,
     window_size,
+    connectivity=4,
     outdir=None,
     statists=True,
     stat_files=True,
@@ -38,8 +39,12 @@ def frag(
         Fragmentation methods:
         'FAD' Foreground Area Density
         'FAC' Foreground Area Clustering
+        'FED' Foreground Edge Density
     window_size : int
         Size of the moving window in pixels. Must be an odd integer >= 3.
+    connectivity : int, optional
+        Pixel connectivity for FAC and FED methods. Must be 4 or 8.
+        Default 4. Ignored for FAD method.
     outdir : str or Path, optional
         Directory for output files. Defaults to the input file's directory.
     statists : bool, optional
@@ -76,7 +81,7 @@ def frag(
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
     # Validate parametres
-    checks.validate_frag_params(window_size, method)
+    checks.validate_frag_params(window_size, method, connectivity)
 
     # Initialize Paths and Metadata
     in_tiff = Path(in_tiff)
@@ -106,11 +111,13 @@ def frag(
         if method.lower() == 'fad':
             data_out = engine.compute_FAD(input_data, window_size, 1)
         elif method.lower() == 'fac':
-            data_out = engine.compute_FAC(input_data, window_size, 1)
+            data_out = engine.compute_FAC(input_data, window_size, 1, connectivity)
+        elif method.lower() == 'fed':
+            data_out = engine.compute_FED(input_data, window_size, 1, connectivity)
 
         # Save Final Geotiff with Palette and Tags
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/"
-        tag_descr = f"GTB_FOS, <Binary,-1,8,{method.upper()}_5,{info['resX']},{window_size}>, {weblink}"
+        tag_descr = f"GTB_FOS, <Binary,-1,{connectivity},{method.upper()}_5,{info['resX']},{window_size}>, {weblink}"
         cmap_path = TEMPL_DIR / "frag_colormap.txt"
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, data_out, info['profile'], cmap_path, tag_descr)

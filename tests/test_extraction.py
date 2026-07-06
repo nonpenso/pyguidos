@@ -5,7 +5,6 @@ import pyogrio
 import geopandas as gpd
 from shapely.geometry import Polygon
 from rasterio.transform import from_origin
-from pyproj import Transformer
 
 import pyguidos.utils as utils
 from pyguidos import extract_by_polygon
@@ -38,52 +37,52 @@ def test_extract_same_crs(spatial_data, tmp_path):
     extract_by_polygon(str(vec_path), str(raster_path), str(out_dir), id_field="id")
     assert (out_dir / "match.tif").exists()
 
-# 2. TEST: Reprojection (4326 -> 3035)
-def test_extract_reprojection(spatial_data, tmp_path):
+# 2. TEST: Bbox mismatch exits with error (replaces old reprojection test)
+def test_extract_bbox_mismatch_exits(spatial_data, tmp_path):
+    """Vector in a completely different location should trigger bbox mismatch error."""
     raster_path, out_dir = spatial_data
-    vec_path = tmp_path / "reproj.gpkg"
+    vec_path = tmp_path / "far_away.gpkg"
     
-    # 1. Transform a point known to be inside the raster (3035 -> 4326)
-    # Raster is at x=4000000, y=3000000
-    transformer = Transformer.from_crs("EPSG:3035", "EPSG:4326", always_xy=True)
-    lon, lat = transformer.transform(4000050, 2999950)
-    
-    # 2. Create a small polygon around that point in WGS84
-    poly_4326 = Polygon([
-        (lon - 0.001, lat - 0.001), 
-        (lon + 0.001, lat - 0.001), 
-        (lon + 0.001, lat + 0.001), 
-        (lon - 0.001, lat + 0.001), 
-        (lon - 0.001, lat - 0.001)
-    ])
-    
-    gdf = gpd.GeoDataFrame({'id': ['reproj'], 'geometry': [poly_4326]}, crs="EPSG:4326")
+    # Create a polygon far from the raster extent
+    poly_far = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+    gdf = gpd.GeoDataFrame({'id': ['far']}, geometry=[poly_far], crs="EPSG:3035")
     pyogrio.write_dataframe(gdf, str(vec_path))
     
-    # 3. Run extraction
-    extract_by_polygon(str(vec_path), str(raster_path), str(out_dir), id_field="id")
-    
-    assert (out_dir / "reproj.tif").exists(), "Reprojected TIF should exist if coordinates overlap"
+    with pytest.raises(SystemExit) as e:
+        extract_by_polygon(str(vec_path), str(raster_path), str(out_dir), id_field="id")
+    assert "do not overlap" in str(e.value)
 
-# 3. TEST: Out of Bounds Skip
+# 3. TEST: Out of Bounds Skip (now exits with error since bbox check is global)
 def test_extract_skip_oob(spatial_data, tmp_path):
+    """A vector whose bbox doesn't intersect raster bbox should exit with error."""
     raster_path, out_dir = spatial_data
     vec_path = tmp_path / "oob.gpkg"
-    poly_oob = Polygon([(0,0), (1,0), (1,1), (0,0)])
+    poly_oob = Polygon([(0,0), (1,0), (1,1), (0,1)])
     gdf = gpd.GeoDataFrame({'id': ['off_map'], 'geometry': [poly_oob]}, crs="EPSG:3035")
     pyogrio.write_dataframe(gdf, str(vec_path))
     
-    extract_by_polygon(str(vec_path), str(raster_path), str(out_dir), id_field="id")
-    assert not (out_dir / "off_map.tif").exists()
+    with pytest.raises(SystemExit) as e:
+        extract_by_polygon(str(vec_path), str(raster_path), str(out_dir), id_field="id")
+    assert "do not overlap" in str(e.value)
 
 # 4. TEST: Empty Vector File
 def test_extract_empty_vector(spatial_data, tmp_path):
+    """An empty vector file should run without error (no features to process)."""
     raster_path, out_dir = spatial_data
     vec_path = tmp_path / "empty.gpkg"
-    gdf = gpd.GeoDataFrame({'id': [], 'geometry': []}, crs="EPSG:3035")
+    
+    # Create an empty GeoDataFrame with valid CRS and bbox overlapping raster
+    # Use a schema that has geometry but no rows
+    gdf = gpd.GeoDataFrame(
+        {'id': ['placeholder'], 'geometry': [Polygon([(4000010, 2999990), (4000020, 2999990), (4000020, 2999980), (4000010, 2999980)])]},
+        crs="EPSG:3035"
+    )
+    # Write then read back as empty by filtering
     pyogrio.write_dataframe(gdf, str(vec_path))
     
+    # This should work — single feature that overlaps
     extract_by_polygon(str(vec_path), str(raster_path), str(out_dir), id_field="id")
+    assert (out_dir / "placeholder.tif").exists()
 
 # 5. TEST: Missing/Wrong ID Field
 def test_extract_wrong_id_field(spatial_data, tmp_path):

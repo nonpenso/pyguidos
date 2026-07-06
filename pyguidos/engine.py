@@ -102,25 +102,29 @@ def compute_FAD(data, window_size, handle_missing):
 
 
 
-@njit("uint8[:,:](int16[:,:], int32, int32)", parallel=True, cache=True, fastmath=True)
-def compute_FAC(data, window_size, handle_missing):
+@njit(parallel=True, cache=True, fastmath=True)
+def compute_FAC(data, window_size, handle_missing, connectivity=4):
     """
     Numba-optimized sliding window to calculate Foreground Area Clustering (FAC)
-    within a moving window for each pixel, replicating SPATCON mapping rule 
+    within a moving window for each pixel, replicating SPATCON mapping rule
     76 behaviour.
-    
+
     Variables:
     ----------
     data           : 2D numpy array
                      The input raster pixels (0=Missing, 1=Background, 2=Foreground).
-    window_size    : int 
+    window_size    : int
                      Side length of the square window (must be odd).
     handle_missing : int
                      Switch for denominator logic:
-                     1 = 'Normalized' (denominator is count of non-missing 4-connected 
+                     1 = 'Normalized' (denominator is count of non-missing connected
                           pairs in window).
-                     2 = 'Fixed' (denominator is always 2 * window_size * (window_size - 1)).
-                     
+                     2 = 'Fixed' (denominator is always the total potential edges for
+                          the chosen connectivity).
+    connectivity   : int
+                     4 = 4-connected (horizontal + vertical pairs).
+                     8 = 8-connected (horizontal + vertical + diagonal pairs).
+
     Returns:
     --------
     result         : 2D numpy array (uint8)
@@ -128,27 +132,30 @@ def compute_FAC(data, window_size, handle_missing):
                      - 101: Original background pixels.
                      - 102: Missing data or invalid calculations.
     """
-    
-    # FOS constants
+
     OUT_BACKGROUND = 101
-    OUT_MISSING = 102
+    OUT_MISSING    = 102
     OUT_BACKGR_SP3 = 105
     OUT_BACKGR_SP4 = 106
-    
+
     nrows, ncols = data.shape
     result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
     radius = window_size // 2
-    total_potential_edges = 2 * window_size * (window_size - 1)
+    W = window_size
+
+    # Total potential edges per connectivity mode
+    if connectivity == 8:
+        total_potential_edges = 2 * (W - 1) * (2 * W - 1)
+    else:
+        total_potential_edges = 2 * W * (W - 1)
 
     for i in prange(nrows):
-        # Pre-clamp row bounds once per row
         r0 = max(0, i - radius)
         r1 = min(nrows, i + radius + 1)
 
         for j in range(ncols):
             pixel_val = data[i, j]
 
-            # 1. Preserve Background (Standard and Special)
             if pixel_val == BACKGROUND:
                 result[i, j] = OUT_BACKGROUND
                 continue
@@ -159,11 +166,9 @@ def compute_FAC(data, window_size, handle_missing):
                 result[i, j] = OUT_BACKGR_SP4
                 continue
 
-            # 2. Process only Foreground pixels
             if pixel_val != FOREGROUND:
                 continue
 
-            # Pre-clamp column bounds once per pixel
             c0 = max(0, j - radius)
             c1 = min(ncols, j + radius + 1)
 
@@ -196,9 +201,183 @@ def compute_FAC(data, window_size, handle_missing):
                         if v1 == FOREGROUND and v2 == FOREGROUND:
                             fg_fg_edges += 1
 
+            # --- Diagonal Scans (8-connected only) ---
+            if connectivity == 8:
+
+                # NW-SE diagonal (down-right neighbour)
+                for wi in range(r0, r1 - 1):
+                    for wj in range(c0, c1 - 1):
+                        v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
+                        if handle_missing == 1:
+                            if v1 != MISSING_IN and v2 != MISSING_IN:
+                                total_edges += 1
+                                if v1 == FOREGROUND and v2 == FOREGROUND:
+                                    fg_fg_edges += 1
+                        else:
+                            if v1 == FOREGROUND and v2 == FOREGROUND:
+                                fg_fg_edges += 1
+
+                # NE-SW diagonal (down-left neighbour)
+                for wi in range(r0, r1 - 1):
+                    for wj in range(c0 + 1, c1):
+                        v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
+                        if handle_missing == 1:
+                            if v1 != MISSING_IN and v2 != MISSING_IN:
+                                total_edges += 1
+                                if v1 == FOREGROUND and v2 == FOREGROUND:
+                                    fg_fg_edges += 1
+                        else:
+                            if v1 == FOREGROUND and v2 == FOREGROUND:
+                                fg_fg_edges += 1
+
             denom = total_edges if handle_missing == 1 else total_potential_edges
             if denom > 0:
                 pff = (fg_fg_edges * 200 + denom) // (2 * denom)
+                result[i, j] = np.uint8(min(pff, 100))
+            else:
+                result[i, j] = OUT_MISSING
+
+    return result
+
+
+@njit(parallel=True, cache=True, fastmath=True)
+def compute_FED(data, window_size, handle_missing, connectivity=4):
+    """
+    Numba-optimized sliding window to calculate Foreground Edge Density (FED)
+    within a moving window for each pixel.
+
+    Scores each connected pair within the window:
+        - Foreground-Foreground : 1   (weight 2 in integer arithmetic)
+        - Foreground-Background : 0.5 (weight 1 in integer arithmetic)
+        - Background-Background : 0
+        - Any pair with Missing : excluded (handle_missing=1) or counted in
+                                  denominator as 0 (handle_missing=2)
+
+    Variables:
+    ----------
+    data           : 2D numpy array (int16)
+                     Input raster (0=Missing, 1=Background, 2=Foreground,
+                     3=BackgrSP3, 4=BackgrSP4).
+    window_size    : int
+                     Side length of the square window (must be odd).
+    handle_missing : int
+                     1 = 'Normalized': denominator is count of non-missing
+                         connected pairs in window.
+                     2 = 'Fixed': denominator is always the total potential
+                         edges for the chosen connectivity.
+    connectivity   : int
+                     4 = horizontal + vertical pairs only.
+                     8 = horizontal + vertical + diagonal pairs.
+
+    Returns:
+    --------
+    result         : 2D numpy array (uint8)
+                     - Values 0-100: FED proportion percentage.
+                     - 101: Background pixels.
+                     - 102: Missing data or invalid calculations.
+                     - 105: BackgrSP3 pixels.
+                     - 106: BackgrSP4 pixels.
+    """
+
+    OUT_BACKGROUND = 101
+    OUT_MISSING    = 102
+    OUT_BACKGR_SP3 = 105
+    OUT_BACKGR_SP4 = 106
+
+    nrows, ncols = data.shape
+    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
+    radius = window_size // 2
+    W = window_size
+
+    if connectivity == 8:
+        total_potential_edges = 2 * (W - 1) * (2 * W - 1)
+    else:
+        total_potential_edges = 2 * W * (W - 1)
+
+    for i in prange(nrows):
+        r0 = max(0, i - radius)
+        r1 = min(nrows, i + radius + 1)
+
+        for j in range(ncols):
+            pixel_val = data[i, j]
+
+            if pixel_val == BACKGROUND:
+                result[i, j] = OUT_BACKGROUND
+                continue
+            if pixel_val == BACKGR_SP3:
+                result[i, j] = OUT_BACKGR_SP3
+                continue
+            if pixel_val == BACKGR_SP4:
+                result[i, j] = OUT_BACKGR_SP4
+                continue
+
+            if pixel_val != FOREGROUND:
+                continue
+
+            c0 = max(0, j - radius)
+            c1 = min(ncols, j + radius + 1)
+
+            weighted_num = 0
+            total_edges  = 0
+
+            # --- Horizontal Scan ---
+            for wi in range(r0, r1):
+                for wj in range(c0, c1 - 1):
+                    v1, v2 = data[wi, wj], data[wi, wj + 1]
+                    if v1 == MISSING_IN or v2 == MISSING_IN:
+                        continue
+                    if handle_missing == 1:
+                        total_edges += 1
+                    if v1 == FOREGROUND and v2 == FOREGROUND:
+                        weighted_num += 2
+                    elif (v1 == FOREGROUND) != (v2 == FOREGROUND):
+                        weighted_num += 1
+
+            # --- Vertical Scan ---
+            for wi in range(r0, r1 - 1):
+                for wj in range(c0, c1):
+                    v1, v2 = data[wi, wj], data[wi + 1, wj]
+                    if v1 == MISSING_IN or v2 == MISSING_IN:
+                        continue
+                    if handle_missing == 1:
+                        total_edges += 1
+                    if v1 == FOREGROUND and v2 == FOREGROUND:
+                        weighted_num += 2
+                    elif (v1 == FOREGROUND) != (v2 == FOREGROUND):
+                        weighted_num += 1
+
+            # --- Diagonal Scans (8-connected only) ---
+            if connectivity == 8:
+
+                # NW-SE diagonal
+                for wi in range(r0, r1 - 1):
+                    for wj in range(c0, c1 - 1):
+                        v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
+                        if v1 == MISSING_IN or v2 == MISSING_IN:
+                            continue
+                        if handle_missing == 1:
+                            total_edges += 1
+                        if v1 == FOREGROUND and v2 == FOREGROUND:
+                            weighted_num += 2
+                        elif (v1 == FOREGROUND) != (v2 == FOREGROUND):
+                            weighted_num += 1
+
+                # NE-SW diagonal
+                for wi in range(r0, r1 - 1):
+                    for wj in range(c0 + 1, c1):
+                        v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
+                        if v1 == MISSING_IN or v2 == MISSING_IN:
+                            continue
+                        if handle_missing == 1:
+                            total_edges += 1
+                        if v1 == FOREGROUND and v2 == FOREGROUND:
+                            weighted_num += 2
+                        elif (v1 == FOREGROUND) != (v2 == FOREGROUND):
+                            weighted_num += 1
+
+            denom = total_edges if handle_missing == 1 else total_potential_edges
+            if denom > 0:
+                pff = (weighted_num * 100 + denom) // (2 * denom)
                 result[i, j] = np.uint8(min(pff, 100))
             else:
                 result[i, j] = OUT_MISSING
