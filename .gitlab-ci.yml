@@ -75,10 +75,6 @@ publish_pypi:
   stage: deploy
   tags:
     - shared-docker
-  environment: pypi  
-  id_tokens:
-    PYPI_ID_TOKEN:   
-      aud: pypi
   needs:
     - job: run_tests
       artifacts: false 
