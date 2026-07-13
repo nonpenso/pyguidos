@@ -2,7 +2,7 @@
 
 [project]
 name = "pyguidos" 
-version = "2.4.0"
+version = "2.4.1"
 authors = [
   { name="Giovanni Caudullo", email="giovanni.caudullo@ext.ec.europa.eu" },
   { name="Peter Vogt", email="peter.vogt@ec.europa.eu" },

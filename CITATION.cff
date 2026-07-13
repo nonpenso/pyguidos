@@ -7,17 +7,16 @@ authors:
   - family-names: "Vogt"
     given-names: "Peter"
     affiliation: "European Commission, Joint Research Centre"
-title: "pyguidos: A Python interface to main modules of GuidosToolbox"
-version: 2.4.0
-date-released: 2026-07-03
+title: "pyguidos: A cross-platform Python interface to GuidosToolbox"
+version: 2.4.1
+date-released: 2026-07-13
 url: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
 repository-code: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
 abstract: >-
-  pyGuidos is a Python interface to the main modules of GuidosToolbox 
+  PyGuidos is a Python interface to the main modules of GuidosToolbox 
   (GTB), a scientific free software developed at the European 
-  Commission Joint Research Centre for the spatial pattent analysis 
-  of raster images.
-  pyGuidos provides programmatic access to the GTB analytical tools, 
+  Commission Joint Research Centre for the pattent analysis of raster images.
+  PyGuidos provides programmatic access to the GTB analytical tools, 
   enabling reproducible landscape analysis workflows in Python scripts, 
   Jupyter notebooks, and automated pipelines.
 keywords:
@@ -34,7 +33,7 @@ preferred-citation:
       given-names: "Giovanni"
     - family-names: "Vogt"
       given-names: "Peter"
-  title: "pyGuidos: A cross-platform Python interface to GuidosToolbox Workbench for pattern analysis of raster maps"
+  title: "A cross-platform Python interface to GuidosToolbox Workbench for pattern analysis of raster maps"
   journal: "JOSS"
   year: 2026
   volume: XX, XX

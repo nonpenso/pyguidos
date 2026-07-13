@@ -7,6 +7,13 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.4.1] - 2026-07-13
+
+### Fixed
+- Fixed incorrect parameter name `outfile=True` → `stat_files=True` in the `frag_stats()` call within Notebook 04 (Regional Analysis).
+
+---
+
 ## [2.4.0] - 2026-07-03
 
 ### Overview
