@@ -36,7 +36,7 @@ providing programmatic access to the main GTB analytical tools, enabling reprodu
 landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 .. note::
-   This documentation describes **pyGuidos version 2.4.0**. For older versions, 
+   This documentation describes **pyGuidos version 2.5.0**. For older versions, 
    please refer to the legacy documentation branch.
 
 
@@ -79,8 +79,8 @@ and the underlying scientific methodology:
 
 .. important::
    **Software Implementation**
-     Caudullo G. and Vogt P. (2026). *pyGuidos: A cross-platform Python interface 
-     to GuidosToolbox Workbench for pattern analysis of raster maps*. In press.
+     Caudullo G. and Vogt P. (2026). *pyGuidos: A cross-platform Python interface to 
+     GuidosToolbox for landscape pattern analysis*. In press.
 
    **Methodology (GTB)**
      Vogt P. and Riitters K. (2017). *GuidosToolbox: universal digital image object analysis*. 

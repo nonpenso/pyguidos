@@ -2,7 +2,7 @@
 
 [project]
 name = "pyguidos" 
-version = "2.4.0"
+version = "2.5.0"
 authors = [
   { name="Giovanni Caudullo", email="giovanni.caudullo@ext.ec.europa.eu" },
   { name="Peter Vogt", email="peter.vogt@ec.europa.eu" },
@@ -43,7 +43,6 @@ dependencies = [
     "pyogrio>=0.10",
     "geopandas>=1.1.0",
     "shapely>=2.0.7",
-    "pyproj>=3.4",
     "python-ternary>=1.0.8",
     "numba>=0.62",
     "tbb>=2021.6.0; sys_platform == 'win32'",

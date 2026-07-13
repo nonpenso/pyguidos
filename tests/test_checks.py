@@ -461,3 +461,47 @@ def test_validate_fchmaps_input_mismatching_spatial_param(base_metadata, base_to
             checks.validate_fchmaps_input(meta1, meta2)
         
         assert "Mismatch found in parameter 'bounds'" in str(exc_info.value)
+
+
+# =============================================================================
+# validate_fmap_gray_input
+# =============================================================================
+
+class TestValidateFmapGrayInput:
+
+    def test_valid_input(self):
+        """Should pass with valid integer input containing foreground."""
+        assert checks.validate_fmap_gray_input([0, 50, 100, 255], 1, 'uint8') is None
+
+    def test_valid_with_nodata_only(self):
+        """Should pass if foreground exists alongside NoData values."""
+        assert checks.validate_fmap_gray_input([0, 30, 200], 1, 'uint8') is None
+
+    def test_no_foreground_raises(self):
+        """Should reject input with no foreground pixels (only 0 and >100)."""
+        with pytest.raises(SystemExit):
+            checks.validate_fmap_gray_input([0, 200, 255], 1, 'uint8')
+
+    def test_only_zero_raises(self):
+        """Should reject input with only zero values."""
+        with pytest.raises(SystemExit):
+            checks.validate_fmap_gray_input([0], 1, 'uint8')
+
+    def test_float_dtype_raises(self):
+        """Should reject float dtype."""
+        with pytest.raises(SystemExit):
+            checks.validate_fmap_gray_input([0, 50, 100], 1, 'float32')
+
+    def test_float64_dtype_raises(self):
+        """Should reject float64 dtype."""
+        with pytest.raises(SystemExit):
+            checks.validate_fmap_gray_input([0, 50], 1, 'float64')
+
+    def test_multiband_raises(self):
+        """Should reject multi-band input."""
+        with pytest.raises(SystemExit):
+            checks.validate_fmap_gray_input([0, 50, 100], 3, 'uint8')
+
+    def test_int16_valid(self):
+        """Should accept int16 dtype."""
+        assert checks.validate_fmap_gray_input([0, 50, 100], 1, 'int16') is None

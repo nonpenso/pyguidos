@@ -33,6 +33,7 @@ Modules
 | Function | Description |
 |---|---|
 | `frag()` | Fragmentation analysis |
+| `frag_gray()` | Grayscale Fragmentation analysis |
 | `frag_change()` | Fragmentation change |
 | `landmos()` | Landscape Mosaic |
 | `spa()` | Simplified Pattern Analysis |
@@ -62,7 +63,6 @@ Requirements
 - pyogrio >=0.10
 - geopandas >=1.1
 - shapely >=2.0
-- pyproj >=3.4
 - python-ternary >=1.0
 - numba >0.62
 - tbb >=2021.6.0; sys_platform == 'win32'
@@ -161,6 +161,14 @@ result = pg.frag(
     connectivity=4
 )
 
+# Grayscale Fragmentation (tree cover density)
+result = pg.frag_gray(
+    in_tiff="tree_cover_density.tif",
+    method="FAD",
+    window_size=27,
+    for_threshold=30
+)
+
 # Fragmentation change
 result = pg.frag_change(
     in_tiff_t1="my_map2018_frag_fad_27.tif",
@@ -212,8 +220,8 @@ software and this package:
   - Vogt P. and Riitters K. (2017). GuidosToolbox: universal digital image object analysis. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: [10.1080/22797254.2017.1330650](https://doi.org/10.1080/22797254.2017.1330650)
 
 **pyGuidos:**
-  - Caudullo G. and Vogt P. (2026). pyGuidos: A cross-platform Python 
-interface to GuidosToolbox Workbench for pattern analysis of raster maps. In press.
+  - Caudullo G. and Vogt P. (2026). PyGuidos, A cross-platform Python 
+interface to GuidosToolbox for landscape pattern analysis. In press.
 
 ### Interactive Citation
 You can get the plain-text citations directly in your Python console:

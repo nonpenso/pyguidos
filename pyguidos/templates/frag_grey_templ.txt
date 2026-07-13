@@ -1,0 +1,54 @@
+FRAGMENTATION GRAYSCALE ANALYSIS 
+Using Fixed Observation Scale (FOS)
+Fragmentation is complementary to Connectivity: Fragmentation = 100% - Connectivity
+
+================================================================================
+INPUT FILE
+================================================================================
+Input image: {input_file}
+EPSG: {epsg_code}
+Unit: {unit_type}
+Pixel size (x,y): {resolx}, {resoly} {unit_type}
+Rows: {rows_val}
+Columns: {cols_val}
+Total pixels: {tot_pxl}
+Foreground [pixel=1:100]: {in_foreg_pxl}
+Background [pixel=0]: {in_backg_pxl}
+Missing/Nodata [pixel=255]: {miss_pxl}
+
+================================================================================
+PARAMETRES
+================================================================================
+Method: {used_method}
+Threshold: {for_thresh}
+Window size [pixels]: {window_size} x {window_size}
+Window area - observation scale (if unit is in metres):
+    {window_areaHA} hectares 
+    {window_areaAC} acres
+
+================================================================================
+RESULTS
+================================================================================
+Output image: {output_file}
+Foreground (thresholded): {out_foreg_pxl}
+Background (thresholded): {out_backg_pxl}
+Reported unit (Background + Foreground): {rep_unit_pxl}
+Foreground proportion [% of Reported unit]: {foreg_area_rel:.4f}
+
+Foreground classes: pixel number and percentage of Foreground area:
+---------------------------------------------------------------------------------
+    CLASS         FOS VALUES      PXL    FORGR. %
+    Rare          [0-9]     {rare_val}      {rare_pro} 
+    Patchy        [10-39]   {patch_val}      {patch_pro}
+    Transitional  [40-59]   {trans_val}      {trans_pro}
+    Dominant      [60-89]   {domin_val}      {domin_pro}
+    Interior      [90-100]  {inter_val}      {inter_pro}
+
+FAD_AV [%]: {fad_av_idx:.4f}
+AVCON [%]: {avcon_idx:.4f}
+
+Computational time: 
+
+================================================================================
+Online guide:
+https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf

@@ -7,6 +7,31 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.5.0] - 2026-07-10
+
+### Overview
+Version 2.5.0 introduces grayscale fragmentation analysis (`frag_gray()`), extending the binary FOS approach to continuous-value rasters where pixel values represent foreground intensity from 0 to 100 (e.g., tree cover density). Three methods (FAD, FAC, FED) are available with configurable foreground thresholds and 4/8-connectivity options.
+
+### Added
+- **`frag_gray()` function**: New grayscale fragmentation analysis supporting FAD, FAC, and FED methods on continuous-value input rasters (uint8, values 0-100, >100 = NoData).
+- **`frag_gray_stats()` function**: Standalone statistics computation from existing grayscale fragmentation output GeoTIFFs. Optionally reads source raster for input pixel counts.
+- **`for_threshold` parameter**: Foreground threshold (1-100) allowing users to define which pixel intensities are considered foreground. Applied inside the Numba kernel for zero-copy efficiency.
+- **`compute_FAD_gray()`** Numba kernel: Grayscale FAD computation with threshold integration.
+- **`compute_FAC_gray()`** Numba kernel: Grayscale FAC with threshold, 4/8-connectivity.
+- **`compute_FED_gray()`** Numba kernel: Grayscale FED with threshold, 4/8-connectivity.
+- **`validate_fmap_gray_input()`** validation function in `checks.py`.
+- **Example data**: Added `TCD2023_sardinia.tif` (Copernicus Tree Cover Density 2023, Sardinia, 100m).
+- **Example notebook**: `05_grayscale_fragmentation.ipynb` demonstrating all grayscale methods with threshold comparison.
+- **Documentation**: New `docs/usage/fragmentation_gray.rst` with sub-chapters per method, formulas, and figure examples.
+
+### Changed
+- Updated `docs/usage/fragmentation.rst` with method sub-chapters (FAD, FAC, FED) and individual figures per method.
+- Updated `docs/usage/index.rst` to include the new grayscale fragmentation page.
+- Updated `__init__.py` to export `frag_gray` and `frag_gray_stats`.
+- Removed `pyproj` dependency. EPSG resolution now uses rasterio's built-in CRS method.
+
+---
+
 ## [2.4.0] - 2026-07-03
 
 ### Overview

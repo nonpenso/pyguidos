@@ -40,6 +40,9 @@ scientific documentation is to use the interactive ``info()`` function:
    * - :doc:`fragmentation`
      - Fragmentation analysis
      - ``.tif``, ``.txt``, ``.csv``, ``.png``
+   * - :doc:`fragmentation_gray`
+     - Grayscale Fragmentation analysis
+     - ``.tif``, ``.txt``, ``.csv``, ``.png``
    * - :doc:`fragmentation_change`
      - Fragmentation change
      - ``.tif``, ``.txt``, ``.csv``, ``.png``
@@ -154,6 +157,7 @@ rerunning the full analysis:
    input_format
    morphology
    fragmentation
+   fragmentation_gray
    fragmentation_change
    landmos
    accounting

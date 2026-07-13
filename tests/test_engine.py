@@ -592,3 +592,127 @@ def test_fos_change_bypass_stats(empty_matrix):
 
     # Matrix element MUST remain unmodified (0)
     assert empty_matrix[50, 50] == 0
+
+
+# =============================================================================
+# FAD Grayscale Logic Tests
+# =============================================================================
+
+class TestComputeFADGray:
+
+    def test_uniform_100(self):
+        """All pixels at 100 should give FAD=100 for internal pixels."""
+        data = np.full((5, 5), 100, dtype=np.int16)
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[2, 2] == 100
+
+    def test_uniform_50(self):
+        """All pixels at 50 should give FAD=50."""
+        data = np.full((5, 5), 50, dtype=np.int16)
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[2, 2] == 50
+
+    def test_nodata_excluded(self):
+        """NoData (>100) should be excluded from computation."""
+        data = np.full((3, 3), 100, dtype=np.int16)
+        data[0, :] = 200  # NoData
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[1, 1] == 100
+
+    def test_nodata_pixel_returns_102(self):
+        """A pixel with value > 100 should output 102."""
+        data = np.full((5, 5), 80, dtype=np.int16)
+        data[2, 2] = 150
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[2, 2] == 102
+
+    def test_zero_pixel_returns_101(self):
+        """A pixel with value 0 should output 101 (non-foreground)."""
+        data = np.full((5, 5), 80, dtype=np.int16)
+        data[2, 2] = 0
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[2, 2] == 101
+
+    def test_threshold_applied(self):
+        """Pixels below threshold should be treated as 0 in computation."""
+        data = np.full((5, 5), 30, dtype=np.int16)
+        data[2, 2] = 80  # Only center is above threshold
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=50)
+        assert result[2, 2] < 20
+
+    def test_below_threshold_pixel_returns_101(self):
+        """A pixel below for_threshold should output 101."""
+        data = np.full((5, 5), 80, dtype=np.int16)
+        data[2, 2] = 30  # Below threshold
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=50)
+        assert result[2, 2] == 101
+
+
+# =============================================================================
+# FAC Grayscale Logic Tests
+# =============================================================================
+
+class TestComputeFACGray:
+
+    def test_uniform_100(self):
+        """All pixels at 100: all pairs are FG-FG with avg=100, should give 100%."""
+        data = np.full((5, 5), 100, dtype=np.int16)
+        result = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=4)
+        assert result[2, 2] == 100
+
+    def test_isolated_fg_returns_zero(self):
+        """Single FG pixel surrounded by zeros: no FG-FG pairs, FAC=0."""
+        data = np.zeros((5, 5), dtype=np.int16)
+        data[2, 2] = 80
+        result = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=4)
+        assert result[2, 2] == 0
+
+    def test_8conn_higher_than_4conn(self):
+        """Diagonal FG pairs should contribute in 8-conn but not 4-conn."""
+        data = np.zeros((5, 5), dtype=np.int16)
+        data[1, 1] = 80
+        data[2, 2] = 80
+        data[3, 3] = 80
+
+        res_4 = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=4)
+        res_8 = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=8)
+        assert res_4[2, 2] == 0
+        assert res_8[2, 2] > 0
+
+
+# =============================================================================
+# FED Grayscale Logic Tests
+# =============================================================================
+
+class TestComputeFEDGray:
+
+    def test_uniform_100(self):
+        """All FG at 100: every pair is FG-FG with max score, should give 100%."""
+        data = np.full((5, 5), 100, dtype=np.int16)
+        result = engine.compute_FED_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=4)
+        assert result[2, 2] == 100
+
+    def test_fed_greater_or_equal_fac(self):
+        """FED should be >= FAC since FG-nonFG edges also contribute."""
+        data = np.zeros((7, 7), dtype=np.int16)
+        data[2:5, 2:5] = 80
+
+        fac = engine.compute_FAC_gray(data, window_size=5, handle_missing=1,
+                                       for_threshold=1, connectivity=4)
+        fed = engine.compute_FED_gray(data, window_size=5, handle_missing=1,
+                                       for_threshold=1, connectivity=4)
+        assert fed[3, 3] >= fac[3, 3]
+
+    def test_mixed_values_partial_score(self):
+        """FG-nonFG pairs should contribute partial score."""
+        data = np.zeros((5, 5), dtype=np.int16)
+        data[2, 2] = 60  # Single FG pixel
+
+        result = engine.compute_FED_gray(data, window_size=3, handle_missing=1,
+                                          for_threshold=1, connectivity=4)
+        assert result[2, 2] > 0

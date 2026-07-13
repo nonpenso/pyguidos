@@ -9,6 +9,35 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
+2.5.0 - 2026-07-10
+------------------
+
+**Overview**
+
+Version 2.5.0 introduces grayscale fragmentation analysis (``frag_gray()``), extending the binary FOS approach to continuous-value rasters where pixel values represent foreground intensity from 0 to 100 (e.g., tree cover density). Three methods (FAD, FAC, FED) are available with configurable foreground thresholds and 4/8-connectivity options.
+
+**Added**
+
+- ``frag_gray()`` function: New grayscale fragmentation analysis supporting FAD, FAC, and FED methods on continuous-value input rasters (uint8, values 0-100, >100 = NoData).
+- ``frag_gray_stats()`` function: Standalone statistics computation from existing grayscale fragmentation output GeoTIFFs.
+- ``for_threshold`` parameter: Foreground threshold (1-100) applied inside Numba kernels for zero-copy efficiency.
+- ``compute_FAD_gray()``, ``compute_FAC_gray()``, ``compute_FED_gray()`` Numba kernels with threshold integration and 4/8-connectivity.
+- ``validate_fmap_gray_input()`` validation function in ``checks.py``.
+- Example data: ``TCD2023_sardinia.tif`` (Copernicus Tree Cover Density 2023, Sardinia, 100m).
+- Example notebook: ``05_grayscale_fragmentation.ipynb``.
+- Documentation: ``docs/usage/fragmentation_gray.rst`` with sub-chapters per method, formulas, and figure examples.
+
+**Changed**
+
+- Updated ``docs/usage/fragmentation.rst`` with method sub-chapters (FAD, FAC, FED) and individual figures.
+- Updated ``docs/usage/index.rst`` to include the new grayscale fragmentation page.
+- Updated ``__init__.py`` to export ``frag_gray`` and ``frag_gray_stats``.
+- Removed ``pyproj`` dependency. EPSG resolution now uses rasterio's built-in CRS method.
+
+
+----
+
+
 2.4.0 - 2026-07-03
 ------------------
 

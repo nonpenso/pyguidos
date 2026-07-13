@@ -103,6 +103,363 @@ def compute_FAD(data, window_size, handle_missing):
 
 
 @njit(parallel=True, cache=True, fastmath=True)
+def compute_FAD_gray(data, window_size, handle_missing, for_threshold):
+    """
+    Numba-optimized sliding window to calculate Foreground Area Density (FAD)
+    on a grayscale (continuous) input raster where pixel values represent
+    foreground intensity from 0 to 100.
+
+    Variables:
+    ----------
+    data           : 2D numpy array (int16)
+                     The input raster pixels:
+                     0 = Non-foreground
+                     1-100 = Foreground intensity (percentage)
+                     255 = NoData (missing)
+    window_size    : int
+                     Side length of the square window (must be odd, >= 3).
+    handle_missing : int
+                     Switch for denominator logic:
+                     1 = 'Normalized' (denominator is count of non-missing
+                         pixels in window, scaled to 100).
+                     2 = 'Fixed' (denominator is always window_size^2 * 100).
+    for_threshold  : int
+                     Foreground threshold (1-100). Pixels with values below
+                     this threshold are treated as non-foreground (value 0)
+                     during computation. If 1, all values 1-100 are valid.
+
+    Returns:
+    --------
+    result         : 2D numpy array (uint8)
+                     - Values 0-100: Average foreground density percentage.
+                     - 101: Non-foreground pixels (input value 0 or below threshold).
+                     - 102: Missing data (input value 255) or invalid.
+    """
+
+    OUT_NONFOREGROUND = 101
+    OUT_MISSING = 102
+
+    nrows, ncols = data.shape
+    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
+    radius = window_size // 2
+
+    for i in prange(nrows):
+        r0 = max(0, i - radius)
+        r1 = min(nrows, i + radius + 1)
+
+        for j in range(ncols):
+            pixel_val = data[i, j]
+
+            # 1. Preserve NoData (any value > 100)
+            if pixel_val > 100:
+                result[i, j] = OUT_MISSING
+                continue
+
+            # 2. Preserve Non-foreground (value 0 or below threshold)
+            if pixel_val < for_threshold:
+                result[i, j] = OUT_NONFOREGROUND
+                continue
+
+            # 3. Process foreground pixels (values >= for_threshold)
+            c0 = max(0, j - radius)
+            c1 = min(ncols, j + radius + 1)
+
+            value_sum = 0
+            non_missing_count = 0
+
+            for wi in range(r0, r1):
+                for wj in range(c0, c1):
+                    val = data[wi, wj]
+                    if val > 100:
+                        continue
+                    # Apply threshold: values below threshold contribute 0
+                    if val < for_threshold:
+                        non_missing_count += 1
+                    else:
+                        value_sum += val
+                        non_missing_count += 1
+
+            # Denominator: non_missing_count * 100 (normalized)
+            # or window_size^2 * 100 (fixed)
+            if handle_missing == 1:
+                denom = non_missing_count * 100
+            else:
+                denom = window_size * window_size * 100
+
+            if denom > 0:
+                # Round-half-up: (value_sum * 200 + denom) // (2 * denom)
+                pf = (value_sum * 200 + denom) // (2 * denom)
+                result[i, j] = np.uint8(min(pf, 100))
+            else:
+                result[i, j] = OUT_MISSING
+
+    return result
+
+
+
+@njit(parallel=True, cache=True, fastmath=True)
+def compute_FAC_gray(data, window_size, handle_missing, for_threshold, connectivity=4):
+    """
+    Numba-optimized sliding window to calculate Foreground Area Clustering (FAC)
+    on a grayscale input raster. Only pairs where both pixels are >= for_threshold
+    contribute to the numerator. The edge value is the average of the two pixel values.
+
+    Variables:
+    ----------
+    data           : 2D numpy array (int16)
+                     0 = Non-foreground, 1-100 = Foreground intensity, 255 = NoData.
+    window_size    : int
+                     Side length of the square window (must be odd, >= 3).
+    handle_missing : int
+                     1 = 'Normalized' (denominator = non-missing edges × 100).
+                     2 = 'Fixed' (denominator = total potential edges × 100).
+    for_threshold  : int
+                     Foreground threshold (1-100). Pixels below are treated as 0.
+    connectivity   : int
+                     4 = horizontal + vertical. 8 = adds diagonals.
+
+    Returns:
+    --------
+    result         : 2D numpy array (uint8), values 0-100, 101, or 102.
+    """
+
+    OUT_NONFOREGROUND = 101
+    OUT_MISSING = 102
+
+    nrows, ncols = data.shape
+    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
+    radius = window_size // 2
+    W = window_size
+
+    if connectivity == 8:
+        total_potential_edges = 2 * (W - 1) * (2 * W - 1)
+    else:
+        total_potential_edges = 2 * W * (W - 1)
+
+    for i in prange(nrows):
+        r0 = max(0, i - radius)
+        r1 = min(nrows, i + radius + 1)
+
+        for j in range(ncols):
+            pixel_val = data[i, j]
+
+            if pixel_val > 100:
+                result[i, j] = OUT_MISSING
+                continue
+            if pixel_val < for_threshold:
+                result[i, j] = OUT_NONFOREGROUND
+                continue
+
+            c0 = max(0, j - radius)
+            c1 = min(ncols, j + radius + 1)
+
+            # Accumulate sum of averages × 2 (to stay integer)
+            # For a pair (a, b) both >= threshold: contribute a + b
+            edge_sum = 0
+            total_edges = 0
+
+            # --- Horizontal Scan ---
+            for wi in range(r0, r1):
+                for wj in range(c0, c1 - 1):
+                    v1, v2 = data[wi, wj], data[wi, wj + 1]
+                    if v1 > 100 or v2 > 100:
+                        continue
+                    if handle_missing == 1:
+                        total_edges += 1
+                    # Apply threshold
+                    a = v1 if v1 >= for_threshold else 0
+                    b = v2 if v2 >= for_threshold else 0
+                    # Only count if both are foreground
+                    if a > 0 and b > 0:
+                        edge_sum += a + b  # sum of pair (avoid division)
+
+            # --- Vertical Scan ---
+            for wi in range(r0, r1 - 1):
+                for wj in range(c0, c1):
+                    v1, v2 = data[wi, wj], data[wi + 1, wj]
+                    if v1 > 100 or v2 > 100:
+                        continue
+                    if handle_missing == 1:
+                        total_edges += 1
+                    a = v1 if v1 >= for_threshold else 0
+                    b = v2 if v2 >= for_threshold else 0
+                    if a > 0 and b > 0:
+                        edge_sum += a + b
+
+            # --- Diagonal Scans (8-connected only) ---
+            if connectivity == 8:
+                for wi in range(r0, r1 - 1):
+                    for wj in range(c0, c1 - 1):
+                        v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
+                        if v1 > 100 or v2 > 100:
+                            continue
+                        if handle_missing == 1:
+                            total_edges += 1
+                        a = v1 if v1 >= for_threshold else 0
+                        b = v2 if v2 >= for_threshold else 0
+                        if a > 0 and b > 0:
+                            edge_sum += a + b
+
+                for wi in range(r0, r1 - 1):
+                    for wj in range(c0 + 1, c1):
+                        v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
+                        if v1 > 100 or v2 > 100:
+                            continue
+                        if handle_missing == 1:
+                            total_edges += 1
+                        a = v1 if v1 >= for_threshold else 0
+                        b = v2 if v2 >= for_threshold else 0
+                        if a > 0 and b > 0:
+                            edge_sum += a + b
+
+            # denom = total_edges * 2 * 100 (since edge_sum accumulates a+b, not avg)
+            if handle_missing == 1:
+                denom = total_edges * 200
+            else:
+                denom = total_potential_edges * 200
+
+            if denom > 0:
+                pf = (edge_sum * 200 + denom) // (2 * denom)
+                result[i, j] = np.uint8(min(pf, 100))
+            else:
+                result[i, j] = OUT_MISSING
+
+    return result
+
+
+
+@njit(parallel=True, cache=True, fastmath=True)
+def compute_FED_gray(data, window_size, handle_missing, for_threshold, connectivity=4):
+    """
+    Numba-optimized sliding window to calculate Foreground Edge Density (FED)
+    on a grayscale input raster. The edge value is the average of the two
+    adjacent pixel values (after thresholding).
+
+    Scoring per pair (a, b are thresholded values):
+        - Both >= threshold (FG-FG): edge = (a + b) / 2
+        - One >= threshold (FG-nonFG): edge = (a + b) / 2  (one is 0)
+        - Both < threshold (nonFG-nonFG): edge = 0
+
+    Variables:
+    ----------
+    data           : 2D numpy array (int16)
+                     0 = Non-foreground, 1-100 = Foreground intensity, 255 = NoData.
+    window_size    : int
+                     Side length of the square window (must be odd, >= 3).
+    handle_missing : int
+                     1 = 'Normalized' (denominator = non-missing edges × 100).
+                     2 = 'Fixed' (denominator = total potential edges × 100).
+    for_threshold  : int
+                     Foreground threshold (1-100). Pixels below are treated as 0.
+    connectivity   : int
+                     4 = horizontal + vertical. 8 = adds diagonals.
+
+    Returns:
+    --------
+    result         : 2D numpy array (uint8), values 0-100, 101, or 102.
+    """
+
+    OUT_NONFOREGROUND = 101
+    OUT_MISSING = 102
+
+    nrows, ncols = data.shape
+    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
+    radius = window_size // 2
+    W = window_size
+
+    if connectivity == 8:
+        total_potential_edges = 2 * (W - 1) * (2 * W - 1)
+    else:
+        total_potential_edges = 2 * W * (W - 1)
+
+    for i in prange(nrows):
+        r0 = max(0, i - radius)
+        r1 = min(nrows, i + radius + 1)
+
+        for j in range(ncols):
+            pixel_val = data[i, j]
+
+            if pixel_val > 100:
+                result[i, j] = OUT_MISSING
+                continue
+            if pixel_val < for_threshold:
+                result[i, j] = OUT_NONFOREGROUND
+                continue
+
+            c0 = max(0, j - radius)
+            c1 = min(ncols, j + radius + 1)
+
+            # Accumulate (a + b) for all non-NoData pairs where at least one is FG
+            # This avoids division: sum of (a+b) / (total_edges * 2 * 100) = avg/100
+            edge_sum = 0
+            total_edges = 0
+
+            # --- Horizontal Scan ---
+            for wi in range(r0, r1):
+                for wj in range(c0, c1 - 1):
+                    v1, v2 = data[wi, wj], data[wi, wj + 1]
+                    if v1 > 100 or v2 > 100:
+                        continue
+                    if handle_missing == 1:
+                        total_edges += 1
+                    a = v1 if v1 >= for_threshold else 0
+                    b = v2 if v2 >= for_threshold else 0
+                    # FED: any pair with at least one FG contributes
+                    edge_sum += a + b
+
+            # --- Vertical Scan ---
+            for wi in range(r0, r1 - 1):
+                for wj in range(c0, c1):
+                    v1, v2 = data[wi, wj], data[wi + 1, wj]
+                    if v1 > 100 or v2 > 100:
+                        continue
+                    if handle_missing == 1:
+                        total_edges += 1
+                    a = v1 if v1 >= for_threshold else 0
+                    b = v2 if v2 >= for_threshold else 0
+                    edge_sum += a + b
+
+            # --- Diagonal Scans (8-connected only) ---
+            if connectivity == 8:
+                for wi in range(r0, r1 - 1):
+                    for wj in range(c0, c1 - 1):
+                        v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
+                        if v1 > 100 or v2 > 100:
+                            continue
+                        if handle_missing == 1:
+                            total_edges += 1
+                        a = v1 if v1 >= for_threshold else 0
+                        b = v2 if v2 >= for_threshold else 0
+                        edge_sum += a + b
+
+                for wi in range(r0, r1 - 1):
+                    for wj in range(c0 + 1, c1):
+                        v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
+                        if v1 > 100 or v2 > 100:
+                            continue
+                        if handle_missing == 1:
+                            total_edges += 1
+                        a = v1 if v1 >= for_threshold else 0
+                        b = v2 if v2 >= for_threshold else 0
+                        edge_sum += a + b
+
+            # denom = total_edges * 2 * 100 (since edge_sum is sum of a+b, not avg)
+            if handle_missing == 1:
+                denom = total_edges * 200
+            else:
+                denom = total_potential_edges * 200
+
+            if denom > 0:
+                pf = (edge_sum * 200 + denom) // (2 * denom)
+                result[i, j] = np.uint8(min(pf, 100))
+            else:
+                result[i, j] = OUT_MISSING
+
+    return result
+
+
+
+@njit(parallel=True, cache=True, fastmath=True)
 def compute_FAC(data, window_size, handle_missing, connectivity=4):
     """
     Numba-optimized sliding window to calculate Foreground Area Clustering (FAC)
