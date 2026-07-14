@@ -388,17 +388,22 @@ def _get_frag_gray_stats(frag_freq,
             "out_backg_pxl": bgrnd,
             "rep_unit_pxl": ruarea,
             "foreg_area_rel": (fgrnd / ruarea * 100) if ruarea > 0 else 0,
-            "rare_val": (rare / fgrnd * 100) if fgrnd > 0 else 0,
-            "patch_val": (patchy / fgrnd * 100) if fgrnd > 0 else 0,
-            "trans_val": (trans / fgrnd * 100) if fgrnd > 0 else 0,
-            "domin_val": (domin / fgrnd * 100) if fgrnd > 0 else 0,
-            "inter_val": (inter / fgrnd * 100) if fgrnd > 0 else 0,
+            "rare_val": f"{rare:>9}",
+            "patch_val": f"{patchy:>9}",
+            "trans_val": f"{trans:>9}",
+            "domin_val": f"{domin:>9}",
+            "inter_val": f"{inter:>9}",
+            "rare_pro": f"{(rare / fgrnd) * 100:7.4f}",
+            "patch_pro": f"{(patchy / fgrnd) * 100:7.4f}",
+            "trans_pro": f"{(trans / fgrnd) * 100:7.4f}",
+            "domin_pro": f"{(domin / fgrnd) * 100:7.4f}",
+            "inter_pro": f"{(inter / fgrnd) * 100:7.4f}",            
             "fad_av_idx": fad_av,
             "avcon_idx": avcon,
         }
 
         txt_file = out_dir / f'{out_name}.txt'
-        utils.generate_text_report(TEMPL_DIR / 'frag_templ.txt', txt_file, content)
+        utils.generate_text_report(TEMPL_DIR / 'frag_gray_templ.txt', txt_file, content)
 
     # Statistic dictionaries
     path_stats_dict = None

@@ -37,8 +37,8 @@ Foreground proportion [% of Reported unit]: {foreg_area_rel:.4f}
 
 Foreground classes: pixel number and percentage of Foreground area:
 ---------------------------------------------------------------------------------
-    CLASS         FOS VALUES      PXL     FORGR. %
-    Rare          [0-9]     {rare_val}      {rare_pro:.4f} 
+    CLASS         FOS VALUES      PXL    FORGR. %
+    Rare          [0-9]     {rare_val}      {rare_pro} 
     Patchy        [10-39]   {patch_val}      {patch_pro}
     Transitional  [40-59]   {trans_val}      {trans_pro}
     Dominant      [60-89]   {domin_val}      {domin_pro}
