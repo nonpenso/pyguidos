@@ -592,3 +592,90 @@ def test_fos_change_bypass_stats(empty_matrix):
 
     # Matrix element MUST remain unmodified (0)
     assert empty_matrix[50, 50] == 0
+
+
+# =============================================================================
+# SP4 Exclusion Tests (SP4 treated as missing in window computation)
+# =============================================================================
+
+def test_fad_sp4_excluded_from_window():
+    """
+    SP4 in the window should be excluded from denominator (like NoData).
+    A 3x3 window with center=FG, 4 SP4, 4 BG:
+    Without exclusion: denom=9, fg=1, FAD=11%
+    With exclusion: denom=5 (only FG+BG counted), fg=1, FAD=20%
+    """
+    data = np.full((3, 3), 1, dtype=np.int16)  # Background
+    data[1, 1] = 2  # Center = Foreground
+    data[0, 0] = 4  # SP4
+    data[0, 1] = 4  # SP4
+    data[0, 2] = 4  # SP4
+    data[1, 0] = 4  # SP4
+    # Remaining: (1,2)=1, (2,0)=1, (2,1)=1, (2,2)=1
+    # Valid non-missing: 1 FG + 4 BG = 5
+    # FAD = 1/5 = 20%
+
+    result = engine.compute_FAD(data, window_size=3, handle_missing=1)
+    assert result[1, 1] == 20
+
+
+def test_fad_sp3_still_fragments():
+    """
+    SP3 in the window should still count in denominator (fragments foreground).
+    Same layout but with SP3 instead of SP4:
+    denom=9 (all non-missing), fg=1, FAD=11%
+    """
+    data = np.full((3, 3), 1, dtype=np.int16)  # Background
+    data[1, 1] = 2  # Center = Foreground
+    data[0, 0] = 3  # SP3
+    data[0, 1] = 3  # SP3
+    data[0, 2] = 3  # SP3
+    data[1, 0] = 3  # SP3
+
+    result = engine.compute_FAD(data, window_size=3, handle_missing=1)
+    # All 9 pixels are non-missing (SP3 counts), fg=1, FAD = 1/9 = 11%
+    assert result[1, 1] == 11
+
+
+def test_fac_sp4_pairs_excluded():
+    """
+    Pairs involving SP4 should be skipped in FAC computation.
+    """
+    data = np.full((3, 3), 2, dtype=np.int16)  # All foreground
+    data[0, :] = 4  # Top row is SP4
+
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
+    # Center pixel (1,1) is FG
+    # Without SP4 exclusion: all 12 edges, 6 FG-FG = 50%
+    # With SP4 exclusion: only pairs between rows 1-2 count
+    # Valid pairs: 3 horizontal in row1, 3 horizontal in row2, 3 vertical between rows 1-2 = 9
+    # FG-FG pairs: all 9 (since rows 1-2 are all FG)
+    # But wait, edges touching row 0 (SP4) are excluded
+    # Horizontal row0: excluded (SP4 involved)
+    # Horizontal row1: (1,0)-(1,1), (1,1)-(1,2) = 2 pairs, both FG-FG
+    # Horizontal row2: (2,0)-(2,1), (2,1)-(2,2) = 2 pairs, both FG-FG
+    # Vertical col0: (0,0)-(1,0) excluded (SP4), (1,0)-(2,0) = FG-FG
+    # Vertical col1: (0,1)-(1,1) excluded (SP4), (1,1)-(2,1) = FG-FG
+    # Vertical col2: (0,2)-(1,2) excluded (SP4), (1,2)-(2,2) = FG-FG
+    # Total valid edges: 4 + 3 = 7, all FG-FG = 7
+    # FAC = 7*200+7 // (2*7) = 1407//14 = 100
+    assert result[1, 1] == 100
+
+
+def test_fed_sp4_pairs_excluded():
+    """
+    Pairs involving SP4 should be skipped in FED computation.
+    """
+    data = np.full((3, 3), 2, dtype=np.int16)  # All foreground
+    data[1, 1] = 2  # Center
+    data[0, 0] = 4  # One SP4 pixel
+
+    result_with_sp4 = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
+
+    data_no_sp4 = np.full((3, 3), 2, dtype=np.int16)  # All foreground, no SP4
+    result_without_sp4 = engine.compute_FED(data_no_sp4, window_size=3, handle_missing=1, connectivity=4)
+
+    # With SP4: fewer valid edges but all remaining are FG-FG → still 100%
+    # Without SP4: all edges are FG-FG → 100%
+    assert result_with_sp4[1, 1] == 100
+    assert result_without_sp4[1, 1] == 100

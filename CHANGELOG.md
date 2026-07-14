@@ -9,6 +9,9 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.4.1] - 2026-07-13
 
+### Changed
+- Special Background 4 (SP4, value=4) is now treated as NoData/missing during fragmentation computation (FAD, FAC, FED). SP4 pixels in the moving window are excluded from the denominator and pair counting, meaning they do not contribute to foreground fragmentation. SP4 pixels themselves are still output as code 106. This allows users to define a land use class (e.g., rocks, transitional vegetation) that does not fragment the foreground.
+
 ### Fixed
 - Fixed incorrect parameter name `outfile=True` → `stat_files=True` in the `frag_stats()` call within Notebook 04 (Regional Analysis).
 

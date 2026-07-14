@@ -87,7 +87,8 @@ def compute_FAD(data, window_size, handle_missing):
                         val = data[wi, wj]
                         if val == FOREGROUND:
                             fg_count += 1
-                        if val != MISSING_IN:
+                        # SP4 treated as missing (does not fragment foreground)
+                        if val != MISSING_IN and val != BACKGR_SP4:
                             non_missing_count += 1
 
                 denom = non_missing_count if handle_missing == 1 else (window_size * window_size)
@@ -180,7 +181,7 @@ def compute_FAC(data, window_size, handle_missing, connectivity=4):
                 for wj in range(c0, c1 - 1):
                     v1, v2 = data[wi, wj], data[wi, wj + 1]
                     if handle_missing == 1:
-                        if v1 != MISSING_IN and v2 != MISSING_IN:
+                        if v1 != MISSING_IN and v2 != MISSING_IN and v1 != BACKGR_SP4 and v2 != BACKGR_SP4:
                             total_edges += 1
                             if v1 == FOREGROUND and v2 == FOREGROUND:
                                 fg_fg_edges += 1
@@ -193,7 +194,7 @@ def compute_FAC(data, window_size, handle_missing, connectivity=4):
                 for wj in range(c0, c1):
                     v1, v2 = data[wi, wj], data[wi + 1, wj]
                     if handle_missing == 1:
-                        if v1 != MISSING_IN and v2 != MISSING_IN:
+                        if v1 != MISSING_IN and v2 != MISSING_IN and v1 != BACKGR_SP4 and v2 != BACKGR_SP4:
                             total_edges += 1
                             if v1 == FOREGROUND and v2 == FOREGROUND:
                                 fg_fg_edges += 1
@@ -209,7 +210,7 @@ def compute_FAC(data, window_size, handle_missing, connectivity=4):
                     for wj in range(c0, c1 - 1):
                         v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
                         if handle_missing == 1:
-                            if v1 != MISSING_IN and v2 != MISSING_IN:
+                            if v1 != MISSING_IN and v2 != MISSING_IN and v1 != BACKGR_SP4 and v2 != BACKGR_SP4:
                                 total_edges += 1
                                 if v1 == FOREGROUND and v2 == FOREGROUND:
                                     fg_fg_edges += 1
@@ -222,7 +223,7 @@ def compute_FAC(data, window_size, handle_missing, connectivity=4):
                     for wj in range(c0 + 1, c1):
                         v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
                         if handle_missing == 1:
-                            if v1 != MISSING_IN and v2 != MISSING_IN:
+                            if v1 != MISSING_IN and v2 != MISSING_IN and v1 != BACKGR_SP4 and v2 != BACKGR_SP4:
                                 total_edges += 1
                                 if v1 == FOREGROUND and v2 == FOREGROUND:
                                     fg_fg_edges += 1
@@ -324,7 +325,7 @@ def compute_FED(data, window_size, handle_missing, connectivity=4):
             for wi in range(r0, r1):
                 for wj in range(c0, c1 - 1):
                     v1, v2 = data[wi, wj], data[wi, wj + 1]
-                    if v1 == MISSING_IN or v2 == MISSING_IN:
+                    if v1 == MISSING_IN or v2 == MISSING_IN or v1 == BACKGR_SP4 or v2 == BACKGR_SP4:
                         continue
                     if handle_missing == 1:
                         total_edges += 1
@@ -337,7 +338,7 @@ def compute_FED(data, window_size, handle_missing, connectivity=4):
             for wi in range(r0, r1 - 1):
                 for wj in range(c0, c1):
                     v1, v2 = data[wi, wj], data[wi + 1, wj]
-                    if v1 == MISSING_IN or v2 == MISSING_IN:
+                    if v1 == MISSING_IN or v2 == MISSING_IN or v1 == BACKGR_SP4 or v2 == BACKGR_SP4:
                         continue
                     if handle_missing == 1:
                         total_edges += 1
@@ -353,7 +354,7 @@ def compute_FED(data, window_size, handle_missing, connectivity=4):
                 for wi in range(r0, r1 - 1):
                     for wj in range(c0, c1 - 1):
                         v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
-                        if v1 == MISSING_IN or v2 == MISSING_IN:
+                        if v1 == MISSING_IN or v2 == MISSING_IN or v1 == BACKGR_SP4 or v2 == BACKGR_SP4:
                             continue
                         if handle_missing == 1:
                             total_edges += 1
@@ -366,7 +367,7 @@ def compute_FED(data, window_size, handle_missing, connectivity=4):
                 for wi in range(r0, r1 - 1):
                     for wj in range(c0 + 1, c1):
                         v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
-                        if v1 == MISSING_IN or v2 == MISSING_IN:
+                        if v1 == MISSING_IN or v2 == MISSING_IN or v1 == BACKGR_SP4 or v2 == BACKGR_SP4:
                             continue
                         if handle_missing == 1:
                             total_edges += 1
