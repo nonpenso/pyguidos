@@ -47,11 +47,11 @@ non-foreground areas interact with the analysis:
      - Mandatory
      - The feature being analysed
    * - 3
-     - Special Background 3
+     - Special Backgr. 3
      - Optional
      - Fragments foreground (same as value 1)
    * - 4
-     - Special Background 4
+     - Special Backgr. 4
      - Optional
      - Does NOT fragment foreground (excluded like NoData)
 
