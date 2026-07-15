@@ -72,8 +72,8 @@ are foreground, and 0 otherwise.
 The total edges (denominator) depend on window size (W) supporting both 4- and 
 8-connectivity:
 
-- 4-connected: :math:`2 \times W \times (W-1)`
-- 8-connected: :math:`2 \times (W-1) \times (2W-1)`
+- Total edges 4-conn. = :math:`2 \times W \times (W-1)`
+- Total edges 8-conn. = :math:`2 \times (W-1) \times (2W-1)`
 
 .. figure:: ../_image/Frag_FAC.png
     :width: 100%
@@ -101,11 +101,11 @@ non-foreground areas. The scoring for each pixel pair is:
 
    FED = \frac{\text{weighted foreground edges}}{\text{total edges in window}} \times 100
 
-FED supports both 4- and 8-connectivity with the same denominator
-formula depending on window size (W) and 4- and 8-connectivity:.
+As FAC, the total edges (denominator) depend on window size (W) supporting both 4- and 
+8-connectivity:
 
-- 4-connected: :math:`2 \times W \times (W-1)`
-- 8-connected: :math:`2 \times (W-1) \times (2W-1)`
+- Total edges 4-conn. = :math:`2 \times W \times (W-1)`
+- Total edges 8-conn. = :math:`2 \times (W-1) \times (2W-1)`
 
 .. figure:: ../_image/Frag_FED.png
     :width: 100%

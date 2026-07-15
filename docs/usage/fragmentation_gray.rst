@@ -33,7 +33,7 @@ Three methods are available:
 
 Input conventions:
 
-- **0** = Non-foreground
+- **0** = Background
 - **1–100** = Foreground intensity (percentage)
 - **>100** = NoData (any value above 100 is treated as missing)
 
@@ -49,8 +49,8 @@ a value of 100 (W² × 100).
 
    FAD_{gray} = \frac{\sum_{i \in window} v_i}{W^2 \times 100} \times 100
 
-Where :math:`v_i` is the pixel value, and NoData pixels are excluded 
-from both numerator and denominator.
+Where :math:`v_i` is the pixel value, and :math:`W` is the window size. The 
+denominator scales by 100 because the maximum possible pixel value is 100.
 
 .. figure:: ../_image/Frag_gray_FAD.png
     :width: 80%
@@ -74,9 +74,12 @@ values, but only for pairs where **both** pixels are foreground (i.e., both
 
    FAC_{gray} = \frac{\sum_{FG-FG pairs} \frac{a + b}{2} }{\text{total edges} \times 100} \times 100
 
-Where :math:`a` and :math:`b` are the pixel values. The denominator scales 
-by 100 because the maximum possible edge value is 100 (when both pixels 
-are at 100%).
+Where :math:`a` and :math:`b` are the pixel values, and :math:`W` is the window size. 
+The denominator scales by 100 because the maximum possible edge value is 100 
+(when both pixels are at 100%).
+
+- Total edges 4-conn. = :math:`2 \times W \times (W-1)`
+- Total edges 8-conn. = :math:`2 \times (W-1) \times (2W-1)`
 
 .. figure:: ../_image/Frag_gray_FAC.png
     :width: 100%
@@ -101,9 +104,12 @@ since background value is 0), while background–background pairs score 0.
 
    FED_{gray} = \frac{\sum_{pairs} \frac{a + b}{2}}{\text{total edges} \times 100} \times 100
 
-Where :math:`a` and :math:`b` are the pixel values. Ad FAC, the denominator 
-scales by 100 because the maximum possible edge value is 100 (when both pixels 
-are at 100%).
+Where :math:`a` and :math:`b` are the pixel values, and :math:`W` is the window size. 
+The denominator scales by 100 because the maximum possible edge value is 100 
+(when both pixels are at 100%).
+
+- Total edges 4-conn. = :math:`2 \times W \times (W-1)`
+- Total edges 8-conn. = :math:`2 \times (W-1) \times (2W-1)`
 
 .. figure:: ../_image/Frag_gray_FED.png
     :width: 100%
