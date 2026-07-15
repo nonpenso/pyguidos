@@ -153,14 +153,18 @@ class TestFragGrayThreshold:
     def test_threshold_reduces_foreground(self, gray_input_tif, tmp_path_factory):
         """Higher threshold should reduce foreground pixel count."""
         tmp_dir = tmp_path_factory.mktemp("frag_gray_thresh")
+        low_dir = tmp_dir / "low"
+        high_dir = tmp_dir / "high"
+        low_dir.mkdir()
+        high_dir.mkdir()
 
         result_low = frag_gray(
             str(gray_input_tif), method='FAD', window_size=3,
-            for_threshold=1, outdir=str(tmp_dir / "low"))
+            for_threshold=1, outdir=str(low_dir))
 
         result_high = frag_gray(
             str(gray_input_tif), method='FAD', window_size=3,
-            for_threshold=80, outdir=str(tmp_dir / "high"))
+            for_threshold=80, outdir=str(high_dir))
 
         fg_low = result_low["input stats"]["out foreground pxl"]
         fg_high = result_high["input stats"]["out foreground pxl"]
