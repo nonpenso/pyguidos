@@ -26,7 +26,7 @@ RESULTS
 Output image: {output_file}
 
 ---------------------------------------------------------
-MSPA CLASS     PXL VALUE   PXL NUMBER    FOREGR.[%]
+MSPA CLASS     PXL VALUE   PXL NUMBER    FOREGR. %
 
 {table_rows}
 
