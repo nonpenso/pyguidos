@@ -3,7 +3,7 @@ Fragmentation Change
 
 Fragmentation Change analysis evaluates landscape structural transitions over time 
 by performing a comparative pixel-by-pixel cross-tabulation matrix overlay using two 
-existing Guidos Fragmentation maps (Time A/T1 and Time B/T2).
+FOS Fragmentation maps (Time A/T1 and Time B/T2).
 
 The analysis tracks localized connectivity variations, groups them into 7 
 categorical transition tiers (ranging from high decrease to high increase), and 
@@ -15,7 +15,7 @@ Further details about structural dynamics and change metrics are available in th
 
 
 Fragmentation Change Classes
--------------------------
+----------------------------
 
 The resulting map evaluates transitions and maps them into 7 distinct 
 categorical change classes based on the variation of Fragmentation/Connectivity:
@@ -29,32 +29,32 @@ categorical change classes based on the variation of Fragmentation/Connectivity:
      - Delta FOS
    * - High decrease
      - High increase
-     - [0-79]
-     - [+21 -- +100]
+     - [0, 79]
+     - [+21, +100]
    * - Medium decrease
      - Medium increase
-     - [80-89]
-     - [+11 -- +20]
+     - [80, 89]
+     - [+11, +20]
    * - Low decrease
      - Low increase
-     - [90-98]
-     - [+2 -- +10]    
+     - [90, 98]
+     - [+2, +10]    
    * - Insign/no change
      - Insign/no change
-     - [99-101]
-     - [-1 -- +1]
+     - [99, 101]
+     - [-1, +1]
    * - Low increase
      - Low decrease
-     - [102-110]
-     - [-10 -- -2]
+     - [102, 110]
+     - [-10, -2]
    * - Medium increase
      - Medium decrease
-     - [111-120]
-     - [-20 -- -11]
+     - [111, 120]
+     - [-20, -11]
    * - High increase
      - High decrease
-     - [121-200]
-     - [-100 -- -21]
+     - [121, 200]
+     - [-100, -21]
 
 
 Usage

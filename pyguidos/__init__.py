@@ -6,7 +6,6 @@ import platform
 import warnings
 import tempfile
 from numba import config
-#import pyproj
 
 # Internal paths
 MODULE_ROOT = Path(__file__).resolve().parent
@@ -16,7 +15,7 @@ DATA_DIR = MODULE_ROOT / "data"
 
 
 # Package metadata
-__version__ = "2.4.1"
+__version__ = "2.5.0"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
@@ -71,6 +70,7 @@ _setup_numba()
 # Import Tools and Results
 from .fragmentation import frag, frag_stats
 from .fragmentation_change import frag_change
+from .fragmentation_gray import frag_gray, frag_gray_stats
 from .land_mosaic import landmos, landmos_stats
 from .spa import spa, spa_stats
 from .accounting import acc, acc_stats
@@ -106,7 +106,13 @@ def info(tool: str = None):
             "desc": "Calculates the change of two Fragmentation output tiff files.",
             "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/fragmentation_change.html",
             "sheet": "https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf"
-        },        
+        },
+        "frag_gray": {
+            "title": "Grayscale Fragmentation",
+            "desc": "Fragmentation analysis on continuous-value rasters (e.g., tree cover density 0-100%).",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/fragmentation_gray.html",
+            "sheet": "https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf"
+        },
         "landmos": {
             "title": "Landscape Mosaic",
             "desc": "Tri-modal landscape classification (Agriculture, Natural, Developed).",
@@ -132,7 +138,7 @@ def info(tool: str = None):
         print(" pyguidos: Available Analytical Tools")
         print("═"*60)
         for name, data in registry.items():
-            print(f" • {name:8} : {data['title']}")
+            print(f" • {name:12} : {data['title']}")
         print("\nType pg.info('tool_name') for detailed links.")
         print("═"*60 + "\n")
         return
@@ -158,7 +164,7 @@ def info(tool: str = None):
 # Exported names
 __all__ = [
            "spa", "spa_stats",
-           "frag", "frag_stats", "frag_change",
+           "frag", "frag_stats", "frag_change", "frag_gray", "frag_gray_stats",
            "landmos", "landmos_stats",
            "acc", "acc_stats",
            "rss",

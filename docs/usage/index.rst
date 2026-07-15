@@ -2,11 +2,12 @@ User Guide
 ==========
 
 This guide describes all available pyGuidos analysis tools. Each tool
-operates on a single-band **uint8 GeoTIFF** input and returns a result
-object containing statistics and optionally the output array.
+operates on a **single-band integer GeoTIFF** input and returns a 
+result GeoTIFF files and optionally files containing statistics (TXT, 
+CSV, PNG).
 
 Before using any tool, please read the :doc:`input_format` page which
-describes the expected pixel value conventions and the GTB output format.
+describes the expected pixel value conventions and the output format.
 
 
 Available Tools
@@ -39,6 +40,9 @@ scientific documentation is to use the interactive ``info()`` function:
      - ``.tif``, ``.txt``
    * - :doc:`fragmentation`
      - Fragmentation analysis
+     - ``.tif``, ``.txt``, ``.csv``, ``.png``
+   * - :doc:`fragmentation_gray`
+     - Grayscale Fragmentation analysis
      - ``.tif``, ``.txt``, ``.csv``, ``.png``
    * - :doc:`fragmentation_change`
      - Fragmentation change
@@ -106,7 +110,7 @@ The dictionary follows a consistent structure across all tools:
 * **output paths**: (:class:`dict` or :obj:`None`) Paths to generated output files. 
   Returns ``None`` if ``stat_files=False``.
 * **input stats**: (:class:`dict`) Basic pixel counts and metadata from the source map.
-* **output stats**: (:class:`dict`) Tool-specific metrics (e.g., MSPA classes, 
+* **output stats**: (:class:`dict`) Tool-specific metrics (e.g., SPA classes, 
   Fragmentation indices, or Landscape Mosaic frequencies).
 
 .. code-block:: python
@@ -154,6 +158,7 @@ rerunning the full analysis:
    input_format
    morphology
    fragmentation
+   fragmentation_gray
    fragmentation_change
    landmos
    accounting

@@ -41,9 +41,6 @@ which are installed automatically with pip:
    * - shapely
      - >=2.0
      - Geometry validation and reprojection
-   * - pyproj
-     - >=3.7
-     - Coordinate reference system handling
    * - python-ternary
      - >=1.0.8
      - Ternary diagram rendering

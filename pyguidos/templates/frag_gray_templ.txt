@@ -1,4 +1,4 @@
-FRAGMENTATION ANALYSIS 
+FRAGMENTATION GRAYSCALE ANALYSIS 
 Using Fixed Observation Scale (FOS)
 Fragmentation is complementary to Connectivity: Fragmentation = 100% - Connectivity
 
@@ -12,16 +12,15 @@ Pixel size (x,y): {resolx}, {resoly} {unit_type}
 Rows: {rows_val}
 Columns: {cols_val}
 Total pixels: {tot_pxl}
-Foreground [pixel=2]: {foreg_pxl}
-Background [pixel=1]: {backg_pxl}
-Special background [pixel=3]: {spec3_pxl}
-Special background [pixel=4]: {spec4_pxl}
-Missing/Nodata [pixel=0]: {miss_pxl}
+Foreground [pixel=1:100]: {in_foreg_pxl}
+Background [pixel=0]: {in_backg_pxl}
+Missing/Nodata [pixel=255]: {miss_pxl}
 
 ================================================================================
 PARAMETRES
 ================================================================================
 Method: {used_method}
+Threshold: {for_thresh}
 Window size [pixels]: {window_size} x {window_size}
 Window area - observation scale (if unit is in metres):
     {window_areaHA} hectares 
@@ -31,6 +30,8 @@ Window area - observation scale (if unit is in metres):
 RESULTS
 ================================================================================
 Output image: {output_file}
+Foreground (thresholded): {out_foreg_pxl}
+Background (thresholded): {out_backg_pxl}
 Reported unit (Background + Foreground): {rep_unit_pxl}
 Foreground proportion [% of Reported unit]: {foreg_area_rel:.4f}
 

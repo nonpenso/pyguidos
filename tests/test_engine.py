@@ -595,15 +595,138 @@ def test_fos_change_bypass_stats(empty_matrix):
 
 
 # =============================================================================
+# FAD Grayscale Logic Tests
+# =============================================================================
+
+class TestComputeFADGray:
+
+    def test_uniform_100(self):
+        """All pixels at 100 should give FAD=100 for internal pixels."""
+        data = np.full((5, 5), 100, dtype=np.int16)
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[2, 2] == 100
+
+    def test_uniform_50(self):
+        """All pixels at 50 should give FAD=50."""
+        data = np.full((5, 5), 50, dtype=np.int16)
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[2, 2] == 50
+
+    def test_nodata_excluded(self):
+        """NoData (>100) should be excluded from computation."""
+        data = np.full((3, 3), 100, dtype=np.int16)
+        data[0, :] = 200  # NoData
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[1, 1] == 100
+
+    def test_nodata_pixel_returns_102(self):
+        """A pixel with value > 100 should output 102."""
+        data = np.full((5, 5), 80, dtype=np.int16)
+        data[2, 2] = 150
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[2, 2] == 102
+
+    def test_zero_pixel_returns_101(self):
+        """A pixel with value 0 should output 101 (non-foreground)."""
+        data = np.full((5, 5), 80, dtype=np.int16)
+        data[2, 2] = 0
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
+        assert result[2, 2] == 101
+
+    def test_threshold_applied(self):
+        """With threshold=50, center pixel (80) is processed but all window
+        values contribute as-is. 3x3 window: 8 pixels at 30 + 1 at 80 = 320.
+        FAD = 320 / (9*100) = 35.6% → rounds to 36."""
+        data = np.full((5, 5), 30, dtype=np.int16)
+        data[2, 2] = 80  # Only center is above threshold
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=50)
+        assert result[2, 2] == 36
+
+    def test_below_threshold_pixel_returns_101(self):
+        """A pixel below for_threshold should output 101."""
+        data = np.full((5, 5), 80, dtype=np.int16)
+        data[2, 2] = 30  # Below threshold
+        result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=50)
+        assert result[2, 2] == 101
+
+
+# =============================================================================
+# FAC Grayscale Logic Tests
+# =============================================================================
+
+class TestComputeFACGray:
+
+    def test_uniform_100(self):
+        """All pixels at 100: all pairs are FG-FG with avg=100, should give 100%."""
+        data = np.full((5, 5), 100, dtype=np.int16)
+        result = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=4)
+        assert result[2, 2] == 100
+
+    def test_isolated_fg_returns_zero(self):
+        """Single FG pixel surrounded by zeros: no FG-FG pairs, FAC=0."""
+        data = np.zeros((5, 5), dtype=np.int16)
+        data[2, 2] = 80
+        result = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=4)
+        assert result[2, 2] == 0
+
+    def test_8conn_higher_than_4conn(self):
+        """Diagonal FG pairs should contribute in 8-conn but not 4-conn."""
+        data = np.zeros((5, 5), dtype=np.int16)
+        data[1, 1] = 80
+        data[2, 2] = 80
+        data[3, 3] = 80
+
+        res_4 = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=4)
+        res_8 = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=8)
+        assert res_4[2, 2] == 0
+        assert res_8[2, 2] > 0
+
+
+# =============================================================================
+# FED Grayscale Logic Tests
+# =============================================================================
+
+class TestComputeFEDGray:
+
+    def test_uniform_100(self):
+        """All FG at 100: every pair is FG-FG with max score, should give 100%."""
+        data = np.full((5, 5), 100, dtype=np.int16)
+        result = engine.compute_FED_gray(data, window_size=3, handle_missing=1,
+                                         for_threshold=1, connectivity=4)
+        assert result[2, 2] == 100
+
+    def test_fed_greater_or_equal_fac(self):
+        """FED should be >= FAC since FG-nonFG edges also contribute."""
+        data = np.zeros((7, 7), dtype=np.int16)
+        data[2:5, 2:5] = 80
+
+        fac = engine.compute_FAC_gray(data, window_size=5, handle_missing=1,
+                                       for_threshold=1, connectivity=4)
+        fed = engine.compute_FED_gray(data, window_size=5, handle_missing=1,
+                                       for_threshold=1, connectivity=4)
+        assert fed[3, 3] >= fac[3, 3]
+
+    def test_mixed_values_partial_score(self):
+        """FG-nonFG pairs should contribute partial score."""
+        data = np.zeros((5, 5), dtype=np.int16)
+        data[2, 2] = 60  # Single FG pixel
+
+        result = engine.compute_FED_gray(data, window_size=3, handle_missing=1,
+                                          for_threshold=1, connectivity=4)
+        assert result[2, 2] > 0
+
+
+# =============================================================================
 # SP4 Exclusion Tests (SP4 treated as missing in window computation)
 # =============================================================================
 
 def test_fad_sp4_excluded_from_window():
     """
     SP4 in the window should be excluded from denominator (like NoData).
-    A 3x3 window with center=FG, 4 SP4, 4 BG:
-    Without exclusion: denom=9, fg=1, FAD=11%
-    With exclusion: denom=5 (only FG+BG counted), fg=1, FAD=20%
     """
     data = np.full((3, 3), 1, dtype=np.int16)  # Background
     data[1, 1] = 2  # Center = Foreground
@@ -611,7 +734,6 @@ def test_fad_sp4_excluded_from_window():
     data[0, 1] = 4  # SP4
     data[0, 2] = 4  # SP4
     data[1, 0] = 4  # SP4
-    # Remaining: (1,2)=1, (2,0)=1, (2,1)=1, (2,2)=1
     # Valid non-missing: 1 FG + 4 BG = 5
     # FAD = 1/5 = 20%
 
@@ -622,8 +744,6 @@ def test_fad_sp4_excluded_from_window():
 def test_fad_sp3_still_fragments():
     """
     SP3 in the window should still count in denominator (fragments foreground).
-    Same layout but with SP3 instead of SP4:
-    denom=9 (all non-missing), fg=1, FAD=11%
     """
     data = np.full((3, 3), 1, dtype=np.int16)  # Background
     data[1, 1] = 2  # Center = Foreground
@@ -645,20 +765,7 @@ def test_fac_sp4_pairs_excluded():
     data[0, :] = 4  # Top row is SP4
 
     result = engine.compute_FAC(data, window_size=3, handle_missing=1)
-    # Center pixel (1,1) is FG
-    # Without SP4 exclusion: all 12 edges, 6 FG-FG = 50%
-    # With SP4 exclusion: only pairs between rows 1-2 count
-    # Valid pairs: 3 horizontal in row1, 3 horizontal in row2, 3 vertical between rows 1-2 = 9
-    # FG-FG pairs: all 9 (since rows 1-2 are all FG)
-    # But wait, edges touching row 0 (SP4) are excluded
-    # Horizontal row0: excluded (SP4 involved)
-    # Horizontal row1: (1,0)-(1,1), (1,1)-(1,2) = 2 pairs, both FG-FG
-    # Horizontal row2: (2,0)-(2,1), (2,1)-(2,2) = 2 pairs, both FG-FG
-    # Vertical col0: (0,0)-(1,0) excluded (SP4), (1,0)-(2,0) = FG-FG
-    # Vertical col1: (0,1)-(1,1) excluded (SP4), (1,1)-(2,1) = FG-FG
-    # Vertical col2: (0,2)-(1,2) excluded (SP4), (1,2)-(2,2) = FG-FG
-    # Total valid edges: 4 + 3 = 7, all FG-FG = 7
-    # FAC = 7*200+7 // (2*7) = 1407//14 = 100
+    # All valid pairs (excluding SP4) are FG-FG → 100%
     assert result[1, 1] == 100
 
 
@@ -667,15 +774,8 @@ def test_fed_sp4_pairs_excluded():
     Pairs involving SP4 should be skipped in FED computation.
     """
     data = np.full((3, 3), 2, dtype=np.int16)  # All foreground
-    data[1, 1] = 2  # Center
     data[0, 0] = 4  # One SP4 pixel
 
-    result_with_sp4 = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
-
-    data_no_sp4 = np.full((3, 3), 2, dtype=np.int16)  # All foreground, no SP4
-    result_without_sp4 = engine.compute_FED(data_no_sp4, window_size=3, handle_missing=1, connectivity=4)
-
-    # With SP4: fewer valid edges but all remaining are FG-FG → still 100%
-    # Without SP4: all edges are FG-FG → 100%
-    assert result_with_sp4[1, 1] == 100
-    assert result_without_sp4[1, 1] == 100
+    result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
+    # All valid pairs are FG-FG → 100%
+    assert result[1, 1] == 100

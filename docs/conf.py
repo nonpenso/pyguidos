@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = "pyGuidos"
 copyright = "European Union, 2026, Giovanni Caudullo, Peter Vogt"
 author = "Giovanni Caudullo, Peter Vogt"
-release = "2.4.1"
+release = "2.5.0"
 
 extensions = [
     "sphinx.ext.autodoc",

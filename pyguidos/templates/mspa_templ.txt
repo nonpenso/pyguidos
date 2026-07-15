@@ -64,7 +64,7 @@ Missing data    129        {ndata_val}
 
 Frequency of the 7 aggregated classes in Foreground area
 ---------------------------------------------------------------------------------
-    MSPA CLASS     FOREGR.[%]
+    MSPA CLASS     FOREGR. %
     Core          {cor_Frel}
     Edge          {edg_Frel}
     Perforation   {prf_Frel}

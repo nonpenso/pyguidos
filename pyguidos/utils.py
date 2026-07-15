@@ -6,7 +6,6 @@ import numpy as np
 
 import rasterio
 from rasterio.enums import ColorInterp
-from pyproj import CRS as pyprojCRS
 from numba import njit, prange
 
 
@@ -46,8 +45,7 @@ def get_raster_info(intiff_path):
         resX, resY = src.res
 
         # Get projection
-        crs_pyproj = pyprojCRS.from_user_input(src.crs)
-        epsg = crs_pyproj.to_epsg(min_confidence=20)
+        epsg = src.crs.to_epsg(confidence_threshold=20)
         if epsg is None:
             epsg = "Unknown"
 
@@ -74,7 +72,7 @@ def get_raster_info(intiff_path):
             "resY": resY,
             "dtype": prof['dtype'],
             "is_tiled": is_tiled,
-            "crs": crs_pyproj,
+            "crs": src.crs,
             "epsg": epsg,
             "is_projected": src.crs.is_projected,
             "bounds": src.bounds,
@@ -511,16 +509,15 @@ def log_msg(verbose, message):
 def citation():
     """Prints the recommended scientific citations for pyguidos."""
     cite_text = """
-=============================================================
+============================================================
 RECOMENDED CITATIONS FOR PYGUIDOS
-=============================================================
+============================================================
 
-Caudullo G., Vogt P., 2026. pyGuidos: A cross-platform Python 
-interface to GuidosToolbox Workbench for pattern analysis 
-of raster maps. JOSS XX(XX), XXXX. 
-https://doi.org/joss.XXXXXX
+Caudullo G., Vogt P., 2026. PyGuidos, A cross-platform Python 
+interface to GuidosToolbox for landscape pattern analysis. 
+JOSS XX(XX), XXXX. https://doi.org/joss.XXXXXX
 
-=============================================================
+============================================================
     """
     print(cite_text)
     return cite_text

@@ -9,7 +9,7 @@ before using any of the analysis functions.
 Input Map Types
 ---------------
 
-pyGuidos supports two types of input maps, each with its own pixel value
+pyGuidos supports three types of input maps, each with its own pixel value
 convention depending on the analysis tool being used.
 
 
@@ -28,7 +28,7 @@ single-band integer GeoTIFF (typically uint8).
   and do not influence the results.
 
 - **Value 1 — Background**: Non-foreground land cover (e.g., non-forest,
-  agricultural or urban land). Background pixels are part of the reporting unit and
+  agricultural land). Background pixels are part of the reporting unit and
   actively participate in the analysis — they fragment the foreground by
   breaking spatial continuity between foreground patches.
 
@@ -105,6 +105,60 @@ single-band integer GeoTIFF (typically uint8).
     SPA, Accounting, and RSS do not accept values 3 and 4. If your input
     contains these values, reclassify them to 0 (NoData) or 1 (Background)
     before running these tools.
+
+
+Grayscale Maps
+^^^^^^^^^^^^^^
+
+Grayscale input maps are used by the ``frag_gray()`` function. Instead of
+binary foreground/background, pixel values represent **foreground intensity**
+as a continuous percentage from 0 to 100 (e.g., tree cover density). The
+input raster must be a single-band integer GeoTIFF (uint8 or int16).
+
+**Pixel value convention:**
+
+- **Value 0 — Non-foreground**: Pixels with no foreground presence (e.g., bare
+  soil, water, non-vegetated areas). These pixels are part of the reporting
+  unit and influence the analysis (they reduce the local density/connectivity).
+
+- **Values 1–100 — Foreground intensity**: The percentage of foreground cover
+  at that pixel. For example, a tree cover density map where value 60 means
+  60% of the pixel area is covered by tree canopy.
+
+- **Values > 100 — NoData**: Any value above 100 is treated as missing data
+  and excluded from computation entirely (e.g., value 255 for clouds or areas
+  outside the study region).
+
+.. list-table::
+   :header-rows: 1
+
+   * - Value
+     - Meaning
+     - Required
+     - Role in computation
+   * - 0
+     - Non-foreground
+     - Optional
+     - Reduces local density (counts in denominator as zero)
+   * - 1–100
+     - Foreground intensity (%)
+     - Mandatory (at least one pixel)
+     - Contributes actual value to the computation
+   * - >100
+     - NoData
+     - Optional
+     - Excluded from computation
+
+The ``for_threshold`` parameter controls which pixels are treated as foreground
+for the purpose of determining **which center pixels are processed**. Pixels
+with values below the threshold are output as non-foreground (code 101), but
+all values 0–100 within the moving window contribute their actual values to
+the computation.
+
+.. note::
+    Grayscale fragmentation does not use Special Background classes (3, 4).
+    The distinction between "fragmenting" and "non-fragmenting" background
+    is handled through the continuous pixel values themselves.
 
 
 Landscape Mosaic Maps

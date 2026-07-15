@@ -8,31 +8,106 @@ a spatially explicit measure of landscape fragmentation.
 
 Three methods are available:
 
-- **FAD** (Foreground Area Density): computes within each window the proportion
-  of foreground pixels relative to the total number of window pixels.
-- **FAC** (Foreground Area Clustering): computes within each window the proportion
-  of common adjacencies (shared pixel edges) between foreground pixels relative
-  to the total number of adjacencies inside the moving window. Supports both
-  4-connected (horizontal + vertical) and 8-connected (adds diagonal) adjacency.
-- **FED** (Foreground Edge Density): computes a weighted edge density where
-  foreground–foreground pairs score 1.0, foreground–background pairs score 0.5,
-  and background–background pairs score 0.0. Supports both 4- and 8-connectivity.
+- **FAD** (Foreground Area Density): proportion of foreground pixels relative to
+  the total number of window pixels.
+- **FAC** (Foreground Area Clustering): proportion of foreground–foreground
+  adjacencies relative to all adjacencies. Supports 4- and 8-connectivity.
+- **FED** (Foreground Edge Density): weighted edge density where FG-FG pairs
+  score 1.0, FG-BG pairs score 0.5, and BG-BG pairs score 0.0. Supports
+  4- and 8-connectivity.
 
 Further details about Fragmentation analysis are available in the
 `Connectivity/Fragmentation product sheet
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf>`_.
 
 
-.. figure:: ../_image/FOS_methods.png
+FAD: Foreground Area Density
+----------------------------
+
+FAD computes the proportion of foreground pixels within the moving window
+relative to the total number of pixels in the window. It provides a direct
+measure of how much foreground (e.g., forest) is present in the local
+neighbourhood of each pixel. The denominator is always the total window area
+(W²), making FAD a pure area-based metric independent of pixel arrangement.
+
+.. math::
+
+   FAD = \frac{\text{number of foreground pixels in window}}{W^2} \times 100
+
+.. figure:: ../_image/Frag_FAD.png
+    :width: 80%
+    :align: center
+    :alt: FAD method
+
+    FAD computation example on a 5×5 binary input map (black = foreground).
+    The window contains 25 pixels of which 13 are foreground. Each foreground
+    pixel contributes 1 to the numerator (shown as value "1" in the circles).
+
+
+FAC: Foreground Area Clustering
+-------------------------------
+
+FAC computes the proportion of foreground–foreground adjacencies within the
+moving window relative to the total number of pixel pair adjacencies. Unlike
+FAD, which only measures the amount of foreground, FAC captures how spatially
+clustered the foreground pixels are — two windows with the same FAD value can
+have very different FAC values depending on whether the foreground pixels are
+grouped together or dispersed.
+
+For 4-connectivity, only horizontal and vertical pixel pairs are considered.
+For 8-connectivity, diagonal pairs are added. Each pair scores 1 if both pixels
+are foreground, and 0 otherwise.
+
+.. math::
+
+   FAC = \frac{\text{foreground–foreground adjacencies}}{\text{total adjacencies in window}} \times 100
+
+The total adjacencies (denominator) depend on connectivity:
+
+- 4-connected: :math:`2 \times W \times (W-1)`
+- 8-connected: :math:`2 \times (W-1) \times (2W-1)`
+
+For a 5×5 window: 40 pairs (4-conn) or 72 pairs (8-conn).
+
+.. figure:: ../_image/Frag_FAC.png
     :width: 100%
     :align: center
-    :alt: FOS methods
+    :alt: FAC method
 
-    Comparison of FAD, FAC, and FED methods exemplified for a 5x5 moving window
-    on a binary input map where black pixels are the foreground. FAD computes
-    the proportion of foreground pixels. FAC computes the proportion of
-    foreground-foreground adjacencies. FED computes the weighted foreground
-    edges (FG-FG = 1, FG-BG = 0.5) relative to all edges.
+    FAC computation example on a 5×5 binary input map for both 4- and
+    8-connectivity. Each circle at a pixel boundary represents an adjacent pair.
+    A pair scores 1 if both pixels are foreground (FG-FG), and 0 otherwise.
+
+
+FED: Foreground Edge Density
+----------------------------
+
+FED computes a weighted measure of foreground involvement in pixel adjacencies.
+It assigns a partial score to edges where foreground interacts with background,
+providing a metric that is sensitive to the boundary between foreground and
+non-foreground areas. The scoring for each pixel pair is:
+
+- Foreground–Foreground: 1.0
+- Foreground–Background: 0.5
+- Background–Background: 0.0
+
+.. math::
+
+   FED = \frac{\text{weighted foreground edges}}{\text{total edges in window}} \times 100
+
+Like FAC, FED supports both 4- and 8-connectivity with the same denominator
+formula.
+
+.. figure:: ../_image/Frag_FED.png
+    :width: 100%
+    :align: center
+    :alt: FED method
+
+    FED computation example on a 5×5 binary input map for both 4- and
+    8-connectivity. Each circle shows the weighted score: 1 for FG-FG pairs,
+    0.5 for FG-BG pairs, and 0 (not shown) for BG-BG pairs. In 8-connected
+    mode, junction points show the sum of both diagonal pairs crossing through
+    them (possible values: 0.5, 1, 1.5, or 2).
 
 
 Fragmentation Classes

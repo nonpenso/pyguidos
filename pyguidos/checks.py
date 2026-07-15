@@ -84,6 +84,41 @@ def validate_fmap_input(present_values, bands, dtype, allow_34=False):
                  f"Allowed: {sorted(list(allowed))}")
 
 
+def validate_fmap_gray_input(present_values, bands, dtype):
+    """
+    Validates the input for the grayscale Fragmentation tool.
+    Ensures the raster is single-band integer type. Valid pixel values
+    are 0-100 (foreground intensity); any value > 100 is treated as
+    NoData by the engine.
+
+    Parameters
+    ----------
+    present_values : list
+        List of unique pixel values found in the raster.
+    bands : int
+        Number of bands. Must be 1.
+    dtype : str
+        Data type string. Must be an integer type.
+
+    Raises
+    ------
+    SystemExit
+        If the input is not single-band, not an integer type, or
+        contains no foreground pixels (values 1-100).
+    """
+    if bands != 1:
+        sys.exit(f"ERROR: Input GeoTIFF must be single-band, but has {bands} bands.")
+
+    if not np.issubdtype(dtype, np.integer):
+        sys.exit(f"ERROR: Grayscale fragmentation requires an integer raster type "
+                 f"(e.g. uint8, int16). Found: {dtype}. Float rasters are not supported.")
+
+    # Check that at least some foreground exists (values 1-100)
+    has_foreground = any(1 <= v <= 100 for v in present_values)
+    if not has_foreground:
+        sys.exit("ERROR: Input contains no foreground pixels (values 1-100).")
+
+
 def validate_lm_input(present_values, bands, dtype):
     """
     Validates the pixel values of an input GeoTIFF for the Landscape
@@ -319,3 +354,7 @@ def validate_fchmaps_input(metadata1, metadata2):
                 "ERROR: The two input GeoTIFFs must share the same geospatial extent and projection. "
                 f"Mismatch found in parameter '{s}': {metadata1.get(s)} vs {metadata2.get(s)}."
             )
+
+
+
+
