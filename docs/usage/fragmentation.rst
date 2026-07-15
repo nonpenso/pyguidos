@@ -39,7 +39,7 @@ neighbourhood of each pixel. The denominator is always the total window area
 
 .. math::
 
-   FAD = \frac{\text{number of foreground pixels in window}}{total pixels in window} \times 100
+   FAD = \frac{\text{number of foreground pixels}}{\text{total pixels}} \times 100
 
 .. figure:: ../_image/Frag_FAD.png
     :width: 80%
@@ -67,7 +67,7 @@ are foreground, and 0 otherwise.
 
 .. math::
 
-   FAC = \frac{\text{foreground–foreground edges}}{\text{total edges in window}} \times 100
+   FAC = \frac{\text{foreground–foreground edges}}{\text{total edges}} \times 100
 
 The total edges (denominator) depend on window size (W) supporting both 4- and 
 8-connectivity:
@@ -99,7 +99,7 @@ non-foreground areas. The scoring for each pixel pair is:
 
 .. math::
 
-   FED = \frac{\text{weighted foreground edges}}{\text{total edges in window}} \times 100
+   FED = \frac{\text{weighted foreground edges}}{\text{total edges}} \times 100
 
 As FAC, the total edges (denominator) depend on window size (W) supporting both 4- and 
 8-connectivity:
