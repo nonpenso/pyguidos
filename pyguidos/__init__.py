@@ -15,7 +15,7 @@ DATA_DIR = MODULE_ROOT / "data"
 
 
 # Package metadata
-__version__ = "2.5.0"
+__version__ = "2.5.1"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
@@ -138,7 +138,7 @@ def info(tool: str = None):
         print(" pyguidos: Available Analytical Tools")
         print("═"*60)
         for name, data in registry.items():
-            print(f" • {name:12} : {data['title']}")
+            print(f" • {name:8} : {data['title']}")
         print("\nType pg.info('tool_name') for detailed links.")
         print("═"*60 + "\n")
         return

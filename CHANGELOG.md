@@ -7,6 +7,14 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.5.1] - 2026-07-15
+
+### Fixed
+- Fixed integer overflow in `compute_FAD_gray`, `compute_FAC_gray`, and `compute_FED_gray` Numba kernels. Accumulators now use explicit `int64` to prevent overflow when window values are multiplied by 200 in the round-half-up formula.
+- Fixed test failure in `test_threshold_reduces_foreground` where output subdirectories were not created before writing GeoTIFF files.
+
+---
+
 ## [2.5.0] - 2026-07-10
 
 ### Overview
@@ -29,6 +37,7 @@ Version 2.5.0 introduces grayscale fragmentation analysis (`frag_gray()`), exten
 - Updated `docs/usage/index.rst` to include the new grayscale fragmentation page.
 - Updated `__init__.py` to export `frag_gray` and `frag_gray_stats`.
 - Removed `pyproj` dependency. EPSG resolution now uses rasterio's built-in CRS method.
+- Special Background 4 (SP4, value=4) is now treated as NoData/missing during fragmentation computation (FAD, FAC, FED). SP4 pixels in the moving window are excluded from the denominator and pair counting, meaning they do not fragment the foreground.
 
 ---
 

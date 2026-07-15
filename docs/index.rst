@@ -36,7 +36,7 @@ providing programmatic access to the main GTB analytical tools, enabling reprodu
 landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 .. note::
-   This documentation describes **pyGuidos version 2.5.0**. For older versions, 
+   This documentation describes **pyGuidos version 2.5.1**. For older versions, 
    please refer to the legacy documentation branch.
 
 
