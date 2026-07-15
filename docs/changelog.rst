@@ -17,6 +17,10 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 - Fixed integer overflow in ``compute_FAD_gray``, ``compute_FAC_gray``, and ``compute_FED_gray`` Numba kernels. Accumulators now use explicit ``int64`` to prevent overflow when window values are multiplied by 200 in the round-half-up formula.
 - Fixed test failure in ``test_threshold_reduces_foreground`` where output subdirectories were not created before writing GeoTIFF files.
 
+**Changed**
+
+- Updated ``docs/usage/fragmentation.rst`` and ``docs/usage/fragmentation_gray.rst` with new text, formulas and individual figures.
+
 
 ----
 
