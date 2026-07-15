@@ -138,7 +138,7 @@ def info(tool: str = None):
         print(" pyguidos: Available Analytical Tools")
         print("═"*60)
         for name, data in registry.items():
-            print(f" • {name:8} : {data['title']}")
+            print(f" • {name:12} : {data['title']}")
         print("\nType pg.info('tool_name') for detailed links.")
         print("═"*60 + "\n")
         return

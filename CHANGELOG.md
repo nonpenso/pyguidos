@@ -32,6 +32,17 @@ Version 2.5.0 introduces grayscale fragmentation analysis (`frag_gray()`), exten
 
 ---
 
+## [2.4.1] - 2026-07-13
+
+### Changed
+- Special Background 4 (SP4, value=4) is now treated as NoData/missing during fragmentation computation (FAD, FAC, FED). SP4 pixels in the moving window are excluded from the denominator and pair counting, meaning they do not fragment the foreground.
+- Improved `docs/usage/input_format.rst` with structured "Input Map Types" chapter, detailed explanations for all pixel values (0–4), and consistent table format.
+
+### Fixed
+- Fixed incorrect parameter name `outfile=True` → `stat_files=True` in the `frag_stats()` call within Notebook 04 (Regional Analysis).
+
+---
+
 ## [2.4.0] - 2026-07-03
 
 ### Overview

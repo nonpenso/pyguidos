@@ -634,11 +634,13 @@ class TestComputeFADGray:
         assert result[2, 2] == 101
 
     def test_threshold_applied(self):
-        """Pixels below threshold should be treated as 0 in computation."""
+        """With threshold=50, center pixel (80) is processed but all window
+        values contribute as-is. 3x3 window: 8 pixels at 30 + 1 at 80 = 320.
+        FAD = 320 / (9*100) = 35.6% → rounds to 36."""
         data = np.full((5, 5), 30, dtype=np.int16)
         data[2, 2] = 80  # Only center is above threshold
         result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=50)
-        assert result[2, 2] < 20
+        assert result[2, 2] == 36
 
     def test_below_threshold_pixel_returns_101(self):
         """A pixel below for_threshold should output 101."""
@@ -716,3 +718,64 @@ class TestComputeFEDGray:
         result = engine.compute_FED_gray(data, window_size=3, handle_missing=1,
                                           for_threshold=1, connectivity=4)
         assert result[2, 2] > 0
+
+
+# =============================================================================
+# SP4 Exclusion Tests (SP4 treated as missing in window computation)
+# =============================================================================
+
+def test_fad_sp4_excluded_from_window():
+    """
+    SP4 in the window should be excluded from denominator (like NoData).
+    """
+    data = np.full((3, 3), 1, dtype=np.int16)  # Background
+    data[1, 1] = 2  # Center = Foreground
+    data[0, 0] = 4  # SP4
+    data[0, 1] = 4  # SP4
+    data[0, 2] = 4  # SP4
+    data[1, 0] = 4  # SP4
+    # Valid non-missing: 1 FG + 4 BG = 5
+    # FAD = 1/5 = 20%
+
+    result = engine.compute_FAD(data, window_size=3, handle_missing=1)
+    assert result[1, 1] == 20
+
+
+def test_fad_sp3_still_fragments():
+    """
+    SP3 in the window should still count in denominator (fragments foreground).
+    """
+    data = np.full((3, 3), 1, dtype=np.int16)  # Background
+    data[1, 1] = 2  # Center = Foreground
+    data[0, 0] = 3  # SP3
+    data[0, 1] = 3  # SP3
+    data[0, 2] = 3  # SP3
+    data[1, 0] = 3  # SP3
+
+    result = engine.compute_FAD(data, window_size=3, handle_missing=1)
+    # All 9 pixels are non-missing (SP3 counts), fg=1, FAD = 1/9 = 11%
+    assert result[1, 1] == 11
+
+
+def test_fac_sp4_pairs_excluded():
+    """
+    Pairs involving SP4 should be skipped in FAC computation.
+    """
+    data = np.full((3, 3), 2, dtype=np.int16)  # All foreground
+    data[0, :] = 4  # Top row is SP4
+
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
+    # All valid pairs (excluding SP4) are FG-FG → 100%
+    assert result[1, 1] == 100
+
+
+def test_fed_sp4_pairs_excluded():
+    """
+    Pairs involving SP4 should be skipped in FED computation.
+    """
+    data = np.full((3, 3), 2, dtype=np.int16)  # All foreground
+    data[0, 0] = 4  # One SP4 pixel
+
+    result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
+    # All valid pairs are FG-FG → 100%
+    assert result[1, 1] == 100

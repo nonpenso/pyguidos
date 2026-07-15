@@ -6,11 +6,50 @@ specific pixel value convention. Understanding this format is essential
 before using any of the analysis functions.
 
 
-Binary
----------------------------
+Input Map Types
+---------------
 
-Most pyGuidos tools (Fragmentation, Accounting, SPA, RSS) expect a
-binary GeoTIFF with the following pixel values:
+pyGuidos supports three types of input maps, each with its own pixel value
+convention depending on the analysis tool being used.
+
+
+Foreground/Background Binary Maps
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Binary input maps are used by the Fragmentation, Accounting, RSS, and SPA
+tools. Pixels are classified as foreground (the feature of interest, e.g.,
+forest) or background (everything else). The input raster must be a
+single-band integer GeoTIFF (typically uint8).
+
+**Pixel value convention:**
+
+- **Value 0 — NoData**: Missing or invalid pixels (e.g., clouds, areas outside
+  the study region). These pixels are completely excluded from all computations
+  and do not influence the results.
+
+- **Value 1 — Background**: Non-foreground land cover (e.g., non-forest,
+  agricultural land). Background pixels are part of the reporting unit and
+  actively participate in the analysis — they fragment the foreground by
+  breaking spatial continuity between foreground patches.
+
+- **Value 2 — Foreground**: The feature of interest (e.g., forest, habitat).
+  This is the class being analysed. All spatial indices are computed for and
+  relative to these pixels.
+
+- **Value 3 — Special Background 3 (SP3)**: An optional secondary background
+  class that **fragments** the foreground. SP3 behaves identically to standard
+  background (value 1) in all computations — adjacent SP3 pixels break
+  foreground connectivity. Use for features that clearly separate foreground
+  patches (e.g., inland water bodies, urban areas within a forest landscape).
+
+- **Value 4 — Special Background 4 (SP4)**: An optional background class that
+  **does not fragment** the foreground. SP4 pixels are treated as
+  transparent/missing during spatial computation — they are excluded from the
+  moving window denominator and pair counting. The foreground "sees through"
+  SP4 pixels as if they were not there. Use for features that should not
+  influence connectivity metrics (e.g., rocks, transitional woodland).
+
+**Fragmentation (FAD, FAC, FED)** — accepts all values 0–4:
 
 .. list-table::
    :header-rows: 1
@@ -18,38 +57,29 @@ binary GeoTIFF with the following pixel values:
    * - Value
      - Meaning
      - Required
-     - Example
+     - Role in computation
    * - 0
      - NoData
      - Optional
-     - Missing data/Cloud
+     - Excluded from computation
    * - 1
      - Background
      - Mandatory
-     - Non-forest land
+     - Fragments foreground (counts in denominator)
    * - 2
      - Foreground
      - Mandatory
-     - Forest
+     - The feature being analysed
    * - 3
-     - Background class 2
+     - Special Backgr. 3
      - Optional
-     - Inland water
+     - Fragments foreground (same behaviour as value 1)
    * - 4
-     - Background class 3
+     - Special Backgr. 4
      - Optional
-     - Sea/Ocean
+     - Does NOT fragment foreground (excluded like NoData)
 
-.. note::
-    Values 3 and 4 are only accepted by Fragmentation, Accounting and RSS.
-    SPA strictly requires only values 0, 1 and 2.
-
-
-Landscape Mosaic Maps
----------------------
-
-The Landscape Mosaic tool expects a three-class GeoTIFF with
-the following pixel values:
+**Accounting, RSS, and SPA** — accept only values 0–2:
 
 .. list-table::
    :header-rows: 1
@@ -57,31 +87,141 @@ the following pixel values:
    * - Value
      - Meaning
      - Required
-     - Example
+     - Role in computation
    * - 0
      - NoData
      - Optional
-     - Missing data/Cloud
+     - Excluded from computation
+   * - 1
+     - Background
+     - Mandatory
+     - Non-foreground land cover
+   * - 2
+     - Foreground
+     - Mandatory
+     - The feature being analysed
+
+.. note::
+    SPA, Accounting, and RSS do not accept values 3 and 4. If your input
+    contains these values, reclassify them to 0 (NoData) or 1 (Background)
+    before running these tools.
+
+
+Grayscale Maps
+^^^^^^^^^^^^^^
+
+Grayscale input maps are used by the ``frag_gray()`` function. Instead of
+binary foreground/background, pixel values represent **foreground intensity**
+as a continuous percentage from 0 to 100 (e.g., tree cover density). The
+input raster must be a single-band integer GeoTIFF (uint8 or int16).
+
+**Pixel value convention:**
+
+- **Value 0 — Non-foreground**: Pixels with no foreground presence (e.g., bare
+  soil, water, non-vegetated areas). These pixels are part of the reporting
+  unit and influence the analysis (they reduce the local density/connectivity).
+
+- **Values 1–100 — Foreground intensity**: The percentage of foreground cover
+  at that pixel. For example, a tree cover density map where value 60 means
+  60% of the pixel area is covered by tree canopy.
+
+- **Values > 100 — NoData**: Any value above 100 is treated as missing data
+  and excluded from computation entirely (e.g., value 255 for clouds or areas
+  outside the study region).
+
+.. list-table::
+   :header-rows: 1
+
+   * - Value
+     - Meaning
+     - Required
+     - Role in computation
+   * - 0
+     - Non-foreground
+     - Optional
+     - Reduces local density (counts in denominator as zero)
+   * - 1–100
+     - Foreground intensity (%)
+     - Mandatory (at least one pixel)
+     - Contributes actual value to the computation
+   * - >100
+     - NoData
+     - Optional
+     - Excluded from computation
+
+The ``for_threshold`` parameter controls which pixels are treated as foreground
+for the purpose of determining **which center pixels are processed**. Pixels
+with values below the threshold are output as non-foreground (code 101), but
+all values 0–100 within the moving window contribute their actual values to
+the computation.
+
+.. note::
+    Grayscale fragmentation does not use Special Background classes (3, 4).
+    The distinction between "fragmenting" and "non-fragmenting" background
+    is handled through the continuous pixel values themselves.
+
+
+Landscape Mosaic Maps
+^^^^^^^^^^^^^^^^^^^^^
+
+The Landscape Mosaic tool (``landmos()``) analyses the compositional diversity
+of a land cover map within a moving window. Unlike binary tools, it requires
+exactly **three land cover classes** to be present, representing the three
+poles of the tri-polar landscape model. The input raster must be a single-band
+integer GeoTIFF (typically uint8).
+
+The three classes can represent any meaningful land cover trichotomy (e.g.,
+Agriculture/Natural/Developed, or Forest/Grassland/Shrubland). The tool computes
+the proportional composition of the three classes within each window and
+classifies the result into one of 103 compositional classes.
+
+**Pixel value convention:**
+
+- **Value 0 — NoData**: Missing or invalid pixels. Excluded from the window
+  computation (does not contribute to any class proportion).
+
+- **Value 1 — Class 1**: First land cover class (e.g., Agriculture). By
+  convention often labelled as the "blue" pole in the ternary diagram.
+
+- **Value 2 — Class 2**: Second land cover class (e.g., Natural vegetation).
+  By convention the "green" pole.
+
+- **Value 3 — Class 3**: Third land cover class (e.g., Developed/Urban).
+  By convention the "red" pole.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Value
+     - Meaning
+     - Required
+     - Role in computation
+   * - 0
+     - NoData
+     - Optional
+     - Excluded from window computation
    * - 1
      - Class 1
      - Mandatory
-     - Agriculture
+     - First pole of the ternary model (e.g., Agriculture)
    * - 2
      - Class 2
      - Mandatory
-     - Natural
+     - Second pole of the ternary model (e.g., Natural vegetation)
    * - 3
      - Class 3
      - Mandatory
-     - Developed
+     - Third pole of the ternary model (e.g., Developed / Urban)
 
 .. note::
-    All three classes must be present in the input map. The tool will
-    raise an error if any of them is missing.
+    All three classes (1, 2, 3) must be present in the input map. The tool
+    will raise an error if any class is missing. The class labels are
+    arbitrary — they can represent any three-way land cover categorisation
+    relevant to your study area.
 
 
 Coordinate Reference System
----------------------------
+----------------------------
 
 pyGuidos accepts both **projected** and **geographic** coordinate
 reference systems. However, area-based statistics (window area in
@@ -94,7 +234,7 @@ GTB Output Format
 All pyGuidos output GeoTIFFs follow the GuidosToolbox (GTB) convention:
 
 - **Single-band uint8 GeoTIFF** with a colour palette
-- **NoData is not set** in the TIFF header -- instead a specific pixel
+- **NoData is not set** in the TIFF header — instead a specific pixel
   value encodes Missing/NoData by convention (e.g. 129 for SPA, 102 for
   Fragmentation)
 - Output file name includes the input file name followed by the **used tool and
@@ -123,6 +263,6 @@ You can verify your input file before running any tool:
 Using GTB Outputs as Inputs
 ----------------------------
 
-The statistic functions `*_stats` accept only pyGuidos (or GTB) output 
-GetoTIFFs as input. For example, using the GeoTIFF outputs after the function 
-`extract_by_polygon` to compute the statistics of extracted GeoTIFFs.
+The statistic functions ``*_stats`` accept only pyGuidos (or GTB) output
+GeoTIFFs as input. For example, using the GeoTIFF outputs after the function
+``extract_by_polygon`` to compute the statistics of extracted GeoTIFFs.
