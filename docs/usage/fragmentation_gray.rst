@@ -1,4 +1,4 @@
-Grayscale Fragmentation
+Fragmentation Grayscale
 =======================
 
 Grayscale Fragmentation extends the binary FOS approach to continuous-value
@@ -7,6 +7,20 @@ rasters where pixel values represent foreground intensity from 0 to 100
 as binary present/absent, the grayscale methods use the actual pixel intensity
 values in the computations, providing a more nuanced assessment of landscape
 connectivity.
+
+The foreground threshold ``for_threshold`` defines the minimum pixel intensity 
+required for a pixel to be classified as foreground and thus processed by the 
+analysis. Pixels with values below this threshold are treated as non-foreground 
+— they are not analysed themselves, but their actual values (including zero) 
+still contribute to the computation within the moving windows of neighbouring 
+foreground pixels. 
+For example, with a tree cover density map and ``for_threshold=30``, only 
+pixels with ≥30% canopy cover are considered "forest" and receive a 
+fragmentation score, while pixels with 1–29% cover still influence the density 
+and connectivity of adjacent forest pixels through their actual values. 
+Setting ``for_threshold=1`` processes all non-zero pixels as foreground; higher 
+thresholds allow the user to focus the analysis on denser canopy areas from the 
+same input map without reclassification.
 
 Three methods are available:
 
@@ -27,17 +41,16 @@ Input conventions:
 FAD: Foreground Area Density (grayscale)
 ----------------------------------------
 
-Grayscale FAD computes the sum of all pixel values in the window divided by
-the maximum potential (W² × 100). Pixels below ``for_threshold`` contribute 0
-to the sum but are still counted in the denominator (they are valid
-non-foreground, not missing data).
+Grayscale FAD computes the sum of all pixel values in the window of size W 
+divided by the maximum potential, where all pixels within the windows have 
+a value of 100 (W² × 100). 
 
 .. math::
 
    FAD_{gray} = \frac{\sum_{i \in window} v_i}{W^2 \times 100} \times 100
 
-Where :math:`v_i` is the pixel value (or 0 if below threshold), and NoData
-pixels are excluded from both numerator and denominator.
+Where :math:`v_i` is the pixel value, and NoData pixels are excluded 
+from both numerator and denominator.
 
 .. figure:: ../_image/Frag_gray_FAD.png
     :width: 80%
@@ -47,7 +60,7 @@ pixels are excluded from both numerator and denominator.
     Grayscale FAD computation on a 5×5 window. Grey pixel values represent
     foreground intensity (0–100). Each pixel value contributes directly to the
     sum (shown in the circles). The result is the sum of all values divided by
-    the maximum potential (25 × 100 = 2500).
+    the maximum potential (5 × 5 × 100 = 2500).
 
 
 FAC: Foreground Area Clustering (grayscale)
@@ -55,15 +68,15 @@ FAC: Foreground Area Clustering (grayscale)
 
 Grayscale FAC computes the edge value as the average of two adjacent pixel
 values, but only for pairs where **both** pixels are foreground (i.e., both
-≥ ``for_threshold``). Pairs where one or both pixels are below the threshold
-score 0.
+≥ 1). Pairs where one or both pixels are 0, the edge scores 0.
 
 .. math::
 
-   FAC_{gray} = \frac{\sum_{pairs} \frac{a + b}{2} \text{ (both FG)}}{\text{total edges} \times 100} \times 100
+   FAC_{gray} = \frac{\sum_{FG-FG pairs} \frac{a + b}{2} }{\text{total edges} \times 100} \times 100
 
-The denominator scales by 100 because the maximum possible edge value is 100
-(when both pixels are at 100%).
+Where :math:`a` and :math:`b` are the pixel values. The denominator scales 
+by 100 because the maximum possible edge value is 100 (when both pixels 
+are at 100%).
 
 .. figure:: ../_image/Frag_gray_FAC.png
     :width: 100%
@@ -72,7 +85,7 @@ The denominator scales by 100 because the maximum possible edge value is 100
 
     Grayscale FAC computation on a 5×5 window for both 4- and 8-connectivity.
     Each circle shows the average of the two adjacent pixel values, but only
-    for pairs where both pixels are foreground (≥ threshold). Pairs involving
+    for pairs where both pixels are foreground (≥ 1). Pairs involving
     non-foreground pixels score 0 and are not shown.
 
 
@@ -81,15 +94,16 @@ FED: Foreground Edge Density (grayscale)
 
 Grayscale FED computes the edge value as the average of two adjacent pixel
 values for **any** pair involving at least one foreground pixel. This means
-foreground–non-foreground boundaries also contribute (with reduced weight
-since one value is 0), while non-foreground–non-foreground pairs score 0.
+foreground–background boundaries also contribute (with reduced weight
+since background value is 0), while background–background pairs score 0.
 
 .. math::
 
    FED_{gray} = \frac{\sum_{pairs} \frac{a + b}{2}}{\text{total edges} \times 100} \times 100
 
-Where :math:`a` and :math:`b` are the thresholded pixel values (values below
-threshold become 0).
+Where :math:`a` and :math:`b` are the pixel values. Ad FAC, the denominator 
+scales by 100 because the maximum possible edge value is 100 (when both pixels 
+are at 100%).
 
 .. figure:: ../_image/Frag_gray_FED.png
     :width: 100%
@@ -97,24 +111,9 @@ threshold become 0).
     :alt: FED grayscale method
 
     Grayscale FED computation on a 5×5 window for both 4- and 8-connectivity.
-    Each circle shows the average of the two adjacent pixel values (after
-    thresholding). Unlike FAC, pairs where one pixel is foreground and the
-    other is non-foreground also contribute (with half the foreground value).
-
-Foreground Threshold
---------------------
-
-The ``for_threshold`` parameter (1–100) determines which pixels are treated as
-foreground during computation. Pixels with values below the threshold are set
-to 0 internally:
-
-- ``for_threshold=1``: all pixel values 1–100 are valid foreground
-- ``for_threshold=30``: only pixels with ≥30% intensity are foreground
-- ``for_threshold=50``: only pixels with ≥50% intensity are foreground
-
-This allows analysis of fragmentation at different canopy density thresholds
-from the same input map (e.g., "fragmentation of dense forest" vs
-"fragmentation of any tree cover").
+    Each circle shows the average of the two adjacent pixel values. Unlike FAC, 
+    pairs where one pixel is foreground and the other is background also 
+    contribute (with half the foreground value).
 
 
 Fragmentation Classes
@@ -211,7 +210,7 @@ Parameters
    * - ``for_threshold``
      - int
      - --
-     - Foreground threshold (1–100). Pixels below are treated as non-foreground.
+     - Foreground threshold (1–100). Pixels below are treated as background.
    * - ``connectivity``
      - int
      - 4
