@@ -47,9 +47,9 @@ a value of 100 (W² × 100).
 
 .. math::
 
-   FAD_{gray} = \frac{\sum_{i \in window} v_i}{W^2 \times 100} \times 100
+   FAD_{gray} = \frac{\sum \text{pixel values}}{W^2 \times 100} \times 100
 
-Where :math:`v_i` is the pixel value, and :math:`W` is the window size. The 
+Where :math:`a_i` is the pixel value, and :math:`W` is the window size. The 
 denominator scales by 100 because the maximum possible pixel value is 100.
 
 .. figure:: ../_image/Frag_gray_FAD.png
@@ -72,11 +72,11 @@ values, but only for pairs where **both** pixels are foreground (i.e., both
 
 .. math::
 
-   FAC_{gray} = \frac{\sum_{FG-FG pairs} \frac{a + b}{2} }{\text{total edges} \times 100} \times 100
+   FAC_{gray} = \frac{\sum_{a>0,\, b>0} \frac{a + b}{2} }{\text{total edges} \times 100} \times 100
 
-Where :math:`a` and :math:`b` are the pixel values, and :math:`W` is the window size. 
-The denominator scales by 100 because the maximum possible edge value is 100 
-(when both pixels are at 100%).
+Where :math:`a` and :math:`b` are the pixel values of foreground-foreground pairs, so
+:math:`a>0` and :math:`b>0`. The denominator scales by 100 because the maximum 
+possible edge value is 100 (when both pixels are at 100%).
 
 - Total edges 4-conn. = :math:`2 \times W \times (W-1)`
 - Total edges 8-conn. = :math:`2 \times (W-1) \times (2W-1)`
@@ -102,11 +102,11 @@ since background value is 0), while background–background pairs score 0.
 
 .. math::
 
-   FED_{gray} = \frac{\sum_{pairs} \frac{a + b}{2}}{\text{total edges} \times 100} \times 100
+   FED_{gray} = \frac{\sum_{all} \frac{a + b}{2}}{\text{total edges} \times 100} \times 100
 
-Where :math:`a` and :math:`b` are the pixel values, and :math:`W` is the window size. 
-The denominator scales by 100 because the maximum possible edge value is 100 
-(when both pixels are at 100%).
+Where :math:`a` and :math:`b` are the pixel values of all pixel pairs. 
+The denominator scales by 100 because the maximum possible edge value 
+is 100 (when both pixels are at 100%).
 
 - Total edges 4-conn. = :math:`2 \times W \times (W-1)`
 - Total edges 8-conn. = :math:`2 \times (W-1) \times (2W-1)`
