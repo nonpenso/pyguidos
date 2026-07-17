@@ -1,8 +1,7 @@
-.. raw:: html
-
-   <p align="center">
-     <img src="../assets/logo/pyguidos_logo-banner.svg" alt="pyGuidos Logo" width="450"/>
-   </p>
+.. image:: ../assets/logo/pyguidos_logo-banner.svg
+   :alt: pyGuidos Logo
+   :align: center
+   :width: 450px
 
 .. |pipeline| image:: https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg?ignore_skipped=true
    :target: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines
