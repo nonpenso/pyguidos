@@ -1,5 +1,8 @@
 
-# pyguidos
+<p align="center">
+  <img src="assets/logo/pyguidos_logo-banner.svg" alt="pyGuidos Logo" width="300"/>
+</p>
+
 
 [![pipeline status](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/pipeline.svg?ignore_skipped=true)](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/pipelines)
 [![coverage report](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/coverage.svg?job=run_tests)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html)
@@ -8,7 +11,7 @@
 [![Downloads](https://static.pepy.tech/badge/pyguidos)](https://pepy.tech/project/pyguidos)
 [![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
-**A Python interface to the main GuidosToolbox (GTB) modules for spatial pattern analysis**
+**PyGuidos is a Python interface to the main GuidosToolbox (GTB) modules for spatial pattern analysis**
 
 
 Overview
