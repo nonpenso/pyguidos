@@ -147,7 +147,7 @@ Once the calculation is complete, the resulting GeoTIFF is loaded alongside its 
 
 
 .. figure:: _image/CorsCLC2018_frag.png
-    :width: 100%
+    :width: 70%
     :align: center
     :alt: CLC2018 frag
 
@@ -187,7 +187,7 @@ Vector datasets, such as administrative boundaries, can be integrated directly a
    plt.show()
 
 .. figure:: _image/Cors_admin.png
-    :width: 100%
+    :width: 70%
     :align: center
     :alt: Corsica admin vector
 
