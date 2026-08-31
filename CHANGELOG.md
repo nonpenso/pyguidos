@@ -7,6 +7,30 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.5.2] - 2026-08-31
+
+### Overview
+Version 2.5.2 improves output file naming conventions, adds stricter input validation, introduces a new visualization utility, and overhauls the project documentation with comprehensive worked examples.
+
+### Added
+- **`utils.get_tif_colormap()` function**: New public utility that reads the embedded GTB colormap from a pyGuidos output GeoTIFF and returns a `matplotlib.colors.ListedColormap` and `Normalize` object for easy visualization in matplotlib.
+- **Comprehensive documentation examples**: `README.md` and `docs/index.rst` now include a complete worked example demonstrating FAD fragmentation on the Corsica sample data, visualization with the new colormap utility, and regional extraction with vector data.
+- **Assets directory**: New top-level `assets/` folder containing the project logo files and example output images referenced in documentation.
+
+### Changed
+- **Output file naming**: Fragmentation output filenames now encode the connectivity value (e.g., `_fac8_27` instead of `_fac_27`) for methods that use connectivity (FAC, FED). FAD output names remain unchanged. This prevents overwriting results when running the same method with different connectivity values.
+- **Grayscale output file naming**: Grayscale fragmentation output filenames now encode both connectivity and foreground threshold (e.g., `_frag_gray_fac8_27_t30`), preventing overwrites across different parameter combinations.
+- **Statistics enrichment**: `frag_stats()` and `frag_gray_stats()` now include `pixel_conn` in their output dictionaries, and histogram chart x-axis labels display the connectivity setting for FAC and FED methods.
+- **Documentation overhaul**: `README.md` header replaced with centered logo image; usage section rewritten with a single cohesive FAD example replacing the previous short snippets. `docs/index.rst` expanded with a ~160-line worked example including visualization, vector data integration, and zonal extraction.
+- Citation text updated from "In press" to "In preparation" in `README.md` and `docs/index.rst`.
+
+### Fixed
+- **`validate_fchmaps_input()`** in `checks.py` now verifies that `for_thres` (foreground threshold) and `pxlsize` (pixel size) match between the two input fragmentation GeoTIFFs, preventing meaningless change analysis on incompatible maps.
+- **`frag_stats()`** now validates that the input GeoTIFF is a binary fragmentation result and exits with a clear error message if a grayscale fragmentation result is passed, directing users to `frag_gray_stats()` instead.
+- Minor trailing whitespace cleanup in `utils.py`, `fragmentation.py`, and `fragmentation_gray.py`.
+
+---
+
 ## [2.5.1] - 2026-07-15
 
 ### Fixed

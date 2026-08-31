@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 import rasterio
+from pathlib import Path
 from pyguidos import frag, frag_stats
 
 @pytest.fixture(scope="module")
@@ -167,3 +168,86 @@ def test_frag_fac8_tag_contains_connectivity(frag_fac8_result):
     tiff_path = Path(frag_fac8_result["output paths"]["path tif"])
     info = utils.get_raster_info(tiff_path)
     assert ",8," in info["tag"]
+
+
+# =============================================================================
+# v2.5.2 — Output Filename Convention Tests
+# =============================================================================
+
+def test_frag_fad_filename_no_connectivity_suffix(frag_result):
+    """FAD output filename should NOT include a connectivity suffix."""
+    tif_path = frag_result["output paths"]["path tif"]
+    stem = Path(tif_path).stem
+    # FAD pattern: <name>_frag_fad_<wsize>  (no digit between 'fad' and '_')
+    assert "_frag_fad_" in stem
+    # Should NOT match patterns like _frag_fad4_ or _frag_fad8_
+    import re
+    assert not re.search(r"_frag_fad\d+_", stem)
+
+
+def test_frag_fac8_filename_includes_connectivity(frag_fac8_result):
+    """FAC 8-conn output filename should include '8' as connectivity suffix."""
+    tif_path = frag_fac8_result["output paths"]["path tif"]
+    stem = Path(tif_path).stem
+    assert "_frag_fac8_" in stem
+
+
+def test_frag_fed_filename_includes_connectivity(frag_fed_result):
+    """FED output filename should include connectivity suffix."""
+    tif_path = frag_fed_result["output paths"]["path tif"]
+    stem = Path(tif_path).stem
+    assert "_frag_fed4_" in stem
+
+
+# =============================================================================
+# v2.5.2 — pixel_conn in Text Report
+# =============================================================================
+
+def test_frag_fad_report_pixel_conn_is_dash(frag_result):
+    """FAD text report should contain pixel_conn as '-' since connectivity is not applicable."""
+    txt_path = Path(frag_result["output paths"]["path txt"])
+    report_text = txt_path.read_text()
+    assert "-" in report_text  # FAD has no connectivity
+
+
+def test_frag_fac8_report_pixel_conn_is_8connected(frag_fac8_result):
+    """FAC 8-conn text report should contain '8-connected'."""
+    txt_path = Path(frag_fac8_result["output paths"]["path txt"])
+    report_text = txt_path.read_text()
+    assert "8-connected" in report_text
+
+
+def test_frag_fed_report_pixel_conn_is_4connected(frag_fed_result):
+    """FED 4-conn text report should contain '4-connected'."""
+    txt_path = Path(frag_fed_result["output paths"]["path txt"])
+    report_text = txt_path.read_text()
+    assert "4-connected" in report_text
+
+
+# =============================================================================
+# v2.5.2 — frag_stats() Rejects Grayscale Input
+# =============================================================================
+
+def test_frag_stats_rejects_grayscale_input(tmp_path_factory):
+    """frag_stats() should exit with an error when given a grayscale frag output."""
+    from rasterio.transform import from_origin
+
+    tmp_dir = tmp_path_factory.mktemp("frag_stats_gray_reject")
+    tiff_path = tmp_dir / "gray_frag.tif"
+
+    # Create a fake grayscale fragmentation output with Gray tiftype tag
+    data = np.full((5, 5), 50, dtype=np.uint8)
+    with rasterio.open(
+        tiff_path, 'w', driver='GTiff',
+        height=5, width=5, count=1, dtype='uint8',
+        crs='EPSG:3035',
+        transform=from_origin(0, 5, 1, 1)
+    ) as dst:
+        dst.write(data, 1)
+        dst.update_tags(
+            TIFFTAG_IMAGEDESCRIPTION="GTB_FOS, <Gray,-1,4,FAD_5,100.0,3>, https://x"
+        )
+
+    with pytest.raises(SystemExit) as exc_info:
+        frag_stats(str(tiff_path))
+    assert "grayscale" in str(exc_info.value).lower() or "Gray" in str(exc_info.value)

@@ -20,6 +20,7 @@ Missing/Nodata [pixel=255]: {miss_pxl}
 PARAMETRES
 ================================================================================
 Method: {used_method}
+Pixel connectivity: {pixel_conn}
 Threshold: {for_thresh}
 Window size [pixels]: {window_size} x {window_size}
 Window area - observation scale (if unit is in metres):

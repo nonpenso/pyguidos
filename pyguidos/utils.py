@@ -6,6 +6,8 @@ import numpy as np
 
 import rasterio
 from rasterio.enums import ColorInterp
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from numba import njit, prange
 
 
@@ -115,7 +117,7 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
             compress='lzw',
             predictor=2
     )
-        
+
     # Estimate size in GB (assuming 1 byte per pixel for uint8)
     estimated_gb = (data.nbytes) / (1024**3)
     if estimated_gb > 3.8:
@@ -152,21 +154,21 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
 
 def get_colormap(cmap_path):
     """
-    Get from TXT templates the colormpas for plotting in Matplotlib 
+    Get from TXT templates the colormpas for plotting in Matplotlib
     and to save in GeoTiffs.
-    
+
     Parameters
-    ----------    
+    ----------
     cmap_path : Path
         The path to a colormap .txt file with space-separated
         columns: value r g b.
-    
+
     Returns
     -------
     dict, dict
         Two dictionaries with the sequence of R, G, B values to use for
         Matplotlib or to save into GeoTiff.
-        
+
     """
     plot_color_map = {}
     tiff_color_map = {}
@@ -176,11 +178,11 @@ def get_colormap(cmap_path):
 
             if len(parts) >= 4:
                 val = int(parts[0])
-			
+
                 # For GeoTiff colormap
                 r, g, b = int(parts[1]), int(parts[2]), int(parts[3])
                 tiff_color_map[val] = (r, g, b, 255)
-				
+
                 # Normalize 0-255 to 0.0-1.0 for Matplotlib
                 rp, gp, bp = int(parts[1])/255, int(parts[2])/255, int(parts[3])/255
                 plot_color_map[val] = (rp, gp, bp)
@@ -192,9 +194,9 @@ def get_pxl_freq(array):
     """
     Counts pixel value frequencies for both 2D and 3D arrays.
     Optimized for large rasters using Numba.
-    
+
     Parameters
-    ----------    
+    ----------
     array : np.ndarray
         Input array, either 2D (rows, cols) or 3D (bands, rows, cols).
     """
@@ -202,7 +204,7 @@ def get_pxl_freq(array):
     data = array[0] if array.ndim == 3 else array
 
     # 2. Determine the "Fast Path" vs "Dynamic Path"
-    # uint8 is guaranteed to be 0-255. 
+    # uint8 is guaranteed to be 0-255.
     # int16/int32/int64 (labels) need a dynamic size.
     if data.dtype == np.uint8:
         counts_array = numba_pixel_counts(data, size=256)
@@ -211,7 +213,7 @@ def get_pxl_freq(array):
         counts_array = numba_pixel_counts(data, size=-1)
 
     # 3. Convert results to Counter, skipping zero-count values
-    # Note: Using a dictionary comprehension here is efficient for 
+    # Note: Using a dictionary comprehension here is efficient for
     # building the Counter from the resulting array.
     counts_dict = {i: count for i, count in enumerate(counts_array) if count > 0}
 
@@ -221,7 +223,7 @@ def get_pxl_freq(array):
 @njit(cache=True)
 def numba_pixel_counts(data, size=-1):
     flat_data = data.ravel()
-    
+
     # Phase 1: Determine size if not provided
     if size == -1:
         max_val = 0
@@ -229,7 +231,7 @@ def numba_pixel_counts(data, size=-1):
             if flat_data[i] > max_val:
                 max_val = flat_data[i]
         size = int(max_val) + 1
-    
+
     # Phase 2: Allocation and Counting
     counts_array = np.zeros(size, dtype=np.int64)
     for i in range(flat_data.size):
@@ -237,7 +239,7 @@ def numba_pixel_counts(data, size=-1):
         if val >= 0:
             # We don't need a boundary check if we calculated size or use 256 for uint8
             counts_array[val] += 1
-            
+
     return counts_array
 
 
@@ -255,8 +257,8 @@ def remap_array(data, mapping):
     data : ndarray (uint8)
         The input 2D raster array containing the original class codes (e.g., 0-103).
     mapping : ndarray (uint8)
-        The lookup table (LUT) array of size 256. The index of the array 
-        represents the 'old' class, and the value at that index represents 
+        The lookup table (LUT) array of size 256. The index of the array
+        represents the 'old' class, and the value at that index represents
         the 'new' class.
 
     Returns
@@ -267,14 +269,14 @@ def remap_array(data, mapping):
     """
     nrows, ncols = data.shape
     result = np.zeros((nrows, ncols), dtype=np.uint8)
-    
+
     # prange distributes the rows across all CPU cores
     for i in prange(nrows):
         for j in range(ncols):
             old_val = data[i, j]
             # The mapping variable lookup:
             result[i, j] = mapping[old_val]
-            
+
     return result
 
 
@@ -295,7 +297,7 @@ def running_time(start_time, end_time):
         Formatted duration string, e.g. '2m 3.4s', '1h 5m 2.1s',
         or '0.95 seconds'.
     """
-    
+
     elapsed = end_time - start_time
     hours, rem = divmod(elapsed, 3600)
     minutes, seconds = divmod(rem, 60)
@@ -340,7 +342,7 @@ def generate_text_report(template_path, output_path, data_dict):
 def update_time_line(file_path, time_str):
     """
     Finds the line starting with 'Computational time:' in an existing
-    .txt report and write the elapsed time. 
+    .txt report and write the elapsed time.
 
     Parameters
     ----------
@@ -497,13 +499,24 @@ def log_msg(verbose, message):
 
     print(message, flush=True)
 
-# def reset_workspace():
-#     """Deletes the workspace configuration so it can be re-defined on next import."""
-#     if GLOBAL_CONFIG.exists():
-#         GLOBAL_CONFIG.unlink()
-#         print("Configuration removed. Restart your session to re-configure.")
-#     else:
-#         print("No configuration file found.")
+
+def get_tif_colormap(tiff_path):
+    """
+    Reads the embedded GTB colormap from a pyGuidos output GeoTIFF
+    and returns a matplotlib ListedColormap and Normalize.
+    """
+    with rasterio.open(tiff_path) as src:
+        cmap_dict = src.colormap(1)
+
+    colors = np.zeros((256, 4), dtype=np.float32)
+    for val, rgba in cmap_dict.items():
+        if 0 <= val < 256:
+            colors[val] = [c / 255.0 for c in rgba]
+
+    cmap = ListedColormap(colors)
+    norm = plt.Normalize(vmin=0, vmax=255)
+
+    return cmap, norm
 
 
 def citation():
@@ -513,8 +526,8 @@ def citation():
 RECOMENDED CITATIONS FOR PYGUIDOS
 ============================================================
 
-Caudullo G., Vogt P., 2026. PyGuidos, A cross-platform Python 
-interface to GuidosToolbox for landscape pattern analysis. 
+Caudullo G., Vogt P., 2026. PyGuidos, A cross-platform Python
+interface to GuidosToolbox for landscape pattern analysis.
 JOSS XX(XX), XXXX. https://doi.org/joss.XXXXXX
 
 ============================================================

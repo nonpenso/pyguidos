@@ -379,8 +379,10 @@ def base_tool_params():
     return {
         "tool_id": "GTB_FOS",
         "tiftype": "1",
+        "for_thres": "-1",
         "connect": "8",
         "method": "fixed",
+        "pxlsize": "100.0",
         "wsize": "27"
     }
 
@@ -505,3 +507,43 @@ class TestValidateFmapGrayInput:
     def test_int16_valid(self):
         """Should accept int16 dtype."""
         assert checks.validate_fmap_gray_input([0, 50, 100], 1, 'int16') is None
+
+
+# =============================================================================
+# v2.5.2 — validate_fchmaps_input: for_thres and pxlsize mismatch
+# =============================================================================
+
+def test_validate_fchmaps_input_mismatching_for_thres(base_metadata, base_tool_params):
+    """Ensures a SystemExit is thrown if for_thres differs between two maps."""
+    meta1 = base_metadata.copy()
+    meta2 = base_metadata.copy()
+    meta2["tag"] = "VALID_TAG_B"
+
+    different_tool_params = base_tool_params.copy()
+    different_tool_params["for_thres"] = "30"  # Different threshold
+
+    with patch("pyguidos.utils.get_tool_parameters") as mock_get_params:
+        mock_get_params.side_effect = [base_tool_params.copy(), different_tool_params]
+
+        with pytest.raises(SystemExit) as exc_info:
+            checks.validate_fchmaps_input(meta1, meta2)
+
+        assert "for_thres" in str(exc_info.value)
+
+
+def test_validate_fchmaps_input_mismatching_pxlsize(base_metadata, base_tool_params):
+    """Ensures a SystemExit is thrown if pxlsize differs between two maps."""
+    meta1 = base_metadata.copy()
+    meta2 = base_metadata.copy()
+    meta2["tag"] = "VALID_TAG_B"
+
+    different_tool_params = base_tool_params.copy()
+    different_tool_params["pxlsize"] = "200.0"  # Different pixel size
+
+    with patch("pyguidos.utils.get_tool_parameters") as mock_get_params:
+        mock_get_params.side_effect = [base_tool_params.copy(), different_tool_params]
+
+        with pytest.raises(SystemExit) as exc_info:
+            checks.validate_fchmaps_input(meta1, meta2)
+
+        assert "pxlsize" in str(exc_info.value)

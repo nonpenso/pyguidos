@@ -338,7 +338,7 @@ def validate_fchmaps_input(metadata1, metadata2):
         )
 
     # Verify internal tool analysis parameters match perfectly
-    tool_params = ["tiftype", "connect", "method", "wsize"]
+    tool_params = ["tiftype", "connect", "method", "wsize", "for_thres", "pxlsize"]
     for p in tool_params:
         if tag1.get(p) != tag2.get(p):
             sys.exit(

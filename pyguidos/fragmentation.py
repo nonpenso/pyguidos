@@ -70,10 +70,10 @@ def frag(
 
     Output Files
     ------------
-    - <in_name>_<method>_<window_size>.tif  : fragmentation result
-    - <in_name>_<method>_<window_size>.txt  : statistics report
-    - <in_name>_<method>_<window_size>.csv  : per-value pixel counts
-    - <in_name>_<method>_<window_size>.png  : foreground pixel histogram
+    - <in_name>_frag_<method><connectivity>_<window_size>.tif  : fragmentation result
+    - <in_name>_frag_<method><connectivity>_<window_size>.txt  : statistics report
+    - <in_name>_frag_<method><connectivity>_<window_size>.csv  : per-value pixel counts
+    - <in_name>_frag_<method><connectivity>_<window_size>.png  : foreground pixel histogram
     """
     start_time = time.time()
 
@@ -87,7 +87,8 @@ def frag(
     in_tiff = Path(in_tiff)
     outdir = Path(outdir) if outdir else in_tiff.parent
     in_name = in_tiff.stem
-    out_name = f"{in_name}_frag_{method.lower()}_{window_size}"
+    conn_suffix = '' if method == 'FAD' else connectivity
+    out_name = f"{in_name}_frag_{method.lower()}{conn_suffix}_{window_size}"
     info = utils.get_raster_info(in_tiff)
 
     # Read the input Geotiff
@@ -213,6 +214,10 @@ def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
         sys.exit(f"ERROR: Input Geotiff is labeled as '{tool_params.get('tool_id')}', "
                  "frag_stats requires a 'GTB_FOS' result file."
         )
+    if tool_params.get("tiftype") != "Binary":
+        sys.exit(f"ERROR: Input Geotiff is a gray fragmentation result (tiftype='{tool_params.get('tiftype')}'). "
+                 "frag_stats requires a Binary result file. "
+                 "Use frag_gray_stats() for grayscale results.")
 
     # Define input and output file names
     out_name = Path(frag_tiff).stem
@@ -256,8 +261,9 @@ def _get_frag_stats(frag_freq,
     # Get Frag parameters
     tag = tiff_info["tag"]
     tool_params = utils.get_tool_parameters(tag)
-    method,fclasses = tool_params["method"].split('_')
+    method, fclasses = tool_params["method"].split('_')
     window_size = int(tool_params["wsize"])
+    connect = tool_params["connect"]
 
     # Define input and output file names
     source_tiff = Path(source_tiff) if source_tiff else None
@@ -310,7 +316,8 @@ def _get_frag_stats(frag_freq,
                       edgecolor='black', linewidth=0.4)
 
         # Formatting the Axes
-        ax.set_xlabel(method, fontsize=14)
+        x_label = 'FAD' if method == 'FAD' else f'{method} {connect}-conn'
+        ax.set_xlabel(x_label, fontsize=14)
         ax.set_ylabel('Frequency [%]', fontsize=14)
         ax.set_title('Foreground pixel histogram', fontsize=15, pad=20)
         ax.tick_params(axis='both', which='major', labelsize=12)
@@ -342,6 +349,7 @@ def _get_frag_stats(frag_freq,
             "spec4_pxl": bgr4,
 
             "used_method": method,
+            "pixel_conn": '-' if method == 'FAD' else f"{connect}-connected",
             "window_size": window_size,
             "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["is_projected"] else '--',
             "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["is_projected"] else '--',
@@ -358,7 +366,7 @@ def _get_frag_stats(frag_freq,
             "patch_pro": f"{(patchy / fgrnd) * 100:7.4f}",
             "trans_pro": f"{(trans / fgrnd) * 100:7.4f}",
             "domin_pro": f"{(domin / fgrnd) * 100:7.4f}",
-            "inter_pro": f"{(inter / fgrnd) * 100:7.4f}",            
+            "inter_pro": f"{(inter / fgrnd) * 100:7.4f}",
             "fad_av_idx": fad_av,
             "avcon_idx": avcon,
         }

@@ -248,7 +248,15 @@ statistics without rerunning the analysis:
 .. code-block:: python
 
     stats = pg.frag_gray_stats(
-        frag_tiff="output/tcd_frag_gray_fad_27.tif",
+        frag_tiff="output/tcd_frag_gray_fad_27_t1.tif",
+        stat_files=True,
+        outdir="output/",
+        source_tiff="tree_cover_density.tif"
+    )
+
+    # For FAC with 8-connectivity and threshold 30:
+    stats = pg.frag_gray_stats(
+        frag_tiff="output/tcd_frag_gray_fac8_27_t30.tif",
         stat_files=True,
         outdir="output/",
         source_tiff="tree_cover_density.tif"
@@ -256,6 +264,13 @@ statistics without rerunning the analysis:
 
 Providing ``source_tiff`` allows the function to report original input
 foreground/background pixel counts. Without it, those values are shown as "n/a".
+
+Output filenames encode the method, connectivity (for FAC/FED), window size, and
+foreground threshold. Examples:
+
+- FAD: ``tcd_frag_gray_fad_27_t1.tif``
+- FAC 8-conn, threshold 30: ``tcd_frag_gray_fac8_27_t30.tif``
+- FED 4-conn, threshold 50: ``tcd_frag_gray_fed4_27_t50.tif``
 
 .. note::
     :func:`frag_gray_stats` requires the input GeoTIFF to be a pyGuidos

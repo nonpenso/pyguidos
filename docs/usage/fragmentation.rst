@@ -238,19 +238,30 @@ Parameters
 Output Files
 ------------
 
+The output filename encodes the method and, for methods that use connectivity (FAC, FED),
+the connectivity value. FAD output names omit the connectivity since it is not applicable.
+
 .. list-table::
    :header-rows: 1
 
    * - File
      - Description
-   * - ``<name>_<method>_<window_size>.tif``
+   * - ``<name>_frag_<method><conn>_<window_size>.tif``
      - Fragmentation result GeoTIFF with colour palette
-   * - ``<name>_<method>_<window_size>.txt``
+   * - ``<name>_frag_<method><conn>_<window_size>.txt``
      - Statistics report
-   * - ``<name>_<method>_<window_size>.csv``
+   * - ``<name>_frag_<method><conn>_<window_size>.csv``
      - Per-value pixel counts and frequencies
-   * - ``<name>_<method>_<window_size>.png``
+   * - ``<name>_frag_<method><conn>_<window_size>.png``
      - Foreground pixel histogram
+
+Where ``<conn>`` is the connectivity value (4 or 8) for FAC and FED, or empty for FAD.
+
+Examples:
+
+- FAD: ``my_map_frag_fad_27.tif``
+- FAC 8-conn: ``my_map_frag_fac8_27.tif``
+- FED 4-conn: ``my_map_frag_fed4_27.tif``
 
 
 Results
@@ -305,6 +316,9 @@ The :func:`frag` function returns a :class:`dict`. The structure is nested as fo
     #  'path txt': 'output/my_map_frag_fad_27.txt',
     #  'path csv': 'output/my_map_frag_fad_27.csv',
     #  'path png': 'output/my_map_frag_fad_27.png'}
+
+    # For FAC with 8-connectivity, paths would be:
+    # 'output/my_map_frag_fac8_27.tif', etc.
 
 
 

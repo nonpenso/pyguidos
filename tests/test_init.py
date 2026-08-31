@@ -20,6 +20,14 @@ def test_api_exposure():
     assert hasattr(pg, "citation")
     assert hasattr(pg, "info")
 
+
+def test_utils_module_accessible():
+    """Verify that pg.utils is explicitly accessible (v2.5.2)."""
+    assert hasattr(pg, "utils")
+    # get_tif_colormap should be callable via pg.utils
+    assert hasattr(pg.utils, "get_tif_colormap")
+    assert callable(pg.utils.get_tif_colormap)
+
 # =============================================================================
 # Environment & Numba Setup Tests
 # =============================================================================

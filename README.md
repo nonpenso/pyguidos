@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="assets/logo/pyguidos_logo-banner.svg" alt="pyGuidos Logo" width="300"/>
+  <img src="https://code.europa.eu/jrc-forest/guidos/pyguidos/-/raw/main/assets/logo/pyguidos_logo-banner.svg" alt="pyGuidos Logo" width="300"/>
 </p>
 
 
@@ -116,7 +116,7 @@ This links module's source code directly to your Python environment, so any chan
 ---
 
 Quick Start
-==========
+===========
 
 Once installed, you can verify your setup and explore the available tools directly from your Python console or Jupyter Notebook.
 
@@ -135,81 +135,51 @@ help(pg.landmos)
 
 ---
 
-Usage Examples
-==============
+Usage Example
+=============
+
+This code computes a Forest Area Density (FAD) fragmentation analysis with a window size of 27x27 pixels of Corsica map forest derived from Corine Land Cover 2018. Then it renders both the resulting fragmentation GeoTiff map (using its embedded colormap) and the automatically generated summary chart in Matplotlib.
+
 
 ```python
 import pyguidos as pg
+from pathlib import Path
+import rasterio
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 
-# Fragmentation analysis (FAD)
-result = pg.frag(
-    in_tiff="my_map.tif",
-    method="FAD",
-    window_size=27
+# Load the Forest Non-Forest map of Corsica
+fnf_tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+
+# Compute Fragmentation analysis.
+fad_corsica = pg.frag(
+    in_tiff = fnf_tiff,
+    method = "FAD",
+    window_size = 27
 )
 
-# Fragmentation analysis (FAC with 8-connectivity)
-result = pg.frag(
-    in_tiff="my_map.tif",
-    method="FAC",
-    window_size=27,
-    connectivity=8
-)
+# Read the output map and chart image
+frag_tiff = fad_corsica['output paths']['path tif']
+with rasterio.open(frag_tiff) as src:
+    tiff_data = src.read(1)
+frag_chart = fad_corsica['output paths']['path png']
+png_img = mpimg.imread(frag_chart)
 
-# Fragmentation analysis (FED - Foreground Edge Density)
-result = pg.frag(
-    in_tiff="my_map.tif",
-    method="FED",
-    window_size=27,
-    connectivity=4
-)
-
-# Grayscale Fragmentation (tree cover density)
-result = pg.frag_gray(
-    in_tiff="tree_cover_density.tif",
-    method="FAD",
-    window_size=27,
-    for_threshold=30
-)
-
-# Fragmentation change
-result = pg.frag_change(
-    in_tiff_t1="my_map2018_frag_fad_27.tif",
-    in_tiff_t2="my_map2025_frag_fad_27.tif"
-)
-
-# Landscape Mosaic
-result = pg.landmos(
-    in_tiff="my_landcover.tif",
-    window_size=33
-)
-
-# Simplified Pattern Analysis (SPA)
-result = pg.spa(
-    in_tiff="my_map.tif",
-    edge_width=1,
-    classes=6
-)
-
-# Foreground Patch Size Accounting
-result = pg.acc(
-    in_tiff="my_map.tif",
-    thresholds=[10, 100, 1000, 10000]
-)
-
-# Raster Spatial Statistics
-result = pg.rss(in_tiff="my_map.tif")
-
-# Extract raster by polygon
-pg.extract_by_polygon(
-    shapefile_path="regions.shp",
-    geotiff_path="my_map.tif",
-    output_dir="output/",
-    id_field="NAME"
-)
+# Plot the output
+fig, axes = plt.subplots(1, 2, figsize=(14, 7))
+cmap, norm = pg.utils.get_tif_colormap(frag_tiff)
+axes[0].imshow(tiff_data, cmap=cmap, norm=norm, interpolation="none")
+axes[0].axis("off")
+axes[1].imshow(png_img)
+axes[1].axis("off")
+plt.tight_layout()
+plt.show()
 ```
 
-Example data and Jupyter notebooks with worked examples are available in the `/notebooks` directory of the [code.europa.eu primary repository](https://code.europa.eu/jrc-forest/guidos/pyguidos).
+![Fragmentation Analysis Output](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/raw/main/assets/frag_example_output.png)
+
+
+Data and Jupyter notebooks with other examples are available on `/notebooks` directory of the [git repository](https://code.europa.eu/jrc-forest/guidos/pyguidos).
 
 ---
 
@@ -224,7 +194,7 @@ software and this package:
 
 **pyGuidos:**
   - Caudullo G. and Vogt P. (2026). PyGuidos, A cross-platform Python 
-interface to GuidosToolbox for landscape pattern analysis. In press.
+interface to GuidosToolbox for landscape pattern analysis. In preparation.
 
 ### Interactive Citation
 You can get the plain-text citations directly in your Python console:

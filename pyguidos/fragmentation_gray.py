@@ -75,10 +75,10 @@ def frag_gray(
 
     Output Files
     ------------
-    - <in_name>_frag_gray_<method>_<window_size>.tif  : fragmentation result
-    - <in_name>_frag_gray_<method>_<window_size>.txt  : statistics report
-    - <in_name>_frag_gray_<method>_<window_size>.csv  : per-value pixel counts
-    - <in_name>_frag_gray_<method>_<window_size>.png  : foreground pixel histogram
+    - <in_name>_frag_gray_<method><connectivity>_<window_size>_t<for_threshold>.tif  : fragmentation result
+    - <in_name>_frag_gray_<method><connectivity>_<window_size>_t<for_threshold>.txt  : statistics report
+    - <in_name>_frag_gray_<method><connectivity>_<window_size>_t<for_threshold>.csv  : per-value pixel counts
+    - <in_name>_frag_gray_<method><connectivity>_<window_size>_t<for_threshold>.png  : foreground pixel histogram
     """
     start_time = time.time()
 
@@ -99,7 +99,8 @@ def frag_gray(
     in_tiff = Path(in_tiff)
     outdir = Path(outdir) if outdir else in_tiff.parent
     in_name = in_tiff.stem
-    out_name = f"{in_name}_frag_gray_{method.lower()}_{window_size}"
+    conn_suffix = '' if method == 'FAD' else connectivity
+    out_name = f"{in_name}_frag_gray_{method.lower()}{conn_suffix}_{window_size}_t{for_threshold}"
     info = utils.get_raster_info(in_tiff)
 
     # Read the input Geotiff
@@ -283,6 +284,7 @@ def _get_frag_gray_stats(frag_freq,
     method, fclasses = tool_params["method"].split('_')
     threshold = tool_params["for_thres"]
     window_size = int(tool_params["wsize"])
+    connect = tool_params["connect"]
 
     # Define input and output file names
     source_tiff = Path(source_tiff) if source_tiff else None
@@ -348,7 +350,8 @@ def _get_frag_gray_stats(frag_freq,
                edgecolor='black', linewidth=0.4)
 
         # Formatting the Axes
-        ax.set_xlabel('FAD (grayscale)', fontsize=14)
+        x_label = 'FAD (grayscale)' if method == 'FAD' else f'{method} {connect}-conn (grayscale)'
+        ax.set_xlabel(x_label, fontsize=14)
         ax.set_ylabel('Frequency [%]', fontsize=14)
         ax.set_title('Foreground pixel histogram', fontsize=15, pad=20)
         ax.tick_params(axis='both', which='major', labelsize=12)
@@ -378,6 +381,7 @@ def _get_frag_gray_stats(frag_freq,
             "miss_pxl": ndata,
 
             "used_method": f"{method} (grayscale)",
+            "pixel_conn": '-' if method == 'FAD' else f"{connect}-connected",
             "for_thresh": threshold,
             "window_size": window_size,
             "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["is_projected"] else '--',
@@ -397,7 +401,7 @@ def _get_frag_gray_stats(frag_freq,
             "patch_pro": f"{(patchy / fgrnd) * 100:7.4f}",
             "trans_pro": f"{(trans / fgrnd) * 100:7.4f}",
             "domin_pro": f"{(domin / fgrnd) * 100:7.4f}",
-            "inter_pro": f"{(inter / fgrnd) * 100:7.4f}",            
+            "inter_pro": f"{(inter / fgrnd) * 100:7.4f}",
             "fad_av_idx": fad_av,
             "avcon_idx": avcon,
         }

@@ -15,7 +15,7 @@ DATA_DIR = MODULE_ROOT / "data"
 
 
 # Package metadata
-__version__ = "2.5.1"
+__version__ = "2.5.2"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
@@ -76,6 +76,7 @@ from .spa import spa, spa_stats
 from .accounting import acc, acc_stats
 from .rss import rss
 from .extract_by_polygon import extract_by_polygon
+from . import utils
 from .utils import citation
 
 

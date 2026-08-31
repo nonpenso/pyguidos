@@ -22,6 +22,7 @@ Missing/Nodata [pixel=0]: {miss_pxl}
 PARAMETRES
 ================================================================================
 Method: {used_method}
+Pixel connectivity: {pixel_conn}
 Window size [pixels]: {window_size} x {window_size}
 Window area - observation scale (if unit is in metres):
     {window_areaHA} hectares 

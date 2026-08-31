@@ -266,3 +266,60 @@ class TestValidation:
         with pytest.raises(SystemExit):
             frag_gray(str(gray_input_tif), method='FED', window_size=3,
                       for_threshold=1, connectivity=6)
+
+
+# =============================================================================
+# v2.5.2 — Output Filename Convention Tests
+# =============================================================================
+
+class TestFragGrayFilenameConvention:
+
+    def test_fad_filename_no_connectivity_with_threshold(self, frag_gray_fad_result):
+        """FAD gray output should NOT have connectivity suffix but SHOULD have threshold."""
+        tif_path = frag_gray_fad_result["output paths"]["path tif"]
+        stem = Path(frag_gray_fad_result["output paths"]["path tif"]).stem
+        # FAD pattern: <name>_frag_gray_fad_<wsize>_t<threshold>
+        assert "_frag_gray_fad_" in stem
+        assert "_t1" in stem  # for_threshold=1 in the fixture
+        # Should NOT match patterns like _frag_gray_fad4_ or _frag_gray_fad8_
+        import re
+        assert not re.search(r"_frag_gray_fad\d+_", stem)
+
+    def test_fac_filename_includes_connectivity_and_threshold(self, frag_gray_fac_result):
+        """FAC gray output should include connectivity suffix AND threshold."""
+        stem = Path(frag_gray_fac_result["output paths"]["path tif"]).stem
+        # FAC 4-conn, threshold=1: <name>_frag_gray_fac4_<wsize>_t1
+        assert "_frag_gray_fac4_" in stem
+        assert "_t1" in stem
+
+    def test_fed_filename_includes_connectivity_and_threshold(self, frag_gray_fed_result):
+        """FED gray output should include connectivity suffix AND threshold."""
+        stem = Path(frag_gray_fed_result["output paths"]["path tif"]).stem
+        assert "_frag_gray_fed4_" in stem
+        assert "_t1" in stem
+
+
+# =============================================================================
+# v2.5.2 — pixel_conn in Gray Text Report
+# =============================================================================
+
+class TestFragGrayPixelConn:
+
+    def test_fad_report_pixel_conn_is_dash(self, frag_gray_fad_result):
+        """FAD gray text report should not contain a connectivity label."""
+        txt_path = Path(frag_gray_fad_result["output paths"]["path txt"])
+        report_text = txt_path.read_text()
+        # FAD has no connectivity, report should show '-'
+        assert "-" in report_text
+
+    def test_fac_report_pixel_conn_is_4connected(self, frag_gray_fac_result):
+        """FAC 4-conn gray text report should contain '4-connected'."""
+        txt_path = Path(frag_gray_fac_result["output paths"]["path txt"])
+        report_text = txt_path.read_text()
+        assert "4-connected" in report_text
+
+    def test_fed_report_pixel_conn_is_4connected(self, frag_gray_fed_result):
+        """FED 4-conn gray text report should contain '4-connected'."""
+        txt_path = Path(frag_gray_fed_result["output paths"]["path txt"])
+        report_text = txt_path.read_text()
+        assert "4-connected" in report_text

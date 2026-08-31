@@ -356,3 +356,72 @@ def test_log_msg_silent_when_false(capsys):
     
     captured = capsys.readouterr()
     assert captured.out == ""
+
+
+# =============================================================================
+# v2.5.2 — get_tif_colormap
+# =============================================================================
+
+def test_get_tif_colormap_returns_cmap_and_norm(tmp_path):
+    """Verify get_tif_colormap reads an embedded colormap and returns
+    a ListedColormap and Normalize object."""
+    from matplotlib.colors import ListedColormap, Normalize
+
+    tiff_path = tmp_path / "cmap_test.tif"
+    data = np.array([[0, 50], [100, 200]], dtype=np.uint8)
+    profile = {
+        'driver': 'GTiff', 'height': 2, 'width': 2, 'count': 1,
+        'dtype': 'uint8', 'crs': 'EPSG:4326',
+        'transform': from_origin(0, 2, 1, 1)
+    }
+
+    # Write GeoTIFF with an embedded colormap
+    cmap_dict = {
+        0: (0, 0, 0, 255),
+        50: (255, 128, 0, 255),
+        100: (0, 255, 0, 255),
+        200: (128, 128, 128, 255),
+    }
+    with rasterio.open(tiff_path, 'w', **profile) as dst:
+        dst.write(data, 1)
+        dst.write_colormap(1, cmap_dict)
+
+    cmap, norm = utils.get_tif_colormap(str(tiff_path))
+
+    assert isinstance(cmap, ListedColormap)
+    assert isinstance(norm, Normalize)
+    assert norm.vmin == 0
+    assert norm.vmax == 255
+
+    # Check that the colors are correctly mapped (normalized to 0-1)
+    # Index 50 should be orange-ish: (255/255, 128/255, 0/255, 255/255)
+    color_50 = cmap.colors[50]
+    assert pytest.approx(color_50[0], abs=0.01) == 1.0       # R
+    assert pytest.approx(color_50[1], abs=0.01) == 128/255    # G
+    assert pytest.approx(color_50[2], abs=0.01) == 0.0        # B
+
+
+def test_get_tif_colormap_unset_entries_are_zero(tmp_path):
+    """Colormap entries not defined in the GeoTIFF should default to (0,0,0,0)."""
+    from matplotlib.colors import ListedColormap
+
+    tiff_path = tmp_path / "sparse_cmap.tif"
+    data = np.array([[1]], dtype=np.uint8)
+    profile = {
+        'driver': 'GTiff', 'height': 1, 'width': 1, 'count': 1,
+        'dtype': 'uint8', 'crs': 'EPSG:4326',
+        'transform': from_origin(0, 1, 1, 1)
+    }
+    # Only define a few entries
+    cmap_dict = {1: (255, 0, 0, 255)}
+    with rasterio.open(tiff_path, 'w', **profile) as dst:
+        dst.write(data, 1)
+        dst.write_colormap(1, cmap_dict)
+
+    cmap, _ = utils.get_tif_colormap(str(tiff_path))
+
+    # Entry 1 should be red
+    assert pytest.approx(cmap.colors[1][0], abs=0.01) == 1.0
+    # Entry 200 (not set) should be zeros
+    assert cmap.colors[200][0] == 0.0
+    assert cmap.colors[200][1] == 0.0
