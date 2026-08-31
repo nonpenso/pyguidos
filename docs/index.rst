@@ -82,11 +82,12 @@ The first step runs the ``pg.frag`` module to evaluate forest fragmentation acro
 
 .. code-block:: python
 
+   import pyguidos as pg
    from pathlib import Path
    import matplotlib.patches as mpatches
    import matplotlib.pyplot as plt
-   import pyguidos as pg
    import rasterio
+   import pyogrio
 
    # Compute Fragmentation (FAD)
    fnf_tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
@@ -151,12 +152,10 @@ Once the calculation is complete, the resulting GeoTIFF is loaded alongside its 
     :alt: CLC2018 frag
 
 
-Vector datasets, such as administrative boundaries, can be integrated directly alongside spatial statistics workflows. In this step, the administrative subdivisions of Corsica are loaded from a GeoPackage using ``pyogrio`` into a GeoDataFrame and visualised using Matplotlib. 
+Vector datasets, such as administrative boundaries, can be integrated directly alongside spatial statistics workflows. In this step, the administrative subdivisions of Corsica are loaded from a GeoPackage using ``pyogrio`` into a GeoDataFrame and visualised using ``matplotlib``. 
 
 .. code-block:: python
 
-   import pyogrio
-   
    # Load vector file containing administrative boundaries
    vector_file = pg.DATA_DIR / "GISCO_adm_corsica.gpkg"
    gdf = pyogrio.read_dataframe(vector_file)
@@ -177,7 +176,8 @@ Vector datasets, such as administrative boundaries, can be integrated directly a
    for i, name in enumerate(gdf[gdf.columns[0]].unique()[:len(colors)]):
        patch = mpatches.Patch(color=colors[i], alpha=0.5, label=name)
        legend_handles.append(patch)
-   ax.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(-0.5, 1.0), fontsize=11, framealpha=0.9)
+   ax.legend(handles=legend_handles, loc='upper left', 
+       bbox_to_anchor=(-0.5, 1.0), fontsize=11, framealpha=0.9)
    
    ax.set_title('Administrative Subdivisions — Corsica\nGISCO Communes database', fontsize=14, pad=15)
    ax.set_aspect('equal')
@@ -186,7 +186,7 @@ Vector datasets, such as administrative boundaries, can be integrated directly a
    plt.tight_layout()
    plt.show()
 
-.. figure:: _image/CorsCLC2018_frag_admin.png
+.. figure:: _image/Cors_admin.png
     :width: 100%
     :align: center
     :alt: Corsica admin vector
