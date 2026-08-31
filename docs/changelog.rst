@@ -50,7 +50,7 @@ Version 2.5.2 improves output file naming conventions, adds stricter input valid
 
 **Changed**
 
-- Updated ``docs/usage/fragmentation.rst`` and ``docs/usage/fragmentation_gray.rst` with new text, formulas and individual figures.
+- Updated ``docs/usage/fragmentation.rst`` and ``docs/usage/fragmentation_gray.rst`` with new text, formulas and individual figures.
 
 
 ----

@@ -47,8 +47,8 @@ Project Infrastructure & Community
 
 The official upstream development workspace for ``pyguidos`` is hosted on `code.europa.eu <https://code.europa.eu/jrc-forest/guidos/pyguidos>`_, the open-source repository platform of the European Commission. Because this institutional forge restricts issue creation and merge requests to authorized internal accounts (EU Login), public community collaboration is mirrored to GitHub.
 
-.. critical::
-   **Bug reports and feature fequests**
+.. important::
+   **Bug reports and feature requests**
    
    To ensure an open, friction-free environment for the global scientific and GIS community, please do not use the code.europa.eu tracker for feedback. Instead, use our public **GitHub Mirror**:
    
@@ -73,8 +73,8 @@ If you are new to pyGuidos, we recommend following these steps:
 3. **User Guide**: Browse the :doc:`usage/index` for detailed examples of Landscape Mosaic, Fragmentation, and other analysis tools.
 
 
-Example
--------
+Examples
+--------
 
 This example demonstrates how to compute Forest Area Density (FAD) fragmentation statistics on a binary Forest/Non-Forest (FNF) raster and visualize the output using Matplotlib along with its embedded GTB colormap and calculated indices.
 
@@ -145,7 +145,7 @@ Once the calculation is complete, the resulting GeoTIFF is loaded alongside its 
    plt.show()
 
 
-.. figure:: ../_image/CorsCLC2018_frag.png
+.. figure:: _image/CorsCLC2018_frag.png
     :width: 100%
     :align: center
     :alt: CLC2018 frag
@@ -186,7 +186,7 @@ Vector datasets, such as administrative boundaries, can be integrated directly a
    plt.tight_layout()
    plt.show()
 
-.. figure:: ../_image/CorsCLC2018_frag_admin.png
+.. figure:: _image/CorsCLC2018_frag_admin.png
     :width: 100%
     :align: center
     :alt: Corsica admin vector
@@ -223,7 +223,7 @@ The final step extracts the fragmentation raster for each administrative region 
    plt.tight_layout()
    plt.show()
 
-.. figure:: ../_image/CorsCLC2018_frag_admin.png
+.. figure:: _image/CorsCLC2018_frag_admin.png
     :width: 100%
     :align: center
     :alt: Corsica admin vector
