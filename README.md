@@ -183,6 +183,22 @@ Data and Jupyter notebooks with other examples are available on `/notebooks` dir
 
 ---
 
+Memory Usage and Large Rasters
+==============================
+
+pyGuidos loads each input raster fully into memory, so a tool's memory footprint scales with the raster size. Peak usage differs by function, expressed as a multiple of the raw input size *R* (one byte per `uint8` pixel):
+
+| Function | Peak memory | Reason |
+|---|---|---|
+| `frag`, `frag_gray`, `landmos` | ~4 × *R* | Input up-cast to int16 plus an output buffer |
+| `acc`, `rss` | ~6 × *R* | Adds a mask and a connected-component label array |
+| `spa` | ~10–15 × *R* | Several morphological masks and distance transforms |
+| `frag_change` | ~2 × *R* | Processed block by block via windowed reading |
+
+Physical RAM is not a hard limit: the effective ceiling is RAM plus swap or page-file space. On Windows and macOS, rasters exceeding RAM are transparently paged to disk and still complete, only more slowly; on Linux the same holds if enough swap is configured, otherwise the process may be terminated. Raster size is therefore mainly a matter of processing time rather than capacity, and downsampling or tiling remains an option when faster turnaround is preferred.
+
+---
+
 Citation
 ========
 
