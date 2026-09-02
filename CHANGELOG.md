@@ -7,13 +7,14 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.5.2] - 2026-08-31
+## [2.5.2] - 2026-09-02
 
 ### Overview
 Version 2.5.2 improves output file naming conventions, adds stricter input validation, introduces a new visualization utility, and overhauls the project documentation with comprehensive worked examples.
 
 ### Added
 - **`utils.get_tif_colormap()` function**: New public utility that reads the embedded GTB colormap from a pyGuidos output GeoTIFF and returns a `matplotlib.colors.ListedColormap` and `Normalize` object for easy visualization in matplotlib.
+- **Memory usage documentation**: New "Memory Usage and Large Rasters" section in `README.md` and `docs/index.rst` reporting per-function peak memory usage and explaining that physical RAM is not a hard limit (rasters exceeding RAM are paged to disk on Windows/macOS, and on Linux when sufficient swap is configured).
 - **Comprehensive documentation examples**: `README.md` and `docs/index.rst` now include a complete worked example demonstrating FAD fragmentation on the Corsica sample data, visualization with the new colormap utility, and regional extraction with vector data.
 - **Assets directory**: New top-level `assets/` folder containing the project logo files and example output images referenced in documentation.
 
