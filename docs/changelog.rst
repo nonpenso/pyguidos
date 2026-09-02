@@ -25,6 +25,7 @@ Version 2.5.2 improves output file naming conventions, adds stricter input valid
 
 **Changed**
 
+- Reduced memory usage: the core analysis functions (``frag``, ``frag_gray``, ``landmos``, ``acc``, ``rss``) now keep the input raster as ``uint8`` instead of up-casting it to ``int16``, roughly halving the input array footprint and removing a redundant full-size copy. The input is read in its native dtype, validated, and only then cast to ``uint8``. All Numba kernels now declare explicit ``uint8[:,:]`` signatures, and redundant full-size intermediate arrays were removed from ``acc``. Peak memory for ``frag``/``frag_gray``/``landmos`` drops from ~4× to ~3× the raw raster size, and for ``acc``/``rss`` from ~6× to ~4–5×.
 - Output file naming: fragmentation output filenames now encode the connectivity value (e.g., ``_fac8_27`` instead of ``_fac_27``) for methods that use connectivity (FAC, FED). FAD output names remain unchanged. This prevents overwriting results when running the same method with different connectivity values.
 - Grayscale output file naming: grayscale fragmentation output filenames now encode both connectivity and foreground threshold (e.g., ``_frag_gray_fac8_27_t30``), preventing overwrites across different parameter combinations.
 - Statistics enrichment: ``frag_stats()`` and ``frag_gray_stats()`` now include ``pixel_conn`` in their output dictionaries, and histogram chart x-axis labels display the connectivity setting for FAC and FED methods.

@@ -243,10 +243,10 @@ multiple of the raw input size *R* (one byte per ``uint8`` pixel):
      - Peak memory
      - Reason
    * - ``frag``, ``frag_gray``, ``landmos``
-     - ~4 × *R*
+     - ~3 × *R*
      - Input up-cast to int16 plus an output buffer
    * - ``acc``, ``rss``
-     - ~6 × *R*
+     - ~4-5 × *R*
      - Adds a mask and a connected-component label array
    * - ``spa``
      - ~10–15 × *R*

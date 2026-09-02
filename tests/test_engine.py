@@ -14,7 +14,7 @@ BACKGR_SP3 = 3
 
 def test_compute_fad_special_background():
     """Verify that Special Background (pixel=3) is preserved as 105."""
-    data = np.full((5, 5), BACKGR_SP3, dtype=np.int16)
+    data = np.full((5, 5), BACKGR_SP3, dtype=np.uint8)
     
     # window_size=3
     result = engine.compute_FAD(data, window_size=3, handle_missing=1)
@@ -28,7 +28,7 @@ def test_compute_fad_normalized_with_missing():
     In a 3x3 window (9 pixels), if 1 is Foreground, 4 are Background, 
     and 4 are Missing: Density = 1 / 5 = 20%.
     """
-    data = np.full((3, 3), MISSING_IN, dtype=np.int16)
+    data = np.full((3, 3), MISSING_IN, dtype=np.uint8)
     data[1, 1] = FOREGROUND # The center pixel being processed
     data[0, :] = BACKGROUND # 3 background pixels
     data[1, 0] = BACKGROUND # 1 background pixel
@@ -44,7 +44,7 @@ def test_compute_fad_fixed_with_missing():
     Test Fixed mode (2): Denominator should always be window_size^2 (9).
     Same setup as above: 1 Foreground in 9 total pixels = 1 / 9 = 11.11% -> 11%.
     """
-    data = np.full((3, 3), MISSING_IN, dtype=np.int16)
+    data = np.full((3, 3), MISSING_IN, dtype=np.uint8)
     data[1, 1] = FOREGROUND
     data[0, :] = BACKGROUND
     data[1, 0] = BACKGROUND
@@ -62,7 +62,7 @@ def test_compute_fad_uniform_foreground():
     The result for a full window should be 100%.
     """
     # 2 is Foreground in your Guidos convention
-    data = np.full((10, 10), 2, dtype=np.int16)
+    data = np.full((10, 10), 2, dtype=np.uint8)
     
     # window_size=3, handle_missing=1 (standard FAD)
     result = engine.compute_FAD(data, window_size=3, handle_missing=1)
@@ -74,7 +74,7 @@ def test_compute_fad_nodata_handling():
     """
     Verify that NoData (0) in the input results in 102 (Missing) in the output.
     """
-    data = np.full((5, 5), 2, dtype=np.int16)
+    data = np.full((5, 5), 2, dtype=np.uint8)
     data[2, 2] = 0  # Inject NoData in the center
     
     result = engine.compute_FAD(data, window_size=3, handle_missing=1)
@@ -86,7 +86,7 @@ def test_compute_fad_background_preservation():
     """
     Verify that original Background (1) results in 101 in the FAD output.
     """
-    data = np.full((5, 5), 1, dtype=np.int16)
+    data = np.full((5, 5), 1, dtype=np.uint8)
     
     result = engine.compute_FAD(data, window_size=3, handle_missing=1)
     
@@ -95,7 +95,7 @@ def test_compute_fad_background_preservation():
 
 @pytest.mark.parametrize("val,expected", [(3, 105), (4, 106)])
 def test_fad_special_bg_coverage(val, expected):
-    data = np.full((3, 3), val, dtype=np.int16)
+    data = np.full((3, 3), val, dtype=np.uint8)
     data[1, 1] = 2 # Add one foreground so the loop processes
     res = engine.compute_FAD(data, 3, 1)
     # The foreground pixel is processed, but we check if 
@@ -108,7 +108,7 @@ def test_fad_single_pixel_density():
     results in 100% density in Normalized mode (handle_missing=1).
     """
     # 3x3 of 0s, center is 2
-    data = np.zeros((3, 3), dtype=np.int16)
+    data = np.zeros((3, 3), dtype=np.uint8)
     data[1, 1] = 2 
     
     res = engine.compute_FAD(data, window_size=3, handle_missing=1)
@@ -128,10 +128,10 @@ FOREGROUND = 2
 def test_compute_fac_perfect_connectivity():
     """A solid 3x3 block of foreground should yield 100% connectivity."""
     # Create a 5x5 array of foreground
-    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data = np.full((5, 5), FOREGROUND, dtype=np.uint8)
     
     # window_size=3, normalized mode
-    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=4)
     
     # In a 3x3 window, there are 6 horizontal and 6 vertical edges (total 12)
     # If all are FG-FG, (12 * 200 + 12) // (2 * 12) = 2412 // 24 = 100
@@ -139,10 +139,10 @@ def test_compute_fac_perfect_connectivity():
 
 def test_compute_fac_zero_connectivity():
     """Isolated foreground pixel in background should yield 0% connectivity."""
-    data = np.full((5, 5), BACKGROUND, dtype=np.int16)
+    data = np.full((5, 5), BACKGROUND, dtype=np.uint8)
     data[2, 2] = FOREGROUND
     
-    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=4)
     
     # Pixel is foreground, but no adjacent neighbors are foreground
     assert result[2, 2] == 0
@@ -150,7 +150,7 @@ def test_compute_fac_zero_connectivity():
 def test_compute_fac_fixed_denominator():
     """Verify handle_missing=2 (Fixed) uses the theoretical maximum denominator."""
     # 3x3 window: max edges = 2 * 3 * (3-1) = 12
-    data = np.full((5, 5), MISSING, dtype=np.int16)
+    data = np.full((5, 5), MISSING, dtype=np.uint8)
     data[1:4, 1:4] = FOREGROUND 
     
     # By setting one corner to BACKGROUND, we break 2 edges (1 horizontal, 1 vertical)
@@ -158,36 +158,36 @@ def test_compute_fac_fixed_denominator():
     data[1, 1] = BACKGROUND 
     
     # Fixed mode ignores missing/background in denominator, uses total_potential_edges (12)
-    result = engine.compute_FAC(data, window_size=3, handle_missing=2)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=2, connectivity=4)
     
     # Math: (10 * 200 + 12) // (2 * 12) = 2012 // 24 = 83.83 -> 83
     assert result[2, 2] == 83
 
 def test_compute_fac_background_preservation():
     """Ensure pixels labeled as background are preserved as 101."""
-    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data = np.full((5, 5), FOREGROUND, dtype=np.uint8)
     data[2, 2] = BACKGROUND
     
-    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=4)
     
     # Result should be OUT_BACKGROUND (101)
     assert result[2, 2] == 101
 
 def test_compute_fac_missing_fallback():
     """If denominator is 0 (e.g. window only contains the center FG pixel and NoData)."""
-    data = np.full((3, 3), MISSING, dtype=np.int16)
+    data = np.full((3, 3), MISSING, dtype=np.uint8)
     data[1, 1] = FOREGROUND
     
     # In normalized mode, NoData edges aren't counted. Denom becomes 0.
-    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=4)
     
     assert result[1, 1] == 102 # OUT_MISSING
 
 @pytest.mark.parametrize("val,expected", [(3, 105), (4, 106)])
 def test_fac_special_bg_coverage(val, expected):
-    data = np.full((3, 3), val, dtype=np.int16)
+    data = np.full((3, 3), val, dtype=np.uint8)
     data[1, 1] = 2 # Add one foreground so the loop processes
-    res = engine.compute_FAC(data, 3, 1)
+    res = engine.compute_FAC(data, 3, 1, 4)
     # The foreground pixel is processed, but we check if 
     # the special background pixels around it return the right codes
     assert res[0, 0] == expected
@@ -195,9 +195,9 @@ def test_fac_special_bg_coverage(val, expected):
 def test_fac_zero_denom_coverage():
     # Center is foreground, but everything else is Missing (0)
     # In handle_missing=1, this might lead to a 0 denominator
-    data = np.zeros((3, 3), dtype=np.int16)
+    data = np.zeros((3, 3), dtype=np.uint8)
     data[1, 1] = 2 
-    res = engine.compute_FAC(data, 3, 1)
+    res = engine.compute_FAC(data, 3, 1, 4)
     assert res[1, 1] == 102
 
 
@@ -207,7 +207,7 @@ def test_fac_zero_denom_coverage():
 
 def test_compute_fac_8conn_perfect():
     """A solid block of foreground should yield 100% in 8-connected mode."""
-    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data = np.full((5, 5), FOREGROUND, dtype=np.uint8)
     result = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=8)
     assert result[2, 2] == 100
 
@@ -217,7 +217,7 @@ def test_compute_fac_8conn_diagonal_only():
     A checkerboard pattern: in 4-conn no FG-FG edges exist,
     but in 8-conn diagonal FG-FG pairs should be counted.
     """
-    data = np.full((5, 5), BACKGROUND, dtype=np.int16)
+    data = np.full((5, 5), BACKGROUND, dtype=np.uint8)
     # Place foreground in a diagonal pattern
     data[1, 1] = FOREGROUND
     data[2, 2] = FOREGROUND
@@ -235,7 +235,7 @@ def test_compute_fac_8conn_diagonal_only():
 def test_compute_fac_8conn_higher_than_4conn():
     """For a foreground block, 8-conn total_potential_edges is larger,
     so the percentage may differ from 4-conn."""
-    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data = np.full((5, 5), FOREGROUND, dtype=np.uint8)
     data[0, 0] = BACKGROUND
 
     res_4 = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=4)
@@ -252,7 +252,7 @@ def test_compute_fac_8conn_higher_than_4conn():
 
 def test_compute_fed_all_foreground():
     """All FG: every pair is FG-FG (score 1.0), should yield 100%."""
-    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data = np.full((5, 5), FOREGROUND, dtype=np.uint8)
     result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
     assert result[2, 2] == 100
 
@@ -262,7 +262,7 @@ def test_compute_fed_isolated_foreground():
     Single FG pixel surrounded by BG: all pairs involving the center
     are FG-BG (0.5 each). No FG-FG pairs exist.
     """
-    data = np.full((5, 5), BACKGROUND, dtype=np.int16)
+    data = np.full((5, 5), BACKGROUND, dtype=np.uint8)
     data[2, 2] = FOREGROUND
 
     result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
@@ -275,13 +275,13 @@ def test_compute_fed_all_background_around_fg():
     """
     3x3 window: center is FG, 8 neighbours are BG.
     4-connected: 12 total edges.
-    FG-BG edges: center shares 4 edges with BG neighbours → 4 × 0.5 = 2.0
-    BG-BG edges: remaining 8 edges → 0
-    weighted_num (integer): 4 × 1 = 4 (since weight 0.5 × 2 = 1 in integer math)
+    FG-BG edges: center shares 4 edges with BG neighbours â†’ 4 Ã— 0.5 = 2.0
+    BG-BG edges: remaining 8 edges â†’ 0
+    weighted_num (integer): 4 Ã— 1 = 4 (since weight 0.5 Ã— 2 = 1 in integer math)
     Plus BG-BG pairs that don't involve center also have BG-BG = 0
-    Result = 4 * 100 / (2 * 12) = 400 / 24 ≈ 16-17%
+    Result = 4 * 100 / (2 * 12) = 400 / 24 â‰ˆ 16-17%
     """
-    data = np.full((3, 3), BACKGROUND, dtype=np.int16)
+    data = np.full((3, 3), BACKGROUND, dtype=np.uint8)
     data[1, 1] = FOREGROUND
 
     result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
@@ -292,7 +292,7 @@ def test_compute_fed_all_background_around_fg():
 
 def test_compute_fed_background_preserved():
     """Background pixels should output 101."""
-    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data = np.full((5, 5), FOREGROUND, dtype=np.uint8)
     data[2, 2] = BACKGROUND
     result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
     assert result[2, 2] == 101
@@ -300,17 +300,17 @@ def test_compute_fed_background_preserved():
 
 def test_compute_fed_missing_preserved():
     """Missing pixels should output 102."""
-    data = np.full((3, 3), MISSING, dtype=np.int16)
+    data = np.full((3, 3), MISSING, dtype=np.uint8)
     data[1, 1] = FOREGROUND
     result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
-    # All pairs involve missing → total_edges=0 → OUT_MISSING
+    # All pairs involve missing â†’ total_edges=0 â†’ OUT_MISSING
     assert result[1, 1] == 102
 
 
 @pytest.mark.parametrize("val,expected", [(3, 105), (4, 106)])
 def test_fed_special_bg_coverage(val, expected):
     """Special background values should be preserved."""
-    data = np.full((3, 3), val, dtype=np.int16)
+    data = np.full((3, 3), val, dtype=np.uint8)
     data[1, 1] = FOREGROUND
     res = engine.compute_FED(data, 3, 1, connectivity=4)
     assert res[0, 0] == expected
@@ -321,7 +321,7 @@ def test_compute_fed_8conn_higher_than_4conn():
     8-connected considers more pairs (diagonals), so for the same
     data the result should generally differ from 4-connected.
     """
-    data = np.full((5, 5), FOREGROUND, dtype=np.int16)
+    data = np.full((5, 5), FOREGROUND, dtype=np.uint8)
     data[0, :] = BACKGROUND
     data[:, 0] = BACKGROUND
 
@@ -338,7 +338,7 @@ def test_compute_fed_vs_fac_relationship():
     FED should always be >= FAC for the same input, because FED gives
     partial credit (0.5) to FG-BG edges while FAC only counts FG-FG.
     """
-    data = np.full((7, 7), BACKGROUND, dtype=np.int16)
+    data = np.full((7, 7), BACKGROUND, dtype=np.uint8)
     data[2:5, 2:5] = FOREGROUND
 
     fac_result = engine.compute_FAC(data, window_size=5, handle_missing=1, connectivity=4)
@@ -356,7 +356,7 @@ def test_compute_lm_pure_forest():
     Verify LM classification for a pure forest window.
     The value 170 represents 'Interior' in the GTB palette.
     """
-    data = np.full((10, 10), 2, dtype=np.int16)
+    data = np.full((10, 10), 2, dtype=np.uint8)
     
     result = engine.compute_LM(data, window_size=3)
     
@@ -368,7 +368,7 @@ def test_compute_lm_mixed():
     Verify LM classification for a mixed window (Water/Edge/Patch).
     """
     # Create a mix: half background (1), half foreground (2)
-    data = np.ones((10, 10), dtype=np.int16)
+    data = np.ones((10, 10), dtype=np.uint8)
     data[:, 5:] = 2 
     
     result = engine.compute_LM(data, window_size=3)
@@ -381,17 +381,17 @@ def test_compute_lm_mixed():
 def test_compute_lm_poles():
     """Verify the three pure corners of the tri-polar model."""
     # Agriculture Corner (1) -> 180
-    data_agr = np.full((5, 5), 1, dtype=np.int16)
+    data_agr = np.full((5, 5), 1, dtype=np.uint8)
     res_agr = engine.compute_LM(data_agr, window_size=3)
     assert res_agr[2, 2] == 180
 
     # Forest Corner (2) -> 170
-    data_for = np.full((5, 5), 2, dtype=np.int16)
+    data_for = np.full((5, 5), 2, dtype=np.uint8)
     res_for = engine.compute_LM(data_for, window_size=3)
     assert res_for[2, 2] == 170
 
     # Developed Corner (3) -> 190
-    data_dev = np.full((5, 5), 3, dtype=np.int16)
+    data_dev = np.full((5, 5), 3, dtype=np.uint8)
     res_dev = engine.compute_LM(data_dev, window_size=3)
     assert res_dev[2, 2] == 190
 
@@ -404,7 +404,7 @@ def test_compute_lm_transitional():
     # a10 = 0, so a10 < v1.
     # d10 = 80, v8 = 72. d10 >= v8 is True. 
     # Code should be 61.
-    data = np.full((3, 3), 3, dtype=np.int16)
+    data = np.full((3, 3), 3, dtype=np.uint8)
     data[1, 1] = 2 
     
     result = engine.compute_LM(data, window_size=3)
@@ -412,7 +412,7 @@ def test_compute_lm_transitional():
 
 def test_compute_lm_missing_data_skip():
     """Ensure that if the center pixel is 0, the result remains 0 (skipped)."""
-    data = np.full((5, 5), 2, dtype=np.int16)
+    data = np.full((5, 5), 2, dtype=np.uint8)
     data[2, 2] = 0 # Missing data
     
     result = engine.compute_LM(data, window_size=3)
@@ -427,7 +427,7 @@ def test_lm_coverage_boost():
         [1, 1, 1],
         [3, 3, 3],
         [1, 3, 1]
-    ], dtype=np.int16)
+    ], dtype=np.uint8)
     # The center pixel must be non-zero to process
     res = engine.compute_LM(data, window_size=3)
     assert res[1, 1] > 0
@@ -487,7 +487,7 @@ def spa_test_grid():
     - [5:15, 5:15]: Main Foreground block (Core/Edge)
     - [10,10]: Background hole inside the main block
     """
-    grid = np.ones((20, 20), dtype=np.int16)  # Background (1)
+    grid = np.ones((20, 20), dtype=np.uint8)  # Background (1)
     
     # 1. Main Block
     grid[5:15, 5:15] = 2  # Foreground
@@ -602,33 +602,33 @@ class TestComputeFADGray:
 
     def test_uniform_100(self):
         """All pixels at 100 should give FAD=100 for internal pixels."""
-        data = np.full((5, 5), 100, dtype=np.int16)
+        data = np.full((5, 5), 100, dtype=np.uint8)
         result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
         assert result[2, 2] == 100
 
     def test_uniform_50(self):
         """All pixels at 50 should give FAD=50."""
-        data = np.full((5, 5), 50, dtype=np.int16)
+        data = np.full((5, 5), 50, dtype=np.uint8)
         result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
         assert result[2, 2] == 50
 
     def test_nodata_excluded(self):
         """NoData (>100) should be excluded from computation."""
-        data = np.full((3, 3), 100, dtype=np.int16)
+        data = np.full((3, 3), 100, dtype=np.uint8)
         data[0, :] = 200  # NoData
         result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
         assert result[1, 1] == 100
 
     def test_nodata_pixel_returns_102(self):
         """A pixel with value > 100 should output 102."""
-        data = np.full((5, 5), 80, dtype=np.int16)
+        data = np.full((5, 5), 80, dtype=np.uint8)
         data[2, 2] = 150
         result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
         assert result[2, 2] == 102
 
     def test_zero_pixel_returns_101(self):
         """A pixel with value 0 should output 101 (non-foreground)."""
-        data = np.full((5, 5), 80, dtype=np.int16)
+        data = np.full((5, 5), 80, dtype=np.uint8)
         data[2, 2] = 0
         result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=1)
         assert result[2, 2] == 101
@@ -636,15 +636,15 @@ class TestComputeFADGray:
     def test_threshold_applied(self):
         """With threshold=50, center pixel (80) is processed but all window
         values contribute as-is. 3x3 window: 8 pixels at 30 + 1 at 80 = 320.
-        FAD = 320 / (9*100) = 35.6% → rounds to 36."""
-        data = np.full((5, 5), 30, dtype=np.int16)
+        FAD = 320 / (9*100) = 35.6% â†’ rounds to 36."""
+        data = np.full((5, 5), 30, dtype=np.uint8)
         data[2, 2] = 80  # Only center is above threshold
         result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=50)
         assert result[2, 2] == 36
 
     def test_below_threshold_pixel_returns_101(self):
         """A pixel below for_threshold should output 101."""
-        data = np.full((5, 5), 80, dtype=np.int16)
+        data = np.full((5, 5), 80, dtype=np.uint8)
         data[2, 2] = 30  # Below threshold
         result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=50)
         assert result[2, 2] == 101
@@ -658,14 +658,14 @@ class TestComputeFACGray:
 
     def test_uniform_100(self):
         """All pixels at 100: all pairs are FG-FG with avg=100, should give 100%."""
-        data = np.full((5, 5), 100, dtype=np.int16)
+        data = np.full((5, 5), 100, dtype=np.uint8)
         result = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
                                          for_threshold=1, connectivity=4)
         assert result[2, 2] == 100
 
     def test_isolated_fg_returns_zero(self):
         """Single FG pixel surrounded by zeros: no FG-FG pairs, FAC=0."""
-        data = np.zeros((5, 5), dtype=np.int16)
+        data = np.zeros((5, 5), dtype=np.uint8)
         data[2, 2] = 80
         result = engine.compute_FAC_gray(data, window_size=3, handle_missing=1,
                                          for_threshold=1, connectivity=4)
@@ -673,7 +673,7 @@ class TestComputeFACGray:
 
     def test_8conn_higher_than_4conn(self):
         """Diagonal FG pairs should contribute in 8-conn but not 4-conn."""
-        data = np.zeros((5, 5), dtype=np.int16)
+        data = np.zeros((5, 5), dtype=np.uint8)
         data[1, 1] = 80
         data[2, 2] = 80
         data[3, 3] = 80
@@ -694,14 +694,14 @@ class TestComputeFEDGray:
 
     def test_uniform_100(self):
         """All FG at 100: every pair is FG-FG with max score, should give 100%."""
-        data = np.full((5, 5), 100, dtype=np.int16)
+        data = np.full((5, 5), 100, dtype=np.uint8)
         result = engine.compute_FED_gray(data, window_size=3, handle_missing=1,
                                          for_threshold=1, connectivity=4)
         assert result[2, 2] == 100
 
     def test_fed_greater_or_equal_fac(self):
         """FED should be >= FAC since FG-nonFG edges also contribute."""
-        data = np.zeros((7, 7), dtype=np.int16)
+        data = np.zeros((7, 7), dtype=np.uint8)
         data[2:5, 2:5] = 80
 
         fac = engine.compute_FAC_gray(data, window_size=5, handle_missing=1,
@@ -712,7 +712,7 @@ class TestComputeFEDGray:
 
     def test_mixed_values_partial_score(self):
         """FG-nonFG pairs should contribute partial score."""
-        data = np.zeros((5, 5), dtype=np.int16)
+        data = np.zeros((5, 5), dtype=np.uint8)
         data[2, 2] = 60  # Single FG pixel
 
         result = engine.compute_FED_gray(data, window_size=3, handle_missing=1,
@@ -728,7 +728,7 @@ def test_fad_sp4_excluded_from_window():
     """
     SP4 in the window should be excluded from denominator (like NoData).
     """
-    data = np.full((3, 3), 1, dtype=np.int16)  # Background
+    data = np.full((3, 3), 1, dtype=np.uint8)  # Background
     data[1, 1] = 2  # Center = Foreground
     data[0, 0] = 4  # SP4
     data[0, 1] = 4  # SP4
@@ -745,7 +745,7 @@ def test_fad_sp3_still_fragments():
     """
     SP3 in the window should still count in denominator (fragments foreground).
     """
-    data = np.full((3, 3), 1, dtype=np.int16)  # Background
+    data = np.full((3, 3), 1, dtype=np.uint8)  # Background
     data[1, 1] = 2  # Center = Foreground
     data[0, 0] = 3  # SP3
     data[0, 1] = 3  # SP3
@@ -761,11 +761,11 @@ def test_fac_sp4_pairs_excluded():
     """
     Pairs involving SP4 should be skipped in FAC computation.
     """
-    data = np.full((3, 3), 2, dtype=np.int16)  # All foreground
+    data = np.full((3, 3), 2, dtype=np.uint8)  # All foreground
     data[0, :] = 4  # Top row is SP4
 
-    result = engine.compute_FAC(data, window_size=3, handle_missing=1)
-    # All valid pairs (excluding SP4) are FG-FG → 100%
+    result = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=4)
+    # All valid pairs (excluding SP4) are FG-FG â†’ 100%
     assert result[1, 1] == 100
 
 
@@ -773,9 +773,9 @@ def test_fed_sp4_pairs_excluded():
     """
     Pairs involving SP4 should be skipped in FED computation.
     """
-    data = np.full((3, 3), 2, dtype=np.int16)  # All foreground
+    data = np.full((3, 3), 2, dtype=np.uint8)  # All foreground
     data[0, 0] = 4  # One SP4 pixel
 
     result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
-    # All valid pairs are FG-FG → 100%
+    # All valid pairs are FG-FG â†’ 100%
     assert result[1, 1] == 100

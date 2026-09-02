@@ -179,7 +179,7 @@ plt.show()
 ![Fragmentation Analysis Output](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/raw/main/assets/frag_example_output.png)
 
 
-Data and Jupyter notebooks with other examples are available on `/notebooks` directory of the [git repository](https://code.europa.eu/jrc-forest/guidos/pyguidos).
+Jupyter notebooks with other examples are available on `/notebooks` directory of the [git repository](https://code.europa.eu/jrc-forest/guidos/pyguidos).
 
 ---
 
@@ -190,8 +190,8 @@ pyGuidos loads each input raster fully into memory, so a tool's memory footprint
 
 | Function | Peak memory | Reason |
 |---|---|---|
-| `frag`, `frag_gray`, `landmos` | ~4 × *R* | Input up-cast to int16 plus an output buffer |
-| `acc`, `rss` | ~6 × *R* | Adds a mask and a connected-component label array |
+| `frag`, `frag_gray`, `landmos` | ~3 × *R* | Input up-cast to int16 plus an output buffer |
+| `acc`, `rss` | ~4-5 × *R* | Adds a mask and a connected-component label array |
 | `spa` | ~10–15 × *R* | Several morphological masks and distance transforms |
 | `frag_change` | ~2 × *R* | Processed block by block via windowed reading |
 

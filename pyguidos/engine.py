@@ -21,7 +21,7 @@ BACKGR_SP4 = 4
 # ---- SPATCON FUNCTIONS ----
 #############################
 
-@njit("uint8[:,:](int16[:,:], int32, int32)", parallel=True, cache=True, fastmath=True)
+@njit("uint8[:,:](uint8[:,:], int32, int32)", parallel=True, cache=True, fastmath=True)
 def compute_FAD(data, window_size, handle_missing):
     """
     Numba-optimized sliding window to calculate Foreground Area Density (FAD)
@@ -103,7 +103,7 @@ def compute_FAD(data, window_size, handle_missing):
 
 
 
-@njit(parallel=True, cache=True, fastmath=True)
+@njit("uint8[:,:](uint8[:,:], int32, int32, int32)", parallel=True, cache=True, fastmath=True)
 def compute_FAD_gray(data, window_size, handle_missing, for_threshold):
     """
     Numba-optimized sliding window to calculate Foreground Area Density (FAD)
@@ -112,7 +112,7 @@ def compute_FAD_gray(data, window_size, handle_missing, for_threshold):
 
     Variables:
     ----------
-    data           : 2D numpy array (int16)
+    data           : 2D numpy array (uint8)
                      The input raster pixels:
                      0 = Non-foreground
                      1-100 = Foreground intensity (percentage)
@@ -194,8 +194,8 @@ def compute_FAD_gray(data, window_size, handle_missing, for_threshold):
 
 
 
-@njit(parallel=True, cache=True, fastmath=True)
-def compute_FAC_gray(data, window_size, handle_missing, for_threshold, connectivity=4):
+@njit("uint8[:,:](uint8[:,:], int32, int32, int32, int32)", parallel=True, cache=True, fastmath=True)
+def compute_FAC_gray(data, window_size, handle_missing, for_threshold, connectivity):
     """
     Numba-optimized sliding window to calculate Foreground Area Clustering (FAC)
     on a grayscale input raster. Only pairs where both pixels are >= for_threshold
@@ -203,7 +203,7 @@ def compute_FAC_gray(data, window_size, handle_missing, for_threshold, connectiv
 
     Variables:
     ----------
-    data           : 2D numpy array (int16)
+    data           : 2D numpy array (uint8)
                      0 = Non-foreground, 1-100 = Foreground intensity, 255 = NoData.
     window_size    : int
                      Side length of the square window (must be odd, >= 3).
@@ -315,8 +315,8 @@ def compute_FAC_gray(data, window_size, handle_missing, for_threshold, connectiv
 
 
 
-@njit(parallel=True, cache=True, fastmath=True)
-def compute_FED_gray(data, window_size, handle_missing, for_threshold, connectivity=4):
+@njit("uint8[:,:](uint8[:,:], int32, int32, int32, int32)", parallel=True, cache=True, fastmath=True)
+def compute_FED_gray(data, window_size, handle_missing, for_threshold, connectivity):
     """
     Numba-optimized sliding window to calculate Foreground Edge Density (FED)
     on a grayscale input raster. The edge value is the average of the two
@@ -329,7 +329,7 @@ def compute_FED_gray(data, window_size, handle_missing, for_threshold, connectiv
 
     Variables:
     ----------
-    data           : 2D numpy array (int16)
+    data           : 2D numpy array (uint8)
                      0 = Non-foreground, 1-100 = Foreground intensity, 255 = NoData.
     window_size    : int
                      Side length of the square window (must be odd, >= 3).
@@ -438,8 +438,8 @@ def compute_FED_gray(data, window_size, handle_missing, for_threshold, connectiv
 
 
 
-@njit(parallel=True, cache=True, fastmath=True)
-def compute_FAC(data, window_size, handle_missing, connectivity=4):
+@njit("uint8[:,:](uint8[:,:], int32, int32, int32)", parallel=True, cache=True, fastmath=True)
+def compute_FAC(data, window_size, handle_missing, connectivity):
     """
     Numba-optimized sliding window to calculate Foreground Area Clustering (FAC)
     within a moving window for each pixel, replicating SPATCON mapping rule
@@ -576,8 +576,8 @@ def compute_FAC(data, window_size, handle_missing, connectivity=4):
     return result
 
 
-@njit(parallel=True, cache=True, fastmath=True)
-def compute_FED(data, window_size, handle_missing, connectivity=4):
+@njit("uint8[:,:](uint8[:,:], int32, int32, int32)", parallel=True, cache=True, fastmath=True)
+def compute_FED(data, window_size, handle_missing, connectivity):
     """
     Numba-optimized sliding window to calculate Foreground Edge Density (FED)
     within a moving window for each pixel.
@@ -591,7 +591,7 @@ def compute_FED(data, window_size, handle_missing, connectivity=4):
 
     Variables:
     ----------
-    data           : 2D numpy array (int16)
+    data           : 2D numpy array (uint8)
                      Input raster (0=Missing, 1=Background, 2=Foreground,
                      3=BackgrSP3, 4=BackgrSP4).
     window_size    : int
@@ -721,7 +721,7 @@ def compute_FED(data, window_size, handle_missing, connectivity=4):
     return result
 
 
-@njit("uint8[:,:](int16[:,:], int32)", parallel=True, cache=True, fastmath=True)
+@njit("uint8[:,:](uint8[:,:], int32)", parallel=True, cache=True, fastmath=True)
 def compute_LM(data, window_size):
     """
     Classify Landscape Mosaics (LM) using tri-polar composition.
@@ -732,7 +732,7 @@ def compute_LM(data, window_size):
     
     Parameters
     ----------
-    data : ndarray (int16)
+    data : ndarray (uint8)
         Input raster containing strictly three classes:
         1: Agriculture (AGR)
         2: Forest (FOR)

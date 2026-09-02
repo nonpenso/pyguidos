@@ -105,13 +105,17 @@ def frag_gray(
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
-        input_data = src.read(1).astype(np.int16)
+        input_data = src.read(1)
 
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
 
     # Validate input
     checks.validate_fmap_gray_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'])
+
+    # Downcast to uint8 after validation
+    if input_data.dtype != np.uint8:
+        input_data = input_data.astype(np.uint8)
 
     # Count input Foreground (1-100) and Background (0) before thresholding
     inFG = sum(count for val, count in input_pxl_freq.items() if 1 <= val <= 100)

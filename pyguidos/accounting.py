@@ -81,13 +81,17 @@ def acc(
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
-        input_data = src.read(1).astype(np.int16)
+        input_data = src.read(1)
 
     # Get the pixel counting
     input_pxl_freq = utils.get_pxl_freq(input_data)
 
     # Input Geotiff validations
     checks.validate_fmap_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'], allow_34=True)
+
+    # Downcast to uint8 after validation
+    if input_data.dtype != np.uint8:
+        input_data = input_data.astype(np.uint8)
 
     # Log
     utils.log_msg(verb, "[    OK     ]  Input raster verified.")
@@ -101,7 +105,9 @@ def acc(
 
         # Create a lookup array for high-speed mapping
         max_id = max(lab_pxl_freq.keys())
-        lookup = np.zeros(int(max_id) + 1, dtype=np.uint32)
+        # Class codes (ACC_VALUES) all fit in uint8, so build the lookup as
+        # uint8 directly to avoid an intermediate full-size uint32 array.
+        lookup = np.zeros(int(max_id) + 1, dtype=np.uint8)
 
         # Fill the lookup table
         for patch_id, pixel_count in lab_pxl_freq.items():
@@ -111,17 +117,18 @@ def acc(
                 continue
             lookup[patch_id] = get_class(pixel_count, thresholds)
 
-        # Reclassification
-        reclass_array = lookup[labeled_array.astype(np.int32)]
-        reclass_array = reclass_array.astype(np.uint8, casting='unsafe')
+        # Reclassification. labeled_array is already int32, so it can index
+        # the lookup directly; the result is uint8, so no further cast is needed.
+        reclass_array = lookup[labeled_array]
 
-        # Mapping logic (NoData, Special codes)
+        # Mapping logic (NoData, Special codes). np.select already returns uint8
+        # here since all inputs are uint8, so no trailing cast is required.
         choices = np.array([129, 105, 176], dtype=np.uint8)
         out_array = np.select(
             [input_data == 0, input_data == 3, input_data == 4],
             choices,
             default=reclass_array
-        ).astype(np.uint8, casting='unsafe')
+        )
 
         # Save Final Geotiff with Palette and Tags
         thresh_list = ",".join([str(x) for x in thresholds])
