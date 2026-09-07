@@ -223,14 +223,18 @@ def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
     # Read metadata
     lm_tiff = Path(lm_tiff)
     minfo = utils.get_raster_info(lm_tiff)
-    if minfo["tag"] is None:
-        sys.exit("ERROR: No valid GuidosToolbox metadata found in the input Geotiff")
 
-    # Check input tag with used tool and parametres
+    # Not a GuidosToolbox output: no tag, or a tag whose tool id is not GTB_*.
     tool_params = utils.get_tool_parameters(minfo["tag"])
-    if tool_params.get("tool_id") != "GTB_LM":
-        sys.exit(f"ERROR: Input Geotiff is labeled as '{tool_params.get('tool_id')}', "
-            "landmos_stats requires a 'GTB_LM' result file.")
+    if tool_params is None:
+        sys.exit("ERROR: The input Geotiff is not a GuidosToolbox output "
+                 "(no valid GTB metadata found).")
+
+    # A GTB output, but produced by a different tool.
+    tool_id = tool_params.get("tool_id")
+    if tool_id != "GTB_LM":
+        sys.exit(f"ERROR: The input Geotiff is a '{tool_id}' output, "
+                 "landmos_stats requires a 'GTB_LM' result file.")
     if tool_params.get("cmap") == "-":
         sys.exit("ERROR: Input Geotiff is 19-class Landscape Mosaic result file, "
             "landmos_stats requires 103-class result file.")

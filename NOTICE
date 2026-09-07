@@ -1,0 +1,50 @@
+pyGuidos - Python interface to main GuidosToolbox (GTB) modules
+Copyright (C) 2025-2026 European Union / Joint Research Centre
+
+Authors:
+  Giovanni Caudullo
+  Peter Vogt     (European Commission, Joint Research Centre)
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option)
+any later version. See the LICENSE file for the full license text, or
+<https://www.gnu.org/licenses/>.
+
+
+Licensing note (dual-licensing history)
+========================================
+pyGuidos was originally released under the European Union Public Licence
+(EUPL-1.2). Starting with version 2.6.0, which incorporates the
+GPLv3-licensed miallib MSPA engine, the project is formally distributed
+under the GNU General Public License v3 or later. The EUPL-1.2 is listed as
+compatible with the GPLv3, and the GPLv3 applies to the package as a whole.
+
+
+Third-party components and attribution
+=======================================
+
+Morphological Spatial Pattern Analysis (MSPA)
+---------------------------------------------
+The MSPA engine in `pyguidos/_mspa/miallib/` is a vendored subset of the
+`miallib` C library (Morphological Image Analysis library), Copyright (C)
+Pierre Soille and collaborators, distributed under the GNU General Public
+License v3 or later. The MSPA algorithm and its GuidosToolbox implementation
+are the work of Pierre Soille and Peter Vogt (European Commission, Joint
+Research Centre).
+
+Reference:
+  Soille P, Vogt P (2009). Morphological segmentation of binary patterns.
+  Pattern Recognition Letters 30(4):456-459.
+  DOI: 10.1016/j.patrec.2008.10.015
+
+Because pyGuidos incorporates and compiles these GPLv3 sources, the pyGuidos
+package as a whole is distributed under the GPLv3 (see LICENSE).
+
+The vendored miallib sources retain their original GPL headers and are kept
+as close to upstream as possible. The only substantive change is a
+portability fix for 64-bit Windows (LLP64): the FIFO4 queue element type was
+widened from `long int` to a pointer-sized integer (`intptr_t`) in
+`fifo.h`/`fifo.c`, with matching cast updates in `label.c` and `wshed.c`.
+This change is a no-op on LP64 platforms (Linux, macOS) and produces
+identical results. It has been reported to the upstream authors.

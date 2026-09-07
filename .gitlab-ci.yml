@@ -18,12 +18,14 @@ variables:
 # 1. Run Tests and calculate coverage
 run_tests:
   stage: test
+  image: python:3.12
   tags:
     - shared-docker
   variables:
     NUMBA_DISABLE_JIT: "1"
   script:
-    - apt-get update && apt-get install -y libexpat1 libgomp1
+    # gcc is required to compile the _mspa C extension from source.
+    - apt-get update && apt-get install -y build-essential libexpat1 libgomp1
     - pip install --upgrade pip
     - pip install pytest pytest-cov ".[test]"
     - python -m pytest --cov=pyguidos tests/ --cov-report term-missing --cov-report html
@@ -42,6 +44,7 @@ run_tests:
 # 2. Build and Deploy Documentation (GitLab Pages)
 pages:
   stage: deploy
+  image: python:3.12
   tags:
     - shared-docker
   needs:
@@ -49,7 +52,8 @@ pages:
       artifacts: true  # Explicitly tell GitLab to bring the htmlcov folder over
       optional: true
   script:
-    - apt-get update && apt-get install -y libexpat1
+    # build-essential is required to compile the _mspa C extension on install.
+    - apt-get update && apt-get install -y build-essential libexpat1
     - pip install --upgrade pip
     - pip install sphinx pydata-sphinx-theme ".[notebooks,test]" 
     - sphinx-build -b html docs public
@@ -70,20 +74,81 @@ pages:
     - if: $CI_COMMIT_BRANCH == "main"
       when: always
 
-# 3. Build and Publish Package to PyPI
-publish_pypi:
+# 3. Build Linux binary wheels with cibuildwheel (compiles the _mspa C
+#    extension once per CPython version inside the manylinux image) for both
+#    x86_64 and ARM64 (aarch64) Linux, plus the source distribution (sdist).
+#    The sdist ships the vendored miallib C sources, so Windows and macOS
+#    users can build the extension at `pip install` time even though this
+#    instance only has a Linux (shared-docker) runner.
+#
+#    To also publish prebuilt Windows (AMD64) and macOS (universal2: Intel +
+#    Apple Silicon) wheels, run cibuildwheel on native runners (e.g. a GitHub
+#    Actions matrix, or GitLab runners tagged for those OSes) using the same
+#    [tool.cibuildwheel] config in pyproject.toml, and add the resulting
+#    wheels to the wheelhouse before publishing.
+build_wheels_linux:
   stage: deploy
+  image: python:3.12
+  tags:
+    - shared-docker
+  services:
+    - docker:dind
+  needs:
+    - job: run_tests
+      artifacts: false
+  variables:
+    CIBW_BUILD_VERBOSITY: "1"
+    # Lab Linux machines are Intel/AMD (x86_64) and ARM64 (aarch64).
+    CIBW_ARCHS_LINUX: "x86_64 aarch64"
+  before_script:
+    # Register QEMU so the manylinux aarch64 (ARM64) images can run on this
+    # x86_64 runner. A native ARM64 runner would not need this step.
+    - docker run --rm --privileged tonistiigi/binfmt --install arm64
+  script:
+    - python -m pip install --upgrade pip cibuildwheel==2.21.*
+    - python -m cibuildwheel --output-dir wheelhouse
+  artifacts:
+    paths:
+      - wheelhouse/
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: always
+
+# 4. Build the source distribution (sdist).
+build_sdist:
+  stage: deploy
+  image: python:3.12
   tags:
     - shared-docker
   needs:
     - job: run_tests
-      artifacts: false 
+      artifacts: false
   script:
-    - apt-get update && apt-get install -y libexpat1
-    - pip install --upgrade pip
-    - pip install build twine
-    - python -m build
-    - TWINE_USERNAME=__token__ TWINE_PASSWORD=${PYPI_TOKEN} python3 -m twine upload dist/*
+    - python -m pip install --upgrade pip build
+    - python -m build --sdist --outdir wheelhouse
+  artifacts:
+    paths:
+      - wheelhouse/
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: always
+
+# 5. Publish the Linux wheels + sdist to PyPI.
+publish_pypi:
+  stage: deploy
+  image: python:3.12
+  tags:
+    - shared-docker
+  needs:
+    - job: build_wheels_linux
+      artifacts: true
+    - job: build_sdist
+      artifacts: true
+  script:
+    - pip install --upgrade pip twine
+    - TWINE_USERNAME=__token__ TWINE_PASSWORD=${PYPI_TOKEN} python -m twine upload wheelhouse/*
   rules:
     - if: $CI_COMMIT_TAG
       when: always

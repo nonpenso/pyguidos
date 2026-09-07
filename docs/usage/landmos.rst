@@ -6,17 +6,94 @@ proportional composition of three land cover classes within a moving
 window. The result describes the local landscape context of each pixel
 in terms of the dominant land cover mixture, producing up to 103
 compositional classes subsequently remapped to 19 aggregated classes.
-The methodology is described in detail in the `Landscape Mosaic sheet 
+The methodology is described in detail in the `Landscape Mosaic sheet
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Pattern-LM.pdf>`_.
 
 
-Landscape Mosaic Classes
-------------------------
+Parameters
+----------
+
+.. list-table::
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``in_tiff``
+     - str or Path
+     - --
+     - Path to input GeoTIFF
+   * - ``window_size``
+     - int
+     - --
+     - Moving window size in pixels, odd integer >= 3
+   * - ``outdir``
+     - str or Path
+     - None
+     - Output directory
+   * - ``statists``
+     - bool
+     - True
+     - Compute statistics
+   * - ``stat_files``
+     - bool
+     - True
+     - Write statistics to files
+   * - ``out_colors``
+     - str
+     - ``'bgr'``
+     - Color scheme for the 103-class output colormap
+   * - ``verb``
+     - bool
+     - False
+     - Print progress messages
+
+Example with all parameters:
+
+.. code-block:: python
+
+    import pyguidos as pg
+
+    result = pg.landmos(
+        in_tiff="my_landcover.tif",
+        window_size=31,
+        outdir="output/",
+        statists=True,
+        stat_files=True,
+        out_colors='bgr',
+        verb=False
+    )
+
+
+Output Files
+------------
+
+.. list-table::
+   :header-rows: 1
+
+   * - File
+     - Description
+   * - ``<name>_lm_<window_size>_103class.tif``
+     - 103-class landscape mosaic result GeoTIFF
+   * - ``<name>_lm_<window_size>.tif``
+     - 19-class remapped result GeoTIFF
+   * - ``<name>_lm_<window_size>.txt``
+     - Statistics report
+   * - ``<name>_lm_<window_size>.csv``
+     - Per-value pixel counts and frequencies
+   * - ``<name>_lm_<window_size>_heatmap.csv``
+     - Ternary diagram data table
+   * - ``<name>_lm_<window_size>_heatmap.png``
+     - Ternary diagram heatmap
+
+
+Output Classes
+--------------
 
 The 19-class aggregation is based on the proportion of the three input
 land cover classes within the moving window. By default, the three classes
 are interpreted as:
-
 
 .. list-table::
    :header-rows: 1
@@ -43,15 +120,13 @@ are interpreted as:
     this documentation for consistency with the GuidosToolbox convention,
     but the analysis is valid for any three-class input map.
 
-
 .. figure:: ../_image/LM_trinagle.png
     :width: 100%
     :align: center
     :alt: LM triangle
 
-    The Landscape Mosaic triangle with the 19 classes and their proportions 
+    The Landscape Mosaic triangle with the 19 classes and their proportions
     to the three land cover types Agriculture, Natural, and Developed.
-
 
 Each of the 19 aggregated classes is defined by the combination of
 proportions of the three input classes within the moving window:
@@ -181,90 +256,13 @@ proportions of the three input classes within the moving window:
      - [100]
 
 
-Usage
------
-
-.. code-block:: python
-
-    import pyguidos as pg
-
-    result = pg.landmos(
-        in_tiff="my_landcover.tif",
-        window_size=31,
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        out_colors='bgr',
-        verb=False
-    )
-
-
-Parameters
+Statistics
 ----------
 
-.. list-table::
-   :header-rows: 1
+Result Dictionary
+^^^^^^^^^^^^^^^^^^
 
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``in_tiff``
-     - str or Path
-     - --
-     - Path to input GeoTIFF
-   * - ``window_size``
-     - int
-     - --
-     - Moving window size in pixels, odd integer >= 3
-   * - ``outdir``
-     - str or Path
-     - None
-     - Output directory
-   * - ``statists``
-     - bool
-     - True
-     - Compute statistics
-   * - ``stat_files``
-     - bool
-     - True
-     - Write statistics to files
-   * - ``out_colors``
-     - str
-     - ``'bgr'``
-     - Color scheme for the 103-class output colormap
-   * - ``verb``
-     - bool
-     - False
-     - Print progress messages
-
-
-Output Files
-------------
-
-.. list-table::
-   :header-rows: 1
-
-   * - File
-     - Description
-   * - ``<name>_lm_<window_size>_103class.tif``
-     - 103-class landscape mosaic result GeoTIFF
-   * - ``<name>_lm_<window_size>.tif``
-     - 19-class remapped result GeoTIFF
-   * - ``<name>_lm_<window_size>.txt``
-     - Statistics report
-   * - ``<name>_lm_<window_size>.csv``
-     - Per-value pixel counts and frequencies
-   * - ``<name>_lm_<window_size>_heatmap.csv``
-     - Ternary diagram data table
-   * - ``<name>_lm_<window_size>_heatmap.png``
-     - Ternary diagram heatmap
-
-
-Results
--------
-
-The :func:`lm` function returns a :class:`dict`. The structure is nested as follows:
+The ``landmos()`` function returns a :class:`dict` with three sections:
 
 * **output paths** (:class:`dict` or :obj:`None`)
     * **path tif 103cl** (:class:`str`): Absolute path to the 103-class Land Mosaic GeoTIFF.
@@ -286,6 +284,8 @@ The :func:`lm` function returns a :class:`dict`. The structure is nested as foll
     * **pxl numb 103cl** (:class:`dict`): Pixel counts for the detailed 103-class Land Mosaic classification.
     * **pxl numb 19cl** (:class:`dict`): Pixel counts for the simplified 19-class Land Mosaic classification.
 
+Accessing the result:
+
 .. code-block:: python
 
     result = pg.landmos("my_landcover.tif", window_size=33)
@@ -305,7 +305,8 @@ The :func:`lm` function returns a :class:`dict`. The structure is nested as foll
 
     # Output file paths
     print(result["output paths"])
-    # {'path tif': 'output/my_landcover_lm_33_103class.tif',
+    # {'path tif 103cl': 'output/my_landcover_lm_33_103class.tif',
+    #  'path tif 19cl': 'output/my_landcover_lm_33.tif',
     #  'path txt': 'output/my_landcover_lm_33.txt',
     #  'path csv': 'output/my_landcover_lm_33.csv',
     #  'path csv hm': 'output/my_landcover_lm_33_heatmap.csv',
@@ -313,7 +314,7 @@ The :func:`lm` function returns a :class:`dict`. The structure is nested as foll
 
 
 Computing Statistics Separately
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you already have a Landscape Mosaic output GeoTIFF, you can compute
 statistics without rerunning the analysis:
@@ -328,19 +329,18 @@ statistics without rerunning the analysis:
     )
 
 .. note::
-    :func:`landmos_stats` requires the input GeoTIFF to be an pyGuidos 
-    (or GTB) output raster file. . See :doc:`input_format` for details.
-
+    ``landmos_stats()`` requires the input GeoTIFF to be a pyGuidos (or GTB)
+    Landscape Mosaic output (``GTB_LM`` tag). See :doc:`input_format` for details.
 
 
 References
 ----------
 
-- Riitters K H, Wickham J D, Wade T G, 2009. An indicator of forest dynamics 
-  using a shifting landscape mosaic. Ecological Indicators 9: 107-117. 
-  DOI: `10.1016/j.ecolind.2008.02.003 
+- Riitters K H, Wickham J D, Wade T G, 2009. An indicator of forest dynamics
+  using a shifting landscape mosaic. Ecological Indicators 9: 107-117.
+  DOI: `10.1016/j.ecolind.2008.02.003
   <https://dx.doi.org/10.1016/j.ecolind.2008.02.003>`_.
 
-- Vogt P, Wickham J, Barredo J I, Riitters K, 2024. Revisiting the Landscape 
-  Mosaic model. PLoS ONE 19(5): e0304215. DOI: `10.1371/journal.pone.0304215 
+- Vogt P, Wickham J, Barredo J I, Riitters K, 2024. Revisiting the Landscape
+  Mosaic model. PLoS ONE 19(5): e0304215. DOI: `10.1371/journal.pone.0304215
   <https://doi.org/10.1371/journal.pone.0304215>`_.

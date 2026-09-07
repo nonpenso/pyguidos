@@ -1,33 +1,19 @@
 Extract by Polygon
 ==================
 
-The :func:`extract_by_polygon` function extracts and saves a separate
-GeoTIFF for each polygon feature in a shapefile, clipping and masking
+The ``extract_by_polygon()`` function extracts and saves a separate
+GeoTIFF for each polygon feature in a vector file, clipping and masking
 the input raster to each polygon's extent and shape. It is particularly
-useful for batch processing a pyGuidos (or GTB) output map over multiple 
+useful for batch processing a pyGuidos (or GTB) output map over multiple
 study areas such as countries, administrative regions or protected areas.
 
-The function preserves the original colour palette and metadata from the 
-input GeoTIFF, so all downstream pyGuidos tools can be applied directly 
+The function preserves the original colour palette and metadata from the
+input GeoTIFF, so all downstream pyGuidos tools can be applied directly
 to the extracted outputs.
 
-
-Usage
------
-
-.. code-block:: python
-
-    import pyguidos as pg
-
-    pg.extract_by_polygon(
-        vector_path="regions.gpkg",
-        geotiff_path="my_map.tif",
-        output_dir="output/",
-        id_field="NAME",
-        name_prefix="region_",
-        nodata_value=None,
-        layer=None
-    )
+.. note::
+    ``extract_by_polygon()`` is a utility that writes clipped rasters to
+    disk; it does not return a statistics dictionary.
 
 
 Parameters
@@ -70,6 +56,42 @@ Parameters
      - Layer name for multi-layer vector files (e.g., GeoPackage, FileGDB).
        If None, reads the first layer. Exits with an error if multiple
        layers are detected and this parameter is not specified.
+
+Example with all parameters:
+
+.. code-block:: python
+
+    import pyguidos as pg
+
+    pg.extract_by_polygon(
+        vector_path="regions.gpkg",
+        geotiff_path="my_map.tif",
+        output_dir="output/",
+        id_field="NAME",
+        name_prefix="region_",
+        nodata_value=None,
+        layer=None
+    )
+
+Example using a name prefix:
+
+.. code-block:: python
+
+    # Extract MSPA results for each country
+    # Output files: country_France.tif, country_Germany.tif, ...
+    pg.extract_by_polygon(
+        vector_path="countries.shp",
+        geotiff_path="europe_mspa.tif",
+        output_dir="output/countries/",
+        id_field="NAME",
+        name_prefix="country_"
+    )
+
+.. tip::
+    The ``id_field`` value is used as the output filename. Spaces are
+    replaced with underscores and forward slashes with hyphens. If the
+    field is not found in a feature, the filename falls back to
+    ``feature_<index>``.
 
 
 Output Files
@@ -122,25 +144,3 @@ The function automatically handles several geometry issues:
     The vector file and the raster file must share the same coordinate
     reference system. If they do not overlap spatially, the function
     will exit with an error asking you to verify both CRS.
-
-.. tip::
-    The ``id_field`` value is used as the output filename. Spaces are
-    replaced with underscores and forward slashes with hyphens. If the
-    field is not found in a feature, the filename falls back to
-    ``feature_<index>``.
-
-
-Example with prefix
--------------------
-
-.. code-block:: python
-
-    # Extract MSPA results for each country
-    # Output files: country_France.tif, country_Germany.tif, ...
-    pg.extract_by_polygon(
-        vector_path="countries.shp",
-        geotiff_path="europe_mspa.tif",
-        output_dir="output/countries/",
-        id_field="NAME",
-        name_prefix="country_"
-    )

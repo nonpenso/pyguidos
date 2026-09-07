@@ -9,6 +9,32 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
+2.6.0 - 2026-09-07
+------------------
+
+**Overview**
+
+Version 2.6.0 reintroduces full Morphological Spatial Pattern Analysis (MSPA) via ``pg.mspa()``. MSPA is now provided as an internal compiled Python extension built from the original ``miallib`` C sources of Soille and Vogt, vendored inside the package. The output is bit-identical to the GuidosToolbox (GTB) MSPA result for the same parameters, and the extension is built cross-platform via ``cibuildwheel`` so installation stays a plain ``pip install pyguidos``.
+
+**Added**
+
+- New ``mspa()`` function: full MSPA segmentation into the mutually exclusive morphological classes (core, islet, edge, perforation, bridge, loop, branch and their internal/external variants). Parameters: ``connectivity`` (4/8), ``edge_width``, ``transition``, ``intext``. Writes a palette GeoTIFF and a ``.txt`` statistics report matching the GTB layout.
+- New ``mspa_stats()`` function: standalone statistics from an existing MSPA output GeoTIFF carrying the ``GTB_MSPA`` metadata tag.
+- Vendored MSPA engine: the required subset of the ``miallib`` C library (20 sources + headers) bundled under ``pyguidos/_mspa/miallib/`` with a thin ``bridge.c`` shim exposing ``segmentBinaryPatterns`` via the NumPy C-API, gated by the ``-DMSPA`` build macro (no GDAL/PROJ/FFTW/GSL/TIFF dependencies).
+- Transition-dependent MSPA palettes ``templates/mspa_colormap_trans1.txt`` and ``templates/mspa_colormap_trans0.txt``, selected automatically from the ``transition`` flag, reproducing the GTB colors for Loop/Bridge pixels crossing an Edge or Perforation.
+- Binary wheel builds via ``cibuildwheel`` in CI for Linux, macOS and Windows (CPython 3.10-3.14) plus an sdist.
+- New ``test_mspa.py`` covering the wrapper, colormap, ``.txt`` report, standalone stats, and a bit-identical regression test against the GTB reference outputs.
+
+**Changed**
+
+- License changed to GPLv3: because the vendored ``miallib`` MSPA sources are GPLv3, the distributed pyGuidos package is now provided under the GNU General Public License v3. The original pyGuidos code remains available under the EUPL-1.2. Original authorship (Soille and Vogt) and the ``miallib`` provenance are credited in the ``NOTICE`` file.
+- Consistent ``*_stats()`` input validation: ``spa_stats``, ``frag_stats``, ``frag_gray_stats``, ``landmos_stats``, ``acc_stats`` and ``mspa_stats`` now report two distinct errors (not a GTB output vs. a GTB output from a different tool) instead of conflating them.
+- Documentation: added a dedicated MSPA usage page and linked it from the user-guide index; added ``mspa()`` to the README module list and to the memory-usage tables; reordered the function lists to lead with morphology (MSPA, SPA); and restructured all tool usage pages to a consistent section order (Parameters with an inline example, Output Files, Output Classes, then a Statistics section split into "Result Dictionary" and "Computing Statistics Separately").
+
+
+----
+
+
 2.5.2 - 2026-09-02
 ------------------
 

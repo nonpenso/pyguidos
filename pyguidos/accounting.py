@@ -217,15 +217,18 @@ def acc_stats(acc_tiff, stat_files=True, outdir=None, source_tiff=None):
     # Read metadata
     acc_tiff = Path(acc_tiff)
     minfo = utils.get_raster_info(acc_tiff)
-    if minfo["tag"] is None:
-        sys.exit("ERROR: No valid GuidosToolbox metadata found in the input Geotiff")
 
-    # Check input tag with used tool and parametres
+    # Not a GuidosToolbox output: no tag, or a tag whose tool id is not GTB_*.
     tool_params = utils.get_tool_parameters(minfo["tag"])
-    if tool_params.get("tool_id") != "GTB_ACC":
-        sys.exit(f"ERROR: Input Geotiff is labeled as '{tool_params.get('tool_id')}', "
-                 "acc_stats requires a 'GTB_ACC' result file."
-        )
+    if tool_params is None:
+        sys.exit("ERROR: The input Geotiff is not a GuidosToolbox output "
+                 "(no valid GTB metadata found).")
+
+    # A GTB output, but produced by a different tool.
+    tool_id = tool_params.get("tool_id")
+    if tool_id != "GTB_ACC":
+        sys.exit(f"ERROR: The input Geotiff is a '{tool_id}' output, "
+                 "acc_stats requires a 'GTB_ACC' result file.")
 
     # Define input and output file names
     out_name = Path(acc_tiff).stem

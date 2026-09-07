@@ -10,8 +10,100 @@ Further details about Accounting analysis are available in the
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Objects-Accounting.pdf>`_.
 
 
-Accounting Classes
-------------------
+Parameters
+----------
+
+.. list-table::
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``in_tiff``
+     - str or Path
+     - --
+     - Path to input GeoTIFF
+   * - ``thresholds``
+     - list, tuple or array
+     - --
+     - 1 to 5 unique positive integers defining size class boundaries
+   * - ``outdir``
+     - str or Path
+     - None
+     - Output directory
+   * - ``statists``
+     - bool
+     - True
+     - Compute statistics
+   * - ``stat_files``
+     - bool
+     - True
+     - Write statistics to files
+   * - ``verb``
+     - bool
+     - False
+     - Print progress messages
+
+Example with all parameters:
+
+.. code-block:: python
+
+    import pyguidos as pg
+
+    result = pg.acc(
+        in_tiff="my_map.tif",
+        thresholds=[10, 100, 1000, 10000],
+        outdir="output/",
+        statists=True,
+        stat_files=True,
+        verb=False
+    )
+
+The ``thresholds`` parameter defines the patch size class boundaries
+in pixels. For example, ``thresholds=[10, 100, 1000, 10000]`` creates 5 size
+classes:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Class
+     - Size range
+   * - 1
+     - 1 -- 10 pixels
+   * - 2
+     - 11 -- 100 pixels
+   * - 3
+     - 101 -- 1000 pixels
+   * - 4
+     - 1001 -- 10000 pixels
+   * - 5
+     - > 10000 pixels
+
+.. note::
+    A minimum of 1 and a maximum of 5 thresholds are allowed.
+    Duplicate values are automatically removed and the list is
+    sorted before processing. Thresholds are expressed in pixels: to convert
+    to area units, multiply by the pixel area (e.g. at 25 m resolution,
+    1 pixel = 0.0625 ha, so a threshold of 200 pixels = 12.5 hectares).
+
+
+Output Files
+------------
+
+.. list-table::
+   :header-rows: 1
+
+   * - File
+     - Description
+   * - ``<name>_acc.tif``
+     - Accounting result GeoTIFF with colour palette
+   * - ``<name>_acc.txt``
+     - Statistics report
+
+
+Output Classes
+--------------
 
 Foreground patches are labelled and classified into up to 6 size classes
 based on user-defined area thresholds. Each class groups patches whose
@@ -68,7 +160,7 @@ and special pixel values:
      - Meaning
    * - 0
      - Grey
-     - Background (value 1 in input)     
+     - Background (value 1 in input)
    * - 129
      - White
      - NoData (value 0 in input)
@@ -80,118 +172,13 @@ and special pixel values:
      - Special background (value 4 in input)
 
 
-.. note::
-    Thresholds are expressed in pixels. To convert to area units, multiply
-    by the pixel area (e.g. for a 25 m resolution raster, 1 pixel = 0.0625 ha).
-    For example, a threshold of 200 pixels at 25 m resolution corresponds
-    to 12.5 hectares.
-
-
-Usage
------
-
-.. code-block:: python
-
-    import pyguidos as pg
-
-    result = pg.acc(
-        in_tiff="my_map.tif",
-        thresholds=[10, 100, 1000, 10000],
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        verb=False
-    )
-
-
-Parameters
+Statistics
 ----------
 
-.. list-table::
-   :header-rows: 1
+Result Dictionary
+^^^^^^^^^^^^^^^^^^
 
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``in_tiff``
-     - str or Path
-     - --
-     - Path to input GeoTIFF
-   * - ``thresholds``
-     - list, tuple or array
-     - --
-     - 1 to 5 unique positive integers defining size class boundaries
-   * - ``outdir``
-     - str or Path
-     - None
-     - Output directory
-   * - ``statists``
-     - bool
-     - True
-     - Compute statistics
-   * - ``stat_files``
-     - bool
-     - True
-     - Write statistics to files
-   * - ``verb``
-     - bool
-     - False
-     - Print progress messages
-
-
-Thresholds
-----------
-
-The ``thresholds`` parameter defines the patch size class boundaries
-in pixels. For example:
-
-.. code-block:: python
-
-    thresholds = [10, 100, 1000, 10000]
-
-This creates 5 size classes:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Class
-     - Size range
-   * - 1
-     - 1 -- 10 pixels
-   * - 2
-     - 11 -- 100 pixels
-   * - 3
-     - 101 -- 1000 pixels
-   * - 4
-     - 1001 -- 10000 pixels
-   * - 5
-     - > 10000 pixels
-
-.. note::
-    A minimum of 1 and a maximum of 5 thresholds are allowed.
-    Duplicate values are automatically removed and the list is
-    sorted before processing.
-
-
-Output Files
-------------
-
-.. list-table::
-   :header-rows: 1
-
-   * - File
-     - Description
-   * - ``<name>_acc.tif``
-     - Accounting result GeoTIFF with colour palette
-   * - ``<name>_acc.txt``
-     - Statistics report
-
-
-Results
--------
-
-The :func:`acc` function returns a :class:`dict`. The structure is nested as follows:
+The ``acc()`` function returns a :class:`dict` with three sections:
 
 * **output paths** (:class:`dict` or :obj:`None`)
     * **path tif** (:class:`str`): Absolute path to the resulting Accounting GeoTIFF.
@@ -208,6 +195,8 @@ The :func:`acc` function returns a :class:`dict`. The structure is nested as fol
 * **output stats** (:class:`dict`)
     * **pxl numb** (:class:`dict`): A dictionary where keys are class IDs and values are the total number of pixels belonging to that accounting class.
     * **patch numb** (:class:`dict`): A dictionary where keys are class IDs and values represent the total number of discrete patches identified for that accounting class.
+
+Accessing the result:
 
 .. code-block:: python
 
@@ -231,13 +220,9 @@ The :func:`acc` function returns a :class:`dict`. The structure is nested as fol
     # {'path tif': 'output/my_map_acc.tif',
     #  'path txt': 'output/my_map_acc.txt'}
 
-.. note::
-    ``result["output paths"]`` is ``None`` when ``stat_files=False``.
-    All other keys are always populated regardless of ``stat_files``.
-
 
 Computing Statistics Separately
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you already have an accounting output GeoTIFF, you can compute
 statistics without rerunning the analysis:
@@ -252,6 +237,5 @@ statistics without rerunning the analysis:
     )
 
 .. note::
-    :func:`acc_stats` requires the input GeoTIFF to be an pyGuidos (or
-    GTB) output raster file. See :doc:`input_format` for details.
-
+    ``acc_stats()`` requires the input GeoTIFF to be a pyGuidos (or GTB)
+    Accounting output (``GTB_ACC`` tag). See :doc:`input_format` for details.

@@ -7,6 +7,29 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.6.0] - 2026-09-07
+
+### Overview
+Version 2.6.0 reintroduces full **Morphological Spatial Pattern Analysis (MSPA)** via `pg.mspa()`. Unlike the previous binary-wrapper approach, MSPA is now provided as an internal compiled Python extension built from the original `miallib` C sources of Soille and Vogt, vendored inside the package. The output is **bit-identical** to the GuidosToolbox (GTB) MSPA result for the same parameters, and the extension is built cross-platform via `cibuildwheel` so installation stays a plain `pip install pyguidos`.
+
+### Added
+- **`mspa()` function**: Full MSPA segmentation of a binary pattern into the mutually exclusive morphological classes (core, islet, edge, perforation, bridge, loop, branch and their internal/external variants). Parameters: `connectivity` (4/8), `edge_width`, `transition`, `intext`. Writes a palette GeoTIFF and a `.txt` statistics report matching the GTB layout.
+- **`mspa_stats()` function**: Standalone statistics computation from an existing MSPA output GeoTIFF carrying the `GTB_MSPA` metadata tag, mirroring the other `*_stats()` functions.
+- **Vendored MSPA engine**: The required subset of the `miallib` C library (20 source files + headers) is bundled under `pyguidos/_mspa/miallib/`, together with a thin `bridge.c` shim exposing `segmentBinaryPatterns` to Python via the NumPy C-API. Gated by the `-DMSPA` build macro so no GDAL/PROJ/FFTW/GSL/TIFF dependencies are pulled in.
+- **Transition-dependent MSPA palettes**: Two colormaps, `templates/mspa_colormap_trans1.txt` and `templates/mspa_colormap_trans0.txt`, are shipped and selected automatically from the `transition` flag. They reproduce the GTB behaviour whereby Loop/Bridge pixels crossing an Edge or Perforation are shown in their own color (`transition=True`) or in the underlying Edge/Perforation color (`transition=False`).
+- **Wheel builds via cibuildwheel**: `.gitlab-ci.yml` now builds binary wheels for Linux, macOS and Windows (CPython 3.10–3.14) plus an sdist, so the C extension is compiled once per platform and shipped as wheels.
+- **`test_mspa.py`**: New test module covering the wrapper, colormap, `.txt` report rendering, standalone stats, and a bit-identical regression test against the GTB reference outputs (skipped automatically when the reference data is absent).
+
+### Changed
+- **License changed to GPLv3**: Because the vendored `miallib` MSPA sources are GPLv3, the distributed pyGuidos package as a whole is now provided under the GNU General Public License v3. The original pyGuidos code (everything except the vendored `miallib` sources) remains available under the EUPL-1.2. Original authorship (Soille and Vogt) and the `miallib` provenance are credited in the `NOTICE` file.
+- **Consistent `*_stats()` input validation**: `spa_stats`, `frag_stats`, `frag_gray_stats`, `landmos_stats`, `acc_stats` and `mspa_stats` now report two distinct errors: one when the input is not a GuidosToolbox output at all, and one when it is a GTB output produced by a *different* tool (naming the tool found). Previously these cases were conflated and could raise an `AttributeError` on non-GTB inputs.
+- **Documentation**: Added a dedicated MSPA usage page (`docs/usage/morph_mspa.rst`) and linked it from the user-guide index; the SPA page (`docs/usage/morph_spa.rst`) continues to describe the Simplified Pattern Analysis subset. `mspa()` was added to the `README.md` module list and to the memory-usage tables in `README.md` and `docs/index.rst`. The function lists were reordered to lead with morphology (MSPA, SPA). All tool usage pages were restructured to a consistent section order (Parameters with an inline example, Output Files, Output Classes, then a Statistics section split into "Result Dictionary" and "Computing Statistics Separately").
+
+### Notes for the miallib authors
+- **LLP64 pointer-truncation fix (Windows)**: The `FIFO4` queue stored pointer values as `long int`, which is 32-bit on Windows (LLP64) and truncates 64-bit pointers, causing an access violation in `label.c` and `wshed.c`. Widened the FIFO element type to a pointer-sized integer (`intptr_t`) and updated the pointer casts. No-op on Linux/macOS (LP64) where results are unchanged. Reported upstream.
+
+---
+
 ## [2.5.2] - 2026-09-02
 
 ### Overview
@@ -346,5 +369,6 @@ installation and system-level GDAL on Linux.
 ---
 
 [Unreleased]: 
+[2.6.0]: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/releases/v2.6.0
 [2.0.0]: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/releases/v2.0.0
 [1.0.0]: https://code.europa.eu/jrc-forest/guidos/pyguidos/-/releases/v1.0.0

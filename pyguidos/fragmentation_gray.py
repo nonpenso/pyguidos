@@ -228,13 +228,17 @@ def frag_gray_stats(frag_tiff, stat_files=True, outdir=None, source_tiff=None):
     # Read metadata
     frag_tiff = Path(frag_tiff)
     minfo = utils.get_raster_info(frag_tiff)
-    if minfo["tag"] is None:
-        sys.exit("ERROR: No valid GuidosToolbox metadata found in the input Geotiff")
 
-    # Check input tag with used tool and parameters
+    # Not a GuidosToolbox output: no tag, or a tag whose tool id is not GTB_*.
     tool_params = utils.get_tool_parameters(minfo["tag"])
-    if tool_params.get("tool_id") != "GTB_FOS":
-        sys.exit(f"ERROR: Input Geotiff is labeled as '{tool_params.get('tool_id')}', "
+    if tool_params is None:
+        sys.exit("ERROR: The input Geotiff is not a GuidosToolbox output "
+                 "(no valid GTB metadata found).")
+
+    # A GTB output, but produced by a different tool.
+    tool_id = tool_params.get("tool_id")
+    if tool_id != "GTB_FOS":
+        sys.exit(f"ERROR: The input Geotiff is a '{tool_id}' output, "
                  "frag_gray_stats requires a 'GTB_FOS' result file.")
     if tool_params.get("tiftype") != "Gray":
         sys.exit(f"ERROR: Input Geotiff is a binary fragmentation result (tiftype='{tool_params.get('tiftype')}'). "

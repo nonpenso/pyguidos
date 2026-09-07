@@ -1,77 +1,17 @@
 Fragmentation Change
 ====================
 
-Fragmentation Change analysis evaluates landscape structural transitions over time 
-by performing a comparative pixel-by-pixel cross-tabulation matrix overlay using two 
+Fragmentation Change analysis evaluates landscape structural transitions over time
+by performing a comparative pixel-by-pixel cross-tabulation matrix overlay using two
 FOS Fragmentation maps (Time A/T1 and Time B/T2).
 
-The analysis tracks localized connectivity variations, groups them into 7 
-categorical transition tiers (ranging from high decrease to high increase), and 
+The analysis tracks localized connectivity variations, groups them into 7
+categorical transition tiers (ranging from high decrease to high increase), and
 compiles detailed transition matrices tracking spatial land-cover and class variations.
 
 Further details about structural dynamics and change metrics are available in the
 `Fragmentation Change product sheet
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf>`_.
-
-
-Fragmentation Change Classes
-----------------------------
-
-The resulting map evaluates transitions and maps them into 7 distinct 
-categorical change classes based on the variation of Fragmentation/Connectivity:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Fragmentation
-     - Connectivity
-     - Pixel value
-     - Delta FOS
-   * - High decrease
-     - High increase
-     - [0, 79]
-     - [+21, +100]
-   * - Medium decrease
-     - Medium increase
-     - [80, 89]
-     - [+11, +20]
-   * - Low decrease
-     - Low increase
-     - [90, 98]
-     - [+2, +10]    
-   * - Insign/no change
-     - Insign/no change
-     - [99, 101]
-     - [-1, +1]
-   * - Low increase
-     - Low decrease
-     - [102, 110]
-     - [-10, -2]
-   * - Medium increase
-     - Medium decrease
-     - [111, 120]
-     - [-20, -11]
-   * - High increase
-     - High decrease
-     - [121, 200]
-     - [-100, -21]
-
-
-Usage
------
-
-.. code-block:: python
-
-    from pyguidos.fragmentation_change import frag_change
-
-    result = frag_change(
-        in_tiff_t1="forest_map_2015_frag_fad_27.tif",
-        in_tiff_t2="forest_map_2020_frag_fad_27.tif",
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        verb=False
-    )
 
 
 Parameters
@@ -109,6 +49,27 @@ Parameters
      - False
      - Print execution pipeline progress log messages
 
+Example with all parameters:
+
+.. code-block:: python
+
+    import pyguidos as pg
+
+    result = pg.frag_change(
+        in_tiff_t1="forest_map_2015_frag_fad_27.tif",
+        in_tiff_t2="forest_map_2020_frag_fad_27.tif",
+        outdir="output/",
+        statists=True,
+        stat_files=True,
+        verb=False
+    )
+
+.. note::
+    Both inputs must have been processed using identical parameter configurations
+    (same window dimensions, same connectivity rules, and identical grid geometry
+    metrics). The system runs validation routines automatically and raises an
+    error if any structural parameter discrepancies are encountered.
+
 
 Output Files
 ------------
@@ -130,10 +91,56 @@ All generated files use the default standardized naming conventions inside the d
      - Connectivity change distribution bar chart image
 
 
-Results
--------
+Output Classes
+--------------
 
-The :func:`frag_change` function returns a nested :class:`dict` containing comprehensive information about the processing pipeline run:
+The resulting map evaluates transitions and maps them into 7 distinct
+categorical change classes based on the variation of Fragmentation/Connectivity:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fragmentation
+     - Connectivity
+     - Pixel value
+     - Delta FOS
+   * - High decrease
+     - High increase
+     - [0, 79]
+     - [+21, +100]
+   * - Medium decrease
+     - Medium increase
+     - [80, 89]
+     - [+11, +20]
+   * - Low decrease
+     - Low increase
+     - [90, 98]
+     - [+2, +10]
+   * - Insign/no change
+     - Insign/no change
+     - [99, 101]
+     - [-1, +1]
+   * - Low increase
+     - Low decrease
+     - [102, 110]
+     - [-10, -2]
+   * - Medium increase
+     - Medium decrease
+     - [111, 120]
+     - [-20, -11]
+   * - High increase
+     - High decrease
+     - [121, 200]
+     - [-100, -21]
+
+
+Statistics
+----------
+
+Result Dictionary
+^^^^^^^^^^^^^^^^^^
+
+The ``frag_change()`` function returns a nested :class:`dict` with three sections:
 
 * **output paths** (:class:`dict` or :obj:`None`)
     * **path tif** (:class:`str`): Absolute path to the categorical change output GeoTIFF.
@@ -166,25 +173,25 @@ The :func:`frag_change` function returns a nested :class:`dict` containing compr
     * **A fad_av** / **B fad_av** (:class:`float`): Average Forest Area Density for Time A and Time B.
     * **A avcon** / **B avcon** (:class:`float`): Average Connectivity index for Time A and Time B.
 
+Accessing the result:
+
 .. code-block:: python
 
-    from pyguidos.fragmentation_change import frag_change
-
-    result = frag_change("t1.tif", "t2.tif")
+    result = pg.frag_change("t1.tif", "t2.tif")
 
     # Access main tracking categories
     print(result.keys())
     # dict_keys(['output paths', 'input stats', 'output stats'])
 
     # Query transition distribution trends
-    print(result["output stats"]["Conn change freq"])
+    print(result["output stats"]["Frag change freq"])
     # {
-    #   '1 Frag High decrease': 450, 
-    #   '2 Frag Medium decrease': 1200, 
+    #   '1 Frag High decrease': 450,
+    #   '2 Frag Medium decrease': 1200,
     #   '3 Frag Low decrease': 3400,
-    #   '4 Frag Insign/no change': 45000, 
-    #   '5 Frag Low increase': 5600, 
-    #   '6 Frag Medium increase': 890, 
+    #   '4 Frag Insign/no change': 45000,
+    #   '5 Frag Low increase': 5600,
+    #   '6 Frag Medium increase': 890,
     #   '7 Frag High increase': 120
     # }
 
@@ -192,8 +199,6 @@ The :func:`frag_change` function returns a nested :class:`dict` containing compr
     print(result["output paths"]["path tif"])
     # "output/FOS_change.tif"
 
-
 .. note::
-    Both inputs must have been processed using identical parameter configurations 
-    (same window dimensions, same connectivity rules, and identical grid geometry metrics). 
-    The system runs validation routines automatically and throws an error if any structural parameter discrepancies are encountered.
+    ``frag_change()`` computes its statistics as part of the main run; there is
+    no separate standalone ``*_stats()`` function for this tool.

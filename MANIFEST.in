@@ -3,7 +3,14 @@
 # Include package metadata files
 include README.md
 include LICENSE
+include NOTICE
+include CHANGELOG.md
+include CITATION.cff
 include pyproject.toml
+include setup.py
+
+# Include the vendored MSPA C sources so the extension can be built from sdist
+recursive-include pyguidos/_mspa *.c *.h
 
 # Include template files
 recursive-include pyguidos/templates *

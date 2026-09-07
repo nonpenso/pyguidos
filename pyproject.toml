@@ -2,14 +2,14 @@
 
 [project]
 name = "pyguidos" 
-version = "2.5.2"
+version = "2.6.0"
 authors = [
   { name="Giovanni Caudullo", email="giovanni.caudullo@ext.ec.europa.eu" },
   { name="Peter Vogt", email="peter.vogt@ec.europa.eu" },
 ]
 description = "Python interface to main GuidosToolbox (GTB) modules for spatial pattern analysis"
 readme = "README.md" 
-license = {text = "EUPL-1.2"}
+license = {text = "GPL-3.0-or-later"}
 requires-python = ">=3.10"
 keywords = [
     "landscape analysis",
@@ -26,6 +26,7 @@ keywords = [
 classifiers = [
     "Development Status :: 3 - Alpha", 
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -74,9 +75,18 @@ pyguidos = [
     "templates/*",
     "data/*",
 ]
+# Vendored MSPA C sources/headers, shipped in the sdist so the extension can
+# be built from source on platforms without a prebuilt wheel.
+"pyguidos._mspa" = [
+    "bridge.c",
+    "miallib/*.c",
+    "miallib/*.h",
+]
 
 [build-system]
-requires = ["setuptools>=61.0"]  
+# numpy is required at build time to compile the _mspa C extension against
+# the NumPy C-API headers. It must satisfy the runtime numpy>=2.0 pin.
+requires = ["setuptools>=61.0", "wheel", "numpy>=2.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
@@ -85,3 +95,31 @@ testpaths = [
     "tests",
 ]
 python_files = "test_*.py"
+
+[tool.cibuildwheel]
+# Target the lab platforms: Windows x64, Linux x86_64 + ARM64, and
+# macOS Intel + Apple Silicon. Build CPython 3.10-3.14 only; skip 32-bit,
+# musllinux, exotic archs and PyPy (the C extension targets 64-bit CPython).
+build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
+skip = "*-win32 *-manylinux_i686 *_ppc64le *_s390x *-musllinux_* pp*"
+build-frontend = "build"
+# Smoke-test each built wheel by importing ONLY the compiled extension (its
+# sole dependency is numpy), so the test does not require the full pyGuidos
+# scientific stack to resolve on every target.
+test-requires = "numpy>=2.0"
+test-command = "python -c \"from pyguidos._mspa import _mspa; assert hasattr(_mspa, 'mspa')\""
+
+[tool.cibuildwheel.macos]
+# universal2 wheels run on both Intel and Apple Silicon Macs from one wheel.
+archs = ["universal2"]
+# universal2 wheels can't run their embedded arch on an x86 runner, so skip
+# the on-runner test for the cross-built slice (build validity is unaffected).
+test-skip = "*universal2:arm64"
+
+[tool.cibuildwheel.linux]
+# x86_64 builds natively; aarch64 (ARM64) is built via QEMU emulation, which
+# CI registers with `docker run --privileged tonistiigi/binfmt` before build.
+archs = ["x86_64", "aarch64"]
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]

@@ -400,14 +400,20 @@ def get_tool_parameters(tag_description):
     Returns
     -------
     dict or None
-        Dictionary with 'tool_id' and tool-specific parameter keys,
-        or None if the tag is empty or not in the expected format.
+        Dictionary with 'tool_id' and tool-specific parameter keys, or None
+        if the tag is empty or is not a GuidosToolbox tag (i.e. its tool id
+        does not start with 'GTB_'). A None result therefore reliably means
+        "not a GTB output".
     """
-    if not tag_description or "," not in tag_description:
+    if not tag_description:
         return None
 
-    # Extract tool_id
+    # Extract tool_id (first comma-separated field, or the whole tag)
     tool_id = tag_description.split(",")[0].strip()
+
+    # Only GuidosToolbox tags are valid; anything else is not a GTB output.
+    if not tool_id.startswith("GTB_"):
+        return None
 
     # Extract parameters
     params_match = re.search(r'<([^>]+)>', tag_description)

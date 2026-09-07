@@ -9,7 +9,7 @@
 [![docs status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/)
 [![PyPI version](https://img.shields.io/pypi/v/pyguidos.svg)](https://pypi.org/project/pyguidos/)
 [![Downloads](https://static.pepy.tech/badge/pyguidos)](https://pepy.tech/project/pyguidos)
-[![license](https://img.shields.io/badge/license-EUPL--1.2-orange.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
+[![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 **PyGuidos is a Python interface to the main GuidosToolbox (GTB) modules for spatial pattern analysis**
 
@@ -255,8 +255,18 @@ European Commission, Joint Research Centre (JRC)
 License
 =======
 
-This project is licensed under the
-[European Union Public Licence v1.2 (EUPL-1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12).
-See the [LICENSE](LICENSE) file for details.
+pyGuidos is distributed under the
+[GNU General Public License v3 (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.html).
+This is because the package bundles the GPLv3-licensed
+[`miallib`](https://github.com/ec-jrc/jeolib-miallib) MSPA engine of Soille and
+Vogt, which is compiled into pyGuidos.
+
+The original pyGuidos code (everything except the vendored `miallib` sources
+under `pyguidos/_mspa/miallib/`) remains available under the
+[European Union Public Licence v1.2 (EUPL-1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12),
+which is compatible with the GPLv3.
+
+See the [LICENSE](LICENSE) file for the full license text and the
+[NOTICE](NOTICE) file for attribution details.
 
 

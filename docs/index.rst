@@ -38,7 +38,7 @@ providing programmatic access to the main GTB analytical tools, enabling reprodu
 landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
 .. note::
-   This documentation describes **pyGuidos version 2.5.2**. For older versions, 
+   This documentation describes **pyGuidos version 2.6.0**. For older versions, 
    please refer to the legacy documentation branch.
 
 
@@ -242,15 +242,18 @@ multiple of the raw input size *R* (one byte per ``uint8`` pixel):
    * - Function
      - Peak memory
      - Reason
+   * - ``mspa``
+     - ~10–15 × *R*
+     - Multiple full-size morphological buffers in the C engine (core, opening, edges, connectors, holes) plus 32-bit label arrays
+   * - ``spa``
+     - ~10–15 × *R*
+     - Several morphological masks and distance transforms
    * - ``frag``, ``frag_gray``, ``landmos``
      - ~3 × *R*
      - Input up-cast to int16 plus an output buffer
    * - ``acc``, ``rss``
      - ~4-5 × *R*
      - Adds a mask and a connected-component label array
-   * - ``spa``
-     - ~10–15 × *R*
-     - Several morphological masks and distance transforms
    * - ``frag_change``
      - ~2 × *R*
      - Processed block by block via windowed reading

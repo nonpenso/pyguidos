@@ -15,7 +15,7 @@ DATA_DIR = MODULE_ROOT / "data"
 
 
 # Package metadata
-__version__ = "2.5.2"
+__version__ = "2.6.0"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
@@ -73,6 +73,7 @@ from .fragmentation_change import frag_change
 from .fragmentation_gray import frag_gray, frag_gray_stats
 from .land_mosaic import landmos, landmos_stats
 from .spa import spa, spa_stats
+from .mspa import mspa, mspa_stats
 from .accounting import acc, acc_stats
 from .rss import rss
 from .extract_by_polygon import extract_by_polygon
@@ -93,7 +94,14 @@ def info(tool: str = None):
             "title": "Simplified Pattern Analysis (SPA)",
             "desc": "Classifies binary maps into mutually exclusive morphological classes "
                     "(Core, Edge, Islet, Loop, Perforation, Linear).",
-            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/mspa.html",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/morph_spa.html",
+            "sheet": "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"
+        },
+        "mspa": {
+            "title": "Morphological Spatial Pattern Analysis (MSPA)",
+            "desc": "Full morphological segmentation of binary patterns into core, islet, "
+                    "edge, perforation, bridge, loop, branch and their variants (miallib).",
+            "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/morph_mspa.html",
             "sheet": "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"
         },
         "frag": {
@@ -165,6 +173,7 @@ def info(tool: str = None):
 # Exported names
 __all__ = [
            "spa", "spa_stats",
+           "mspa", "mspa_stats",
            "frag", "frag_stats", "frag_change", "frag_gray", "frag_gray_stats",
            "landmos", "landmos_stats",
            "acc", "acc_stats",

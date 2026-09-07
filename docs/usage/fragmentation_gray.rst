@@ -8,18 +8,18 @@ as binary present/absent, the grayscale methods use the actual pixel intensity
 values in the computations, providing a more nuanced assessment of landscape
 connectivity.
 
-The foreground threshold ``for_threshold`` defines the minimum pixel intensity 
-required for a pixel to be classified as foreground and thus processed by the 
-analysis. Pixels with values below this threshold are treated as non-foreground 
-— they are not analysed themselves, but their actual values (including zero) 
-still contribute to the computation within the moving windows of neighbouring 
-foreground pixels. 
-For example, with a tree cover density map and ``for_threshold=30``, only 
-pixels with ≥30% canopy cover are considered "forest" and receive a 
-fragmentation score, while pixels with 1–29% cover still influence the density 
-and connectivity of adjacent forest pixels through their actual values. 
-Setting ``for_threshold=1`` processes all non-zero pixels as foreground; higher 
-thresholds allow the user to focus the analysis on denser canopy areas from the 
+The foreground threshold ``for_threshold`` defines the minimum pixel intensity
+required for a pixel to be classified as foreground and thus processed by the
+analysis. Pixels with values below this threshold are treated as non-foreground
+— they are not analysed themselves, but their actual values (including zero)
+still contribute to the computation within the moving windows of neighbouring
+foreground pixels.
+For example, with a tree cover density map and ``for_threshold=30``, only
+pixels with ≥30% canopy cover are considered "forest" and receive a
+fragmentation score, while pixels with 1–29% cover still influence the density
+and connectivity of adjacent forest pixels through their actual values.
+Setting ``for_threshold=1`` processes all non-zero pixels as foreground; higher
+thresholds allow the user to focus the analysis on denser canopy areas from the
 same input map without reclassification.
 
 Three methods are available:
@@ -38,18 +38,21 @@ Input conventions:
 - **>100** = NoData (any value above 100 is treated as missing)
 
 
-FAD: Foreground Area Density (grayscale)
-----------------------------------------
+Methods
+-------
 
-Grayscale FAD computes the sum of all pixel values in the window of size W 
-divided by the maximum potential, where all pixels within the windows have 
-a value of 100 (W² × 100). 
+FAD: Foreground Area Density (grayscale)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Grayscale FAD computes the sum of all pixel values in the window of size W
+divided by the maximum potential, where all pixels within the windows have
+a value of 100 (W² × 100).
 
 .. math::
 
    FAD_{gray} = \frac{\sum \text{pixel values}}{W^2 \times 100} \times 100
 
-Where :math:`a_i` is the pixel value, and :math:`W` is the window size. The 
+Where :math:`a_i` is the pixel value, and :math:`W` is the window size. The
 denominator scales by 100 because the maximum possible pixel value is 100.
 
 .. figure:: ../_image/Frag_gray_FAD.png
@@ -64,7 +67,7 @@ denominator scales by 100 because the maximum possible pixel value is 100.
 
 
 FAC: Foreground Area Clustering (grayscale)
--------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Grayscale FAC computes the edge value as the average of two adjacent pixel
 values, but only for pairs where **both** pixels are foreground (i.e., both
@@ -75,7 +78,7 @@ values, but only for pairs where **both** pixels are foreground (i.e., both
    FAC_{gray} = \frac{\sum_{a>0,\, b>0} \frac{a + b}{2} }{\text{total edges} \times 100} \times 100
 
 Where :math:`a` and :math:`b` are the pixel values of foreground-foreground pairs, so
-:math:`a>0` and :math:`b>0`. The denominator scales by 100 because the maximum 
+:math:`a>0` and :math:`b>0`. The denominator scales by 100 because the maximum
 possible edge value is 100 (when both pixels are at 100%).
 
 - Total edges 4-conn. = :math:`2 \times W \times (W-1)`
@@ -93,7 +96,7 @@ possible edge value is 100 (when both pixels are at 100%).
 
 
 FED: Foreground Edge Density (grayscale)
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Grayscale FED computes the edge value as the average of two adjacent pixel
 values for **any** pair involving at least one foreground pixel. This means
@@ -104,8 +107,8 @@ since background value is 0), while background–background pairs score 0.
 
    FED_{gray} = \frac{\sum_{all} \frac{a + b}{2}}{\text{total edges} \times 100} \times 100
 
-Where :math:`a` and :math:`b` are the pixel values of all pixel pairs. 
-The denominator scales by 100 because the maximum possible edge value 
+Where :math:`a` and :math:`b` are the pixel values of all pixel pairs.
+The denominator scales by 100 because the maximum possible edge value
 is 100 (when both pixels are at 100%).
 
 - Total edges 4-conn. = :math:`2 \times W \times (W-1)`
@@ -117,78 +120,9 @@ is 100 (when both pixels are at 100%).
     :alt: FED grayscale method
 
     Grayscale FED computation on a 5×5 window for both 4- and 8-connectivity.
-    Each circle shows the average of the two adjacent pixel values. Unlike FAC, 
-    pairs where one pixel is foreground and the other is background also 
+    Each circle shows the average of the two adjacent pixel values. Unlike FAC,
+    pairs where one pixel is foreground and the other is background also
     contribute (with half the foreground value).
-
-
-Fragmentation Classes
----------------------
-
-The output classification follows the same 5-class scheme as binary fragmentation:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Foreground cover class
-     - FOS range
-     - Fragmentation
-     - Connectivity
-   * - **Rare**
-     - 0 -- 10%
-     - Very low
-     - Very high
-   * - **Patchy**
-     - 10 -- 40%
-     - Low
-     - High
-   * - **Transitional**
-     - 40 -- 60%
-     - Medium
-     - Medium
-   * - **Dominant**
-     - 60 -- 90%
-     - High
-     - Low
-   * - **Interior**
-     - 90 -- 100%
-     - Very high
-     - Very low
-
-
-Usage
------
-
-.. code-block:: python
-
-    import pyguidos as pg
-
-    # FAD grayscale (all tree cover)
-    result = pg.frag_gray(
-        in_tiff="tree_cover_density.tif",
-        method="FAD",
-        window_size=27,
-        for_threshold=1,
-        outdir="output/"
-    )
-
-    # FAC grayscale (only ≥30% canopy, 8-connected)
-    result = pg.frag_gray(
-        in_tiff="tree_cover_density.tif",
-        method="FAC",
-        window_size=27,
-        for_threshold=30,
-        connectivity=8
-    )
-
-    # FED grayscale
-    result = pg.frag_gray(
-        in_tiff="tree_cover_density.tif",
-        method="FED",
-        window_size=27,
-        for_threshold=1,
-        connectivity=4
-    )
 
 
 Parameters
@@ -238,9 +172,152 @@ Parameters
      - False
      - Print progress messages
 
+Example with all parameters:
+
+.. code-block:: python
+
+    import pyguidos as pg
+
+    # FAD grayscale (all tree cover)
+    result = pg.frag_gray(
+        in_tiff="tree_cover_density.tif",
+        method="FAD",
+        window_size=27,
+        for_threshold=1,
+        outdir="output/",
+        statists=True,
+        stat_files=True,
+        verb=False
+    )
+
+    # FAC grayscale (only ≥30% canopy, 8-connected)
+    result = pg.frag_gray(
+        in_tiff="tree_cover_density.tif",
+        method="FAC",
+        window_size=27,
+        for_threshold=30,
+        connectivity=8
+    )
+
+    # FED grayscale
+    result = pg.frag_gray(
+        in_tiff="tree_cover_density.tif",
+        method="FED",
+        window_size=27,
+        for_threshold=1,
+        connectivity=4
+    )
+
+
+Output Files
+------------
+
+Output filenames encode the method, connectivity (for FAC/FED), window size, and
+foreground threshold.
+
+.. list-table::
+   :header-rows: 1
+
+   * - File
+     - Description
+   * - ``<name>_frag_gray_<method><conn>_<window_size>_t<threshold>.tif``
+     - Grayscale fragmentation result GeoTIFF with colour palette
+   * - ``<name>_frag_gray_<method><conn>_<window_size>_t<threshold>.txt``
+     - Statistics report
+   * - ``<name>_frag_gray_<method><conn>_<window_size>_t<threshold>.csv``
+     - Per-value pixel counts and frequencies
+   * - ``<name>_frag_gray_<method><conn>_<window_size>_t<threshold>.png``
+     - Foreground pixel histogram
+
+Where ``<conn>`` is the connectivity value (4 or 8) for FAC and FED, or empty for FAD.
+
+Examples:
+
+- FAD: ``tcd_frag_gray_fad_27_t1.tif``
+- FAC 8-conn, threshold 30: ``tcd_frag_gray_fac8_27_t30.tif``
+- FED 4-conn, threshold 50: ``tcd_frag_gray_fed4_27_t50.tif``
+
+
+Output Classes
+--------------
+
+The output classification follows the same 5-class scheme as binary fragmentation:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Foreground cover class
+     - FOS range
+     - Fragmentation
+     - Connectivity
+   * - **Rare**
+     - 0 -- 10%
+     - Very low
+     - Very high
+   * - **Patchy**
+     - 10 -- 40%
+     - Low
+     - High
+   * - **Transitional**
+     - 40 -- 60%
+     - Medium
+     - Medium
+   * - **Dominant**
+     - 60 -- 90%
+     - High
+     - Low
+   * - **Interior**
+     - 90 -- 100%
+     - Very high
+     - Very low
+
+
+Statistics
+----------
+
+Result Dictionary
+^^^^^^^^^^^^^^^^^^
+
+The ``frag_gray()`` function returns a :class:`dict` with three sections:
+
+* **output paths** (:class:`dict` or :obj:`None`)
+    * **path tif** (:class:`str`): Absolute path to the result GeoTIFF.
+    * **path txt** (:class:`str`): Absolute path to the statistics text report.
+    * **path csv** (:class:`str`): Absolute path to the per-value pixel count CSV.
+    * **path png** (:class:`str`): Absolute path to the foreground pixel histogram image.
+    * *Note: This key is* ``None`` *if* ``stat_files=False``.
+
+* **input stats** (:class:`dict`)
+    * **foreground pxl** (:class:`int`): Count of foreground pixels (>= threshold).
+    * **background pxl** (:class:`int`): Count of background pixels (below threshold).
+    * **missing pxl** (:class:`int`): Count of NoData (> 100) pixels.
+
+* **output stats** (:class:`dict`)
+    * **class freq** (:class:`dict`): Breakdown of pixel counts per fragmentation category
+      (Rare, Patchy, Transitional, Dominant, Interior).
+    * **fad_av** (:class:`float`): The average Foreground Area Density index.
+    * **avcon** (:class:`float`): The Average Connectivity index.
+
+Accessing the result:
+
+.. code-block:: python
+
+    result = pg.frag_gray("tree_cover_density.tif", method="FAD",
+                          window_size=27, for_threshold=1)
+
+    # Output file paths
+    tif_path = result['output paths']['path tif']
+
+    # Input pixel counts
+    fg = result['input stats']['foreground pxl']
+
+    # Fragmentation indices and class pixel counts
+    freq = result['output stats']['class freq']
+    fad_av = result['output stats']['fad_av']
+
 
 Computing Statistics Separately
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you already have a grayscale fragmentation output GeoTIFF, you can compute
 statistics without rerunning the analysis:
@@ -265,14 +342,7 @@ statistics without rerunning the analysis:
 Providing ``source_tiff`` allows the function to report original input
 foreground/background pixel counts. Without it, those values are shown as "n/a".
 
-Output filenames encode the method, connectivity (for FAC/FED), window size, and
-foreground threshold. Examples:
-
-- FAD: ``tcd_frag_gray_fad_27_t1.tif``
-- FAC 8-conn, threshold 30: ``tcd_frag_gray_fac8_27_t30.tif``
-- FED 4-conn, threshold 50: ``tcd_frag_gray_fed4_27_t50.tif``
-
 .. note::
-    :func:`frag_gray_stats` requires the input GeoTIFF to be a pyGuidos
+    ``frag_gray_stats()`` requires the input GeoTIFF to be a pyGuidos
     grayscale fragmentation output (tag type ``Gray``). For binary fragmentation
-    outputs, use :func:`frag_stats` instead.
+    outputs, use ``frag_stats()`` instead.

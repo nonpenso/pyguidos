@@ -35,8 +35,11 @@ scientific documentation is to use the interactive ``info()`` function:
    * - Function
      - Description
      - Output Files
-   * - :doc:`morphology`
-     - Simplified Pattern Analysis
+   * - :doc:`morph_mspa`
+     - Morphology MSPA
+     - ``.tif``, ``.txt``
+   * - :doc:`morph_spa`
+     - Morphology SPA
      - ``.tif``, ``.txt``
    * - :doc:`fragmentation`
      - Fragmentation analysis
@@ -156,7 +159,8 @@ rerunning the full analysis:
    :hidden:
 
    input_format
-   morphology
+   morph_mspa
+   morph_spa
    fragmentation
    fragmentation_gray
    fragmentation_change

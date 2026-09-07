@@ -969,7 +969,7 @@ def compute_spa(input_arr, s, n_classes):
     return out_padded[r0:r1, c0:c1]
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def _assemble_spa(healed_padded, original_padded,
                   core, islet, halo, bg_incore_dil,
                   core_int_dil, bg_incore, n_class):

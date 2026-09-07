@@ -324,7 +324,7 @@ def validate_fchmaps_input(metadata1, metadata2):
     tag2 = utils.get_tool_parameters(metadata2["tag"])
 
     # Verify if BOTH files come from GTB tool
-    if tag1 == "--" or tag2 == "--":
+    if not tag1 or not tag2 or tag1 == "--" or tag2 == "--":
         sys.exit(
             "ERROR: One or both inputs are not Guidos outputs. "
             "Both inputs must be valid Fragmentation outputs from Guidos spatial analysis."

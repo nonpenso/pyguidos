@@ -2,15 +2,15 @@ Fragmentation
 =============
 
 Fragmentation analysis uses a Fixed Observation Scale (FOS) approach to compute
-foreground pattern indices within a user-defined moving window, which is a 
-square neighbourhood of W × W pixels that is centred on each foreground pixel 
-in the raster, one at a time. 
-The window size W defines the side length of this square and must be an odd integer 
-(e.g., 3, 5, 27) so that the centre pixel is unambiguously defined. As the window 
-moves across the map, the fragmentation index is computed from all pixels within 
-the window and assigned to the centre pixel. Larger windows capture broader 
-landscape context but smooth local detail; smaller windows preserve fine-grained 
-spatial patterns but are more sensitive to local noise. The choice of W 
+foreground pattern indices within a user-defined moving window, which is a
+square neighbourhood of W × W pixels that is centred on each foreground pixel
+in the raster, one at a time.
+The window size W defines the side length of this square and must be an odd integer
+(e.g., 3, 5, 27) so that the centre pixel is unambiguously defined. As the window
+moves across the map, the fragmentation index is computed from all pixels within
+the window and assigned to the centre pixel. Larger windows capture broader
+landscape context but smooth local detail; smaller windows preserve fine-grained
+spatial patterns but are more sensitive to local noise. The choice of W
 determines the Fixed Observation Scale (FOS) at which fragmentation is measured.
 
 To compute the foreground fragmentation, three methods are available:
@@ -28,13 +28,16 @@ Further details about Fragmentation analysis are available in the
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf>`_.
 
 
+Methods
+-------
+
 FAD: Foreground Area Density
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 FAD computes the proportion of foreground pixels within the moving window
 relative to the total number of pixels in the window. It provides a direct
 measure of how much foreground (e.g., forest) is present in the local
-neighbourhood of each pixel. The denominator is always the total window area 
+neighbourhood of each pixel. The denominator is always the total window area
 (W²), making FAD a pure area-based metric independent of pixel arrangement.
 
 .. math::
@@ -52,7 +55,7 @@ neighbourhood of each pixel. The denominator is always the total window area
 
 
 FAC: Foreground Area Clustering
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 FAC computes the proportion of foreground–foreground edges within the
 moving window relative to the total number of pixel pair edges. Unlike
@@ -69,7 +72,7 @@ are foreground, and 0 otherwise.
 
    FAC = \frac{\text{foreground–foreground edges}}{\text{total edges}} \times 100
 
-The total edges (denominator) depend on window size (W) supporting both 4- and 
+The total edges (denominator) depend on window size (W) supporting both 4- and
 8-connectivity:
 
 - Total edges 4-conn. = :math:`2 \times W \times (W-1)`
@@ -86,7 +89,7 @@ The total edges (denominator) depend on window size (W) supporting both 4- and
 
 
 FED: Foreground Edge Density
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 FED computes a weighted measure of foreground involvement in pixel edges.
 It assigns a partial score to edges where foreground interacts with background,
@@ -101,7 +104,7 @@ non-foreground areas. The scoring for each pixel pair is:
 
    FED = \frac{\text{weighted foreground edges}}{\text{total edges}} \times 100
 
-As FAC, the total edges (denominator) depend on window size (W) supporting both 4- and 
+As FAC, the total edges (denominator) depend on window size (W) supporting both 4- and
 8-connectivity:
 
 - Total edges 4-conn. = :math:`2 \times W \times (W-1)`
@@ -117,78 +120,6 @@ As FAC, the total edges (denominator) depend on window size (W) supporting both 
     0.5 for FG-BG pairs, and 0 (not shown) for BG-BG pairs. In 8-connected
     mode, junction points show the sum of both diagonal pairs crossing through
     them (possible values: 0.5, 1, 1.5, or 2).
-
-
-Fragmentation Classes
----------------------
-
-The result of a FOS analysis is a map with the same spatial extent as the input,
-where each foreground pixel receives a value in the range [0, 100] reflecting the
-FAD or FAC metric in its local neighbourhood. These continuous values are then
-grouped into 5 classes and colour-coded in the output map:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Foreground cover class
-     - FOS range
-     - Fragmentation
-     - Connectivity
-   * - **Rare**
-     - 0 -- 10%
-     - Very low
-     - Very high
-   * - **Patchy**
-     - 10 -- 40%
-     - Low 
-     - High
-   * - **Transitional**
-     - 40 -- 60%
-     - Medium 
-     - Medium
-   * - **Dominant**
-     - 60 -- 90%
-     - High 
-     - Low
-   * - **Interior**
-     - 90 -- 100%
-     - Very high 
-     - Very low
-
-
-Usage
------
-
-.. code-block:: python
-
-    import pyguidos as pg
-
-    # FAD - Foreground Area Density
-    result = pg.frag(
-        in_tiff="my_map.tif",
-        method="FAD",
-        window_size=27,
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        verb=False
-    )
-
-    # FAC - Foreground Area Clustering (8-connected)
-    result = pg.frag(
-        in_tiff="my_map.tif",
-        method="FAC",
-        window_size=27,
-        connectivity=8
-    )
-
-    # FED - Foreground Edge Density (4-connected)
-    result = pg.frag(
-        in_tiff="my_map.tif",
-        method="FED",
-        window_size=27,
-        connectivity=4
-    )
 
 
 Parameters
@@ -234,6 +165,39 @@ Parameters
      - False
      - Print progress messages
 
+Example with all parameters:
+
+.. code-block:: python
+
+    import pyguidos as pg
+
+    # FAD - Foreground Area Density
+    result = pg.frag(
+        in_tiff="my_map.tif",
+        method="FAD",
+        window_size=27,
+        outdir="output/",
+        statists=True,
+        stat_files=True,
+        verb=False
+    )
+
+    # FAC - Foreground Area Clustering (8-connected)
+    result = pg.frag(
+        in_tiff="my_map.tif",
+        method="FAC",
+        window_size=27,
+        connectivity=8
+    )
+
+    # FED - Foreground Edge Density (4-connected)
+    result = pg.frag(
+        in_tiff="my_map.tif",
+        method="FED",
+        window_size=27,
+        connectivity=4
+    )
+
 
 Output Files
 ------------
@@ -264,10 +228,50 @@ Examples:
 - FED 4-conn: ``my_map_frag_fed4_27.tif``
 
 
-Results
--------
+Output Classes
+--------------
 
-The :func:`frag` function returns a :class:`dict`. The structure is nested as follows:
+The result of a FOS analysis is a map with the same spatial extent as the input,
+where each foreground pixel receives a value in the range [0, 100] reflecting the
+FAD or FAC metric in its local neighbourhood. These continuous values are then
+grouped into 5 classes and colour-coded in the output map:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Foreground cover class
+     - FOS range
+     - Fragmentation
+     - Connectivity
+   * - **Rare**
+     - 0 -- 10%
+     - Very low
+     - Very high
+   * - **Patchy**
+     - 10 -- 40%
+     - Low
+     - High
+   * - **Transitional**
+     - 40 -- 60%
+     - Medium
+     - Medium
+   * - **Dominant**
+     - 60 -- 90%
+     - High
+     - Low
+   * - **Interior**
+     - 90 -- 100%
+     - Very high
+     - Very low
+
+
+Statistics
+----------
+
+Result Dictionary
+^^^^^^^^^^^^^^^^^^
+
+The ``frag()`` function returns a :class:`dict` with three sections:
 
 * **output paths** (:class:`dict` or :obj:`None`)
     * **path tif** (:class:`str`): Absolute path to the fragmentation result GeoTIFF.
@@ -292,6 +296,8 @@ The :func:`frag` function returns a :class:`dict`. The structure is nested as fo
         * ``5 inter pxl``: Pixels in the "Interior" category.
     * **fad_av** (:class:`float`): The average Forest Area Density index.
     * **avcon** (:class:`float`): The Average Connectivity index.
+
+Accessing the result:
 
 .. code-block:: python
 
@@ -321,9 +327,8 @@ The :func:`frag` function returns a :class:`dict`. The structure is nested as fo
     # 'output/my_map_frag_fac8_27.tif', etc.
 
 
-
 Computing Statistics Separately
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you already have a fragmentation output GeoTIFF, you can compute
 statistics without rerunning the analysis:
@@ -338,7 +343,5 @@ statistics without rerunning the analysis:
     )
 
 .. note::
-    :func:`frag_stats` requires the input GeoTIFF to be an pyGuidos (or
-    GTB) output raster file. See :doc:`input_format` for details.
-
-
+    ``frag_stats()`` requires the input GeoTIFF to be a pyGuidos (or GTB)
+    fragmentation output raster (``GTB_FOS`` tag). See :doc:`input_format` for details.
