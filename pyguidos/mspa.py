@@ -144,7 +144,9 @@ def mspa(in_tiff,
                                    int(connectivity),
                                    trans_i,
                                    intext_i)
-
+        # Post-process to fix miallib bug: if pixels = 2 appear, they are converted to Background
+        mspa_array[mspa_array=2] = 0
+        
         # Save Final GeoTIFF with palette and tags. 
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"
         tag_descr = (f"GTB_MSPA, <{connectivity},{edge_width},"

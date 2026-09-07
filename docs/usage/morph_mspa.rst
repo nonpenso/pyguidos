@@ -258,8 +258,10 @@ not with Loop/Bridge:
 * **Edge** = Edge + Loop-in-Edge + Bridge-in-Edge (external and internal).
 * **Perforation** = Perforation + Loop-in-Perforation + Bridge-in-Perforation
   (external and internal).
-* **Loop** = only the plain Loop pixels not touching an Edge or Perforation.
-* **Bridge** = only the plain Bridge pixels not touching an Edge or Perforation.
+* **Loop** = only the plain Loop pixels not touching an Edge or Perforation
+  (external and internal).
+* **Bridge** = only the plain Bridge pixels not touching an Edge or Perforation
+  (external and internal).
 
 **Integral Foreground.** The foreground footprint including its internal
 openings:
@@ -299,14 +301,10 @@ The ``mspa()`` function returns a :class:`dict` with three sections:
       External, Internal and Background sections.
     * **aggregated foregr** (:class:`dict`): Pixel counts for the seven
       aggregated foreground classes (Core, Edge, Perforation, Islet, Branch,
-      Loop, Bridge). Transition pixels are counted with the class they cross:
-      Loop/Bridge-in-Edge are added to **Edge**, and Loop/Bridge-in-Perforation
-      to **Perforation**; **Loop** and **Bridge** therefore hold only the
-      pixels not touching an Edge or Perforation.
-    * **integral foregr** (:class:`int`): Morphological foreground plus
-      core-openings.
-    * **porosity** (:class:`float`): derived from Core + Edge + Perforation
-      (with the aggregated Edge/Perforation above) and the core-openings.
+      Loop, Bridge).
+    * **integral foregr** (:class:`int`): Integral Foreground derived from
+      Foreground and openings.
+    * **porosity** (:class:`float`): derived from Core + Edge + Perforation.
 
 Accessing the result:
 
