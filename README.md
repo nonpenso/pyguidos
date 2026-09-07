@@ -35,11 +35,12 @@ Modules
 
 | Function | Description |
 |---|---|
+| `mspa()` | Morphological Spatial Pattern Analysis |
+| `spa()` | Simplified Pattern Analysis |
 | `frag()` | Fragmentation analysis |
 | `frag_gray()` | Grayscale Fragmentation analysis |
 | `frag_change()` | Fragmentation change |
 | `landmos()` | Landscape Mosaic |
-| `spa()` | Simplified Pattern Analysis |
 | `acc()` | Foreground Patch Size Accounting |
 | `rss()` | Restoration Status Summary |
 | `extract_by_polygon()` | Extract raster by polygon features |
@@ -190,9 +191,10 @@ pyGuidos loads each input raster fully into memory, so a tool's memory footprint
 
 | Function | Peak memory | Reason |
 |---|---|---|
+| `mspa` | ~10–15 × *R* | Multiple full-size morphological buffers in the C engine (core, opening, edges, connectors, holes) plus 32-bit label arrays |
+| `spa` | ~10–15 × *R* | Several morphological masks and distance transforms |
 | `frag`, `frag_gray`, `landmos` | ~3 × *R* | Input up-cast to int16 plus an output buffer |
 | `acc`, `rss` | ~4-5 × *R* | Adds a mask and a connected-component label array |
-| `spa` | ~10–15 × *R* | Several morphological masks and distance transforms |
 | `frag_change` | ~2 × *R* | Processed block by block via windowed reading |
 
 Physical RAM is not a hard limit: the effective ceiling is RAM plus swap or page-file space. On Windows and macOS, rasters exceeding RAM are transparently paged to disk and still complete, only more slowly; on Linux the same holds if enough swap is configured, otherwise the process may be terminated. Raster size is therefore mainly a matter of processing time rather than capacity, and downsampling or tiling remains an option when faster turnaround is preferred.
