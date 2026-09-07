@@ -39,7 +39,7 @@ Parameters
    * - ``outdir``
      - str or Path
      - None
-     - Output directory. Defaults to input directory
+     - Output directory. If None (default), outputs are written to the input file's directory.
    * - ``statists``
      - bool
      - True
