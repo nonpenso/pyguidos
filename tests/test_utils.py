@@ -87,14 +87,26 @@ def test_get_pxl_freq():
 # =============================================================================
 
 def test_get_tool_parameters():
-    """Verify parsing of GTB metadata tags."""
-    # Your code returns None if the regex doesn't match perfectly. 
-    # Ensure the tag format matches your re.match in utils.py
-    params = utils.get_tool_parameters("GTB_FOS_WS27_M1")
-    if params:
-        assert params["tool_id"] == "GTB_FOS"
-        assert params["window_size"] == 27
-        assert params["method"] == 1
+    """Verify parsing of a real GTB metadata tag.
+
+    The tag format written by save_output_geotiff() is:
+        'GTB_TOOLID, <param1,param2,...>, URL'
+    """
+    tag = "GTB_FOS, <Binary,-1,8,FAD_5,100.000,27>, https://example.org"
+    params = utils.get_tool_parameters(tag)
+    assert params is not None
+    assert params["tool_id"] == "GTB_FOS"
+    assert params["tiftype"] == "Binary"
+    assert params["connect"] == "8"
+    assert params["method"] == "FAD_5"
+    assert params["wsize"] == "27"
+
+
+def test_get_tool_parameters_non_gtb_returns_none():
+    """A tag that is not a GTB output (no GTB_ tool id) yields None."""
+    assert utils.get_tool_parameters("some random description") is None
+    assert utils.get_tool_parameters("") is None
+    assert utils.get_tool_parameters(None) is None
 
 def test_get_gtb_nodata(monkeypatch):
     """Test the priority system: GTB Tag > Profile > Default 0."""

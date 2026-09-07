@@ -23,9 +23,9 @@
    :target: https://pepy.tech/project/pyguidos
    :alt: Downloads Counter
 
-.. |license| image:: https://img.shields.io/badge/license-EUPL--1.2-orange.svg
-   :target: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
-   :alt: EUPL-1.2 License
+.. |license| image:: https://img.shields.io/badge/license-GPLv3-blue.svg
+   :target: https://www.gnu.org/licenses/gpl-3.0.html
+   :alt: GPLv3 License
 
 |pipeline| |coverage| |docs| |pypi| |downloads| |license|
 
@@ -293,11 +293,19 @@ Authors
 License
 -------
 
-This project is licensed under the **European Union Public Licence (EUPL-1.2)**. 
-The EUPL is a modern, copyleft free software license, providing a legal framework 
-compatible with the laws of the European Union Member States.
+pyGuidos is distributed under the **GNU General Public License v3 (GPLv3)**.
+This is because the package bundles the GPLv3-licensed `miallib
+<https://github.com/ec-jrc/jeolib-miallib>`_ MSPA engine of Soille and Vogt,
+which is compiled into pyGuidos.
 
-For more details, see the `official EUPL page <https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12>`_.
+The original pyGuidos code (everything except the vendored ``miallib`` sources
+under ``pyguidos/_mspa/miallib/``) remains available under the `European Union
+Public Licence v1.2 (EUPL-1.2)
+<https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12>`_, which is
+compatible with the GPLv3.
+
+For the full license text see the ``LICENSE`` file, and the ``NOTICE`` file
+for attribution details.
 
 
 

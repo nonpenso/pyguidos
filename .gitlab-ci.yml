@@ -27,7 +27,15 @@ run_tests:
     # gcc is required to compile the _mspa C extension from source.
     - apt-get update && apt-get install -y build-essential libexpat1 libgomp1
     - pip install --upgrade pip
-    - pip install pytest pytest-cov ".[test]"
+    - pip install pytest pytest-cov
+    - pip install ".[test]"
+    # pytest runs from the repo root and imports pyguidos from the SOURCE tree
+    # (./pyguidos/), which shadows the installed wheel. The source tree ships
+    # only the C sources, not the compiled extension, so we must compile the
+    # _mspa extension in place. `build_ext --inplace` drops the Linux .so into
+    # ./pyguidos/_mspa/ so the imported source package has a working extension.
+    - pip install numpy setuptools wheel
+    - python setup.py build_ext --inplace
     - python -m pytest --cov=pyguidos tests/ --cov-report term-missing --cov-report html
   coverage: '/(?i)total.*? (100(?:\.0+)?%|[1-9]?\d(?:\.\d+)?%)/'
   artifacts:
@@ -55,7 +63,12 @@ pages:
     # build-essential is required to compile the _mspa C extension on install.
     - apt-get update && apt-get install -y build-essential libexpat1
     - pip install --upgrade pip
-    - pip install sphinx pydata-sphinx-theme ".[notebooks,test]" 
+    - pip install sphinx pydata-sphinx-theme ".[notebooks,test]"
+    # Compile the _mspa extension in place so that importing pyguidos from the
+    # source tree during the docs build finds the extension (same source-tree
+    # shadowing reason as the run_tests job).
+    - pip install numpy setuptools wheel
+    - python setup.py build_ext --inplace
     - sphinx-build -b html docs public
     - |
       if [ -d "htmlcov" ]; then
