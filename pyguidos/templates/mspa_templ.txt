@@ -62,16 +62,21 @@ Core-Opening    100        {cor_opn_val}
 Missing data    129        {ndata_val}
 
 
-Frequency of the 7 aggregated classes in Foreground area
+Frequency of the 7 aggregated classes in Foreground area. Transition pixels 
+are counted with the class they cross:
+  Edge         = Edge + Loop in Edge + Bridge in Edge
+  Perforation  = Perforation + Loop in Perforation + Bridge in Perforation
+  Loop, Bridge = only pixels not touching an Edge or Perforation
 ---------------------------------------------------------------------------------
-    MSPA CLASS     FOREGR. %
-    Core          {cor_Frel}
-    Edge          {edg_Frel}
-    Perforation   {prf_Frel}
-    Islet         {isl_Frel}
-    Branch        {bch_Frel}
-    Loop          {loo_Frel}
-    Bridge        {brg_Frel}
+
+    MSPA CLASS     PXL NUMBER   FOREGR. %
+    Core          {cor_Fnum}   {cor_Frel}
+    Edge          {edg_Fnum}   {edg_Frel}
+    Perforation   {prf_Fnum}   {prf_Frel}
+    Islet         {isl_Fnum}   {isl_Frel}
+    Branch        {bch_Fnum}   {bch_Frel}
+    Loop          {loo_Fnum}   {loo_Frel}
+    Bridge        {brg_Fnum}   {brg_Frel}
 
 Integral Foreground: {int_frgr}
 Porosity [%]: {poros_val}

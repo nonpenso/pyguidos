@@ -246,6 +246,39 @@ match the GuidosToolbox (GTB) MSPA output.
 Statistics
 ----------
 
+Definitions
+^^^^^^^^^^^
+
+**Aggregated foreground classes.** The 22 morphological pixel values are
+summarised into seven aggregated classes. Transition pixels (Loop or Bridge
+crossing an Edge or a Perforation) are counted with the class they cross,
+not with Loop/Bridge:
+
+* **Core**, **Islet**, **Branch** — their external and internal values.
+* **Edge** = Edge + Loop-in-Edge + Bridge-in-Edge (external and internal).
+* **Perforation** = Perforation + Loop-in-Perforation + Bridge-in-Perforation
+  (external and internal).
+* **Loop** = only the plain Loop pixels not touching an Edge or Perforation.
+* **Bridge** = only the plain Bridge pixels not touching an Edge or Perforation.
+
+**Integral Foreground.** The foreground footprint including its internal
+openings:
+
+.. math::
+
+   \text{Integral FG} = \text{Foreground} + \text{Core-Opening} + \text{Border-Opening}
+
+where *Foreground* is the sum of all 22 morphological pixels.
+
+**Porosity [%].** The share of the contiguous foreground occupied by
+core-openings, where *Contiguous* = Core + Edge + Perforation (using the
+aggregated Edge/Perforation above):
+
+.. math::
+
+   \text{Porosity} = 100 - 100 \times \frac{\text{Contiguous}}{\text{Contiguous} + \text{Core-Opening}}
+
+
 Result Dictionary
 ^^^^^^^^^^^^^^^^^^
 
@@ -265,11 +298,15 @@ The ``mspa()`` function returns a :class:`dict` with three sections:
     * **class freq** (:class:`dict`): Per-value pixel counts, grouped into
       External, Internal and Background sections.
     * **aggregated foregr** (:class:`dict`): Pixel counts for the seven
-      aggregated foreground classes (external + internal + variants).
+      aggregated foreground classes (Core, Edge, Perforation, Islet, Branch,
+      Loop, Bridge). Transition pixels are counted with the class they cross:
+      Loop/Bridge-in-Edge are added to **Edge**, and Loop/Bridge-in-Perforation
+      to **Perforation**; **Loop** and **Bridge** therefore hold only the
+      pixels not touching an Edge or Perforation.
     * **integral foregr** (:class:`int`): Morphological foreground plus
       core-openings.
-    * **porosity** (:class:`float`): Core-openings as a percentage of the
-      integral foreground.
+    * **porosity** (:class:`float`): derived from Core + Edge + Perforation
+      (with the aggregated Edge/Perforation above) and the core-openings.
 
 Accessing the result:
 
@@ -312,8 +349,7 @@ without re-running the analysis:
 License note
 ------------
 
-MSPA is computed by the original `miallib
-<https://github.com/ec-jrc/jeolib-miallib>`_ C implementation of Soille and 
+MSPA is computed by the original ``miallib`` C implementation of Soille and
 Vogt, bundled inside pyGuidos and compiled as an internal extension. The
 output is **bit-identical** to the GuidosToolbox (GTB) MSPA result for the
 same parameters.

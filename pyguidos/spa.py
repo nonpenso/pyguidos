@@ -58,8 +58,8 @@ def spa(in_tiff,
 
     Output Files
     ------------
-    - <in_name>_mspa_<connectivity>_<edge_width>_<trans>_<i_e>.tif : SPA result
-    - <in_name>_mspa_<connectivity>_<edge_width>_<trans>_<i_e>.txt : statistics report
+    - <in_name>_spa_<connectivity>_<edge_width>_<trans>_<i_e>.tif : SPA result
+    - <in_name>_spa_<connectivity>_<edge_width>_<trans>_<i_e>.txt : statistics report
     """
     start_time = time.time()
 
@@ -99,7 +99,7 @@ def spa(in_tiff,
         # Save Final Geotiff with Palette and Tags
         weblink = 'https://forest.jrc.ec.europa.eu/en/activities/lpa'
         tag_descr = f"GTB_SPA, <{edge_width},{classes}>, {weblink}"
-        cmap_path = TEMPL_DIR / "mspa_colormap.txt"
+        cmap_path = TEMPL_DIR / "spa_colormap.txt"
         out_tiff = outdir / f"{out_name}.tif"
         utils.save_output_geotiff(out_tiff, spa_array, info['profile'], cmap_path, tag_descr)
 

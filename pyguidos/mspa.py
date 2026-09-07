@@ -9,7 +9,7 @@ from . import utils
 from . import checks
 from . import TEMPL_DIR
 
-# import lazily mspa.py in case of failing wheel installation
+# import lazily mspa.py in case of fail wheel installation
 try:
     from ._mspa import _mspa
     _MSPA_IMPORT_ERROR = None
@@ -269,15 +269,15 @@ def mspa_stats(mspa_tiff, stat_files=True, outdir=None, source_tiff=None):
     return stats_dict
 
 
-# MSPA output pixel values, grouped by morphological class.
+# MSPA output pixel values, grouped by the 7 aggregated morphological classes.
 _MSPA_CLASS_VALUES = {
     "Core":        {"ext": [17],  "int": [117]},
-    "Edge":        {"ext": [3],   "int": [103]},
-    "Perforation": {"ext": [5],   "int": [105]},
+    "Edge":        {"ext": [3, 67, 35],   "int": [103, 167, 135]},
+    "Perforation": {"ext": [5, 69, 37],   "int": [105, 169, 137]},
     "Islet":       {"ext": [9],   "int": [109]},
     "Branch":      {"ext": [1],   "int": [101]},
-    "Loop":        {"ext": [65, 67, 69],  "int": [165, 167, 169]},
-    "Bridge":      {"ext": [33, 35, 37],  "int": [133, 135, 137]},
+    "Loop":        {"ext": [65],  "int": [165]},
+    "Bridge":      {"ext": [33],  "int": [133]},
 }
 
 
@@ -331,9 +331,9 @@ def _get_mspa_stats(mspa_freq,
     # Total foreground = sum of all 22 morphological pattern pixels.
     fgrnd = sum(agg.values())
 
-    # GTB derived indicators
+    # Indices
     contiguous = agg["Core"] + agg["Edge"] + agg["Perforation"]
-    ifrgr = fgrnd + cor_opn
+    ifrgr = fgrnd + cor_opn + brd_opn
     base = contiguous + cor_opn
     poros = 100.0 - (contiguous / base * 100.0) if base > 0 else 0.0
 
@@ -395,6 +395,15 @@ def _get_mspa_stats(mspa_freq,
             # Background group
             "bgr_val": bgr, "brd_opn_val": brd_opn,
             "cor_opn_val": cor_opn, "ndata_val": ndata,
+
+            # Aggregated foreground pixel counts
+            "cor_Fnum": f'{agg["Core"]:>10}',
+            "edg_Fnum": f'{agg["Edge"]:>10}',
+            "prf_Fnum": f'{agg["Perforation"]:>10}',
+            "isl_Fnum": f'{agg["Islet"]:>10}',
+            "bch_Fnum": f'{agg["Branch"]:>10}',
+            "loo_Fnum": f'{agg["Loop"]:>10}',
+            "brg_Fnum": f'{agg["Bridge"]:>10}',
 
             # Aggregated foreground percentages
             "cor_Frel": f'{rel(agg["Core"]):6.2f}',
