@@ -312,7 +312,8 @@ without re-running the analysis:
 License note
 ------------
 
-MSPA is computed by the original ``miallib`` C implementation of Soille and
+MSPA is computed by the original `miallib
+<https://github.com/ec-jrc/jeolib-miallib>`_ C implementation of Soille and 
 Vogt, bundled inside pyGuidos and compiled as an internal extension. The
 output is **bit-identical** to the GuidosToolbox (GTB) MSPA result for the
 same parameters.
