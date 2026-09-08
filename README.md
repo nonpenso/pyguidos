@@ -27,6 +27,7 @@ If you browse the source files directly via either platform, the repository incl
 * **`/docs`**: Source files for automated Sphinx HTML documentation platform.
 * **`/notebooks`**: Interactive Jupyter notebooks demonstrating data visualization and workflow examples.
 * **`/tests`**: Comprehensive unit and integration test suites validating input parameters and mathematical integrity.
+* **`/assets`**: Static image assets (project logo, example of output figure) referenced in the README file.
 
 ---
 

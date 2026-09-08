@@ -147,7 +147,7 @@ Once the calculation is complete, the resulting GeoTIFF is loaded alongside its 
 
 
 .. figure:: _image/CorsCLC2018_frag.png
-    :width: 70%
+    :width: 80%
     :align: center
     :alt: CLC2018 frag
 
