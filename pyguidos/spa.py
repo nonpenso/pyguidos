@@ -70,7 +70,7 @@ def spa(in_tiff,
     checks.validate_spa_params(edge_width, classes)
 
     # Initialize Paths and Metadata
-    in_tiff = Path(in_tiff).resolve(strict=True)
+    in_tiff = Path(in_tiff).resolve()
     outdir = Path(outdir).resolve(strict=True) if outdir else in_tiff.parent
     in_name = in_tiff.stem
     out_name = in_name + f'_spa_{edge_width}_{classes}'

@@ -53,7 +53,7 @@ def rss(
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
     # Initialize Paths and Metadata
-    in_tiff = Path(in_tiff).resolve(strict=True)
+    in_tiff = Path(in_tiff).resolve()
     outdir = Path(outdir).resolve(strict=True) if outdir else in_tiff.parent
     in_name = in_tiff.stem
     out_name = f"{in_name}_rss"

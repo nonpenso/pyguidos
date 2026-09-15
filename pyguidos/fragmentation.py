@@ -84,7 +84,7 @@ def frag(
     checks.validate_frag_params(window_size, method, connectivity)
 
     # Initialize Paths and Metadata
-    in_tiff = Path(in_tiff).resolve(strict=True)
+    in_tiff = Path(in_tiff).resolve()
     outdir = Path(outdir).resolve(strict=True) if outdir else in_tiff.parent
     in_name = in_tiff.stem
     conn_suffix = '' if method == 'FAD' else connectivity

@@ -164,3 +164,29 @@ def test_get_frag_change_stats_reporting(
     # Verify reporting files are created
     mock_file_io.assert_called()
     mock_save_fig.assert_called_once()
+
+@patch("pyguidos.fragmentation_change.utils.get_raster_info")
+@patch("pyguidos.fragmentation_change.rasterio.open")
+def test_frag_change_missing_outdir_stops_early(
+    mock_rasterio_open, mock_raster_info, tmp_path
+):
+    """A non-existent output directory must stop the run before any computation.
+
+    The output directory is resolved strictly (resolve(strict=True)), so a
+    missing directory raises FileNotFoundError up front, before the raster is
+    opened or the change matrix is computed.
+    """
+    missing_dir = tmp_path / "does_not_exist"
+
+    with pytest.raises(FileNotFoundError):
+        frag_change(
+            in_tiff_t1="t1.tif",
+            in_tiff_t2="t2.tif",
+            outdir=missing_dir,
+            statists=True,
+            stat_files=True,
+            verb=False,
+        )
+
+    # Computation must not have started: the raster was never opened.
+    mock_rasterio_open.assert_not_called()

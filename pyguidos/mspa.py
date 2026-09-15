@@ -107,7 +107,7 @@ def mspa(in_tiff,
         sys.exit(f"ERROR: edge_width must be an integer >= 1 (received {edge_width})")
 
     # Initialize Paths and Metadata
-    in_tiff = Path(in_tiff).resolve(strict=True)
+    in_tiff = Path(in_tiff).resolve()
     outdir = Path(outdir).resolve(strict=True) if outdir else in_tiff.parent
     in_name = in_tiff.stem
     trans_i = 1 if transition else 0
