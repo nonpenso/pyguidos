@@ -199,7 +199,7 @@ pyGuidos loads each input raster fully into memory, so a tool's memory footprint
 | `acc`, `rss` | ~4-5 × *R* | Adds a mask and a connected-component label array |
 | `frag_change` | ~2 × *R* | Processed block by block via windowed reading |
 
-Physical RAM is not a hard limit: the effective ceiling is RAM plus swap or page-file space. On Windows and macOS, rasters exceeding RAM are transparently paged to disk and still complete, only more slowly; on Linux the same holds if enough swap is configured, otherwise the process may be terminated. Raster size is therefore mainly a matter of processing time rather than capacity, and downsampling or tiling remains an option when faster turnaround is preferred.
+Physical RAM is not a hard limit: the effective ceiling is RAM plus swap or page-file space. On Windows and macOS, rasters exceeding RAM are transparently paged to disk and still complete, only more slowly; on Linux the same holds if enough swap is configured, otherwise the process may be terminated. Raster size is therefore mainly a matter of processing time rather than capacity, and downsampling remains an option when faster turnaround is preferred.
 
 ---
 

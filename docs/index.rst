@@ -267,7 +267,7 @@ page-file space. On Windows and macOS, rasters exceeding RAM are transparently
 paged to disk and still complete, only more slowly; on Linux the same holds if
 enough swap is configured, otherwise the process may be terminated. Raster size
 is therefore mainly a matter of processing time rather than capacity, and
-downsampling or tiling remains an option when faster turnaround is preferred.
+downsampling remains an option when faster turnaround is preferred.
 
 
 Citation
