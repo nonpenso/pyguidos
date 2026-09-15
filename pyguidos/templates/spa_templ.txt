@@ -35,9 +35,6 @@ Background         0       {bgr_val:>10}
 Missing data     129       {ndata_val:>10}
 
 
-Integral Foreground: {int_frgr}
-Porosity [%]: {poros_val}
-
 Computational time: 
 
 =========================================================

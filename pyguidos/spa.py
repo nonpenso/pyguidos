@@ -252,11 +252,6 @@ def _get_spa_stats(spa_freq,
     ndata = spa_freq[129]
     fgrnd = (tiff_info["rows"] * tiff_info["cols"]) - bgrnd - ndata
 
-    ifrgr = fgrnd + bgrnd + cor_opn
-    contiguous = core + edge + perf
-    base = contiguous + cor_opn
-    poros = 100.0 - (contiguous/base * 100.0)
-
     if classes == '2':
         out_freq = {"1 Contiguous (17)" : core,
                     "2 Margin (1)" : marg,
@@ -339,9 +334,6 @@ def _get_spa_stats(spa_freq,
             "perf_rel":f'{perf/fgrnd*100:6.2f}',
             "isle_rel":f'{isle/fgrnd*100:6.2f}',
             "marg_rel":f'{marg/fgrnd*100:6.2f}',
-
-            "int_frgr": ifrgr,
-            "poros_val":f'{poros:.4f}',
         }
 
         txt_file = out_dir / f'{out_name}.txt'
@@ -360,9 +352,7 @@ def _get_spa_stats(spa_freq,
         "missing pxl" : ndata
         }
     output_stats_dict = {
-        "class freq" : out_freq,
-        "integral foregr" : ifrgr,
-        "porosity" : poros
+        "class freq" : out_freq
         }
     stats_dict = {
         "output paths" : path_stats_dict,

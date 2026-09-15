@@ -80,4 +80,4 @@ def test_spa_stats_standalone(spa_result):
     with open(expected_txt, 'r') as f:
         content = f.read()
         # Check for template keywords
-        assert "Porosity" in content or "Core" in content 
+        assert "Core" in content 

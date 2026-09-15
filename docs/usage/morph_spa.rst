@@ -164,8 +164,6 @@ The ``spa()`` function returns a :class:`dict` with three sections:
 
 * **output stats** (:class:`dict`)
     * **class freq** (:class:`dict`): Breakdown of pixel counts for the specific SPA classes chosen.
-    * **integral foregr** (:class:`int`): The sum of foreground, background, and core-opening pixels.
-    * **porosity** (:class:`float`): Calculated measure of foreground density.
 
 Accessing the result:
 
@@ -179,9 +177,8 @@ Accessing the result:
     # Input pixel counts
     fg = result['input stats']['foreground pxl']
 
-    # Class frequencies and derived indicators
+    # Class frequencies
     freq = result['output stats']['class freq']
-    porosity = result['output stats']['porosity']
 
 
 Computing Statistics Separately
