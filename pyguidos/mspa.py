@@ -107,8 +107,8 @@ def mspa(in_tiff,
         sys.exit(f"ERROR: edge_width must be an integer >= 1 (received {edge_width})")
 
     # Initialize Paths and Metadata
-    in_tiff = Path(in_tiff)
-    outdir = Path(outdir) if outdir else in_tiff.parent
+    in_tiff = Path(in_tiff).resolve(strict=True)
+    outdir = Path(outdir).resolve(strict=True) if outdir else in_tiff.parent
     in_name = in_tiff.stem
     trans_i = 1 if transition else 0
     intext_i = 1 if intext else 0
@@ -385,18 +385,18 @@ def _get_mspa_stats(mspa_freq,
             "output_file": f"{out_name}.tif",
 
             # External class counts
-            "cor_e_val": cor_e, "edg_e_val": edg_e, "prf_e_val": prf_e,
-            "isl_e_val": isl_e, "bch_e_val": bch_e,
-            "loo_e_val": loo_e, "loE_e_val": loE_e, "loP_e_val": loP_e,
-            "brg_e_val": brg_e, "brE_e_val": brE_e, "brP_e_val": brP_e,
+            "cor_e_val": f'{cor_e:>10}', "edg_e_val": f'{edg_e:>10}', "prf_e_val": f'{prf_e:>10}',
+            "isl_e_val": f'{isl_e:>10}', "bch_e_val": f'{bch_e:>10}',
+            "loo_e_val": f'{loo_e:>10}', "loE_e_val": f'{loE_e:>10}', "loP_e_val": f'{loP_e:>10}',
+            "brg_e_val": f'{brg_e:>10}', "brE_e_val": f'{brE_e:>10}', "brP_e_val": f'{brP_e:>10}',
             # Internal class counts
-            "cor_i_val": cor_i, "edg_i_val": edg_i, "prf_i_val": prf_i,
-            "isl_i_val": isl_i, "bch_i_val": bch_i,
-            "loo_i_val": loo_i, "loE_i_val": loE_i, "loP_i_val": loP_i,
-            "brg_i_val": brg_i, "brE_i_val": brE_i, "brP_i_val": brP_i,
+            "cor_i_val": f'{cor_i:>10}', "edg_i_val": f'{edg_i:>10}', "prf_i_val": f'{prf_i:>10}',
+            "isl_i_val": f'{isl_i:>10}', "bch_i_val": f'{bch_i:>10}',
+            "loo_i_val": f'{loo_i:>10}', "loE_i_val": f'{loE_i:>10}', "loP_i_val": f'{loP_i:>10}',
+            "brg_i_val": f'{brg_i:>10}', "brE_i_val": f'{brE_i:>10}', "brP_i_val": f'{brP_i:>10}',
             # Background group
-            "bgr_val": bgr, "brd_opn_val": brd_opn,
-            "cor_opn_val": cor_opn, "ndata_val": ndata,
+            "bgr_val": f'{bgr:>10}', "brd_opn_val": f'{brd_opn:>10}',
+            "cor_opn_val": f'{cor_opn:>10}', "ndata_val": f'{ndata:>10}',
 
             # Aggregated foreground pixel counts
             "cor_Fnum": f'{agg["Core"]:>10}',

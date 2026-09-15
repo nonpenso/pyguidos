@@ -10,6 +10,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/pyguidos.svg)](https://pypi.org/project/pyguidos/)
 [![Downloads](https://static.pepy.tech/badge/pyguidos)](https://pepy.tech/project/pyguidos)
 [![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![JOSS status](https://joss.theoj.org/papers/8a3fdc720f5b0c3f8392d33405787d79/status.svg)](https://joss.theoj.org/papers/8a3fdc720f5b0c3f8392d33405787d79)
 
 **PyGuidos is a Python interface to the main GuidosToolbox (GTB) modules for spatial pattern analysis**
 
@@ -228,7 +229,7 @@ pg.citation()
 Contributing & Issue Tracking
 =============================
 
-The primary development workspace for `pyguidos` is officially hosted on **code.europa.eu**. Because this institutional ecosystem requires an EU Login to post issues or submit code, we manage all public interaction transparently via our public **GitHub mirror** to guarantee open participation.
+The primary development workspace for `pyguidos` is officially hosted on **code.europa.eu**. Because this institutional ecosystem requires an EU Login to post issues or submit code, we manage all public interaction transparently via our public [GitHub mirror](https://github.com/nonpenso/pyguidos) to guarantee open participation.
 
 ### Bug Reports & Feature Requests
 If you encounter a bug, have an installation issue, or wish to request an analytical feature, please do not use code.europa.eu. Instead, submit a ticket via the public [GitHub Issue Tracker](https://github.com/nonpenso/pyguidos/issues). This includes the peer-review audits associated with journal submissions.

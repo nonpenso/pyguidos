@@ -73,9 +73,9 @@ def frag_change(
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
     # Initialize Paths and Metadata
-    in_tiff1 = Path(in_tiff_t1)
-    in_tiff2 = Path(in_tiff_t2)
-    outdir = Path(outdir) if outdir else in_tiff1.parent
+    in_tiff1 = Path(in_tiff_t1).resolve(strict=True)
+    in_tiff2 = Path(in_tiff_t2).resolve(strict=True)
+    outdir = Path(outdir).resolve(strict=True) if outdir else in_tiff1.parent
     outname = "FOS_change"
     info1 = utils.get_raster_info(in_tiff1)
     info2 = utils.get_raster_info(in_tiff2)

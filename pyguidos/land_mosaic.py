@@ -82,8 +82,8 @@ def landmos(in_tiff,
     checks.validate_wsize(window_size)
 
     # Initialize Paths and Metadata
-    in_tiff = Path(in_tiff)
-    outdir = Path(outdir) if outdir else in_tiff.parent
+    in_tiff = Path(in_tiff).resolve(strict=True)
+    outdir = Path(outdir).resolve(strict=True) if outdir else in_tiff.parent
     in_name = in_tiff.stem
     out_name = f"{in_name}_lm_{window_size}"
     info = utils.get_raster_info(in_tiff)

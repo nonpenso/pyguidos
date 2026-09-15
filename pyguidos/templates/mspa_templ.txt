@@ -69,14 +69,14 @@ are counted with the class they cross:
   Loop, Bridge = only pixels not touching an Edge or Perforation
 ---------------------------------------------------------------------------------
 
-    MSPA CLASS     PXL NUMBER   FOREGR. %
-    Core          {cor_Fnum}   {cor_Frel}
-    Edge          {edg_Fnum}   {edg_Frel}
-    Perforation   {prf_Fnum}   {prf_Frel}
-    Islet         {isl_Fnum}   {isl_Frel}
-    Branch        {bch_Fnum}   {bch_Frel}
-    Loop          {loo_Fnum}   {loo_Frel}
-    Bridge        {brg_Fnum}   {brg_Frel}
+    MSPA CLASS     PXL NUMBER    FOREGR. %
+    Core           {cor_Fnum}    {cor_Frel}
+    Edge           {edg_Fnum}    {edg_Frel}
+    Perforation    {prf_Fnum}    {prf_Frel}
+    Islet          {isl_Fnum}    {isl_Frel}
+    Branch         {bch_Fnum}    {bch_Frel}
+    Loop           {loo_Fnum}    {loo_Frel}
+    Bridge         {brg_Fnum}    {brg_Frel}
 
 Integral Foreground: {int_frgr}
 Porosity [%]: {poros_val}

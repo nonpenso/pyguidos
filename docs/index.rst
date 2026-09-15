@@ -26,8 +26,12 @@
 .. |license| image:: https://img.shields.io/badge/license-GPLv3-blue.svg
    :target: https://www.gnu.org/licenses/gpl-3.0.html
    :alt: GPLv3 License
+   
+.. |JOSS| image:: https://joss.theoj.org/papers/8a3fdc720f5b0c3f8392d33405787d79/status.svg
+   :target: https://joss.theoj.org/papers/8a3fdc720f5b0c3f8392d33405787d79
+   :alt: JOSS status
 
-|pipeline| |coverage| |docs| |pypi| |downloads| |license|
+|pipeline| |coverage| |docs| |pypi| |downloads| |license| |JOSS|
 
 **pyGuidos** is a Python interface to the main modules of `GuidosToolbox <https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/>`_ (GTB), 
 a scientific software suite developed at the European Commission Joint Research Centre (JRC) for the 
