@@ -385,27 +385,27 @@ def _get_mspa_stats(mspa_freq,
             "output_file": f"{out_name}.tif",
 
             # External class counts
-            "cor_e_val": f'{cor_e:>10}', "edg_e_val": f'{edg_e:>10}', "prf_e_val": f'{prf_e:>10}',
-            "isl_e_val": f'{isl_e:>10}', "bch_e_val": f'{bch_e:>10}',
-            "loo_e_val": f'{loo_e:>10}', "loE_e_val": f'{loE_e:>10}', "loP_e_val": f'{loP_e:>10}',
-            "brg_e_val": f'{brg_e:>10}', "brE_e_val": f'{brE_e:>10}', "brP_e_val": f'{brP_e:>10}',
+            "cor_e_val": f'{cor_e:>11}', "edg_e_val": f'{edg_e:>11}', "prf_e_val": f'{prf_e:>11}',
+            "isl_e_val": f'{isl_e:>11}', "bch_e_val": f'{bch_e:>11}',
+            "loo_e_val": f'{loo_e:>11}', "loE_e_val": f'{loE_e:>11}', "loP_e_val": f'{loP_e:>11}',
+            "brg_e_val": f'{brg_e:>11}', "brE_e_val": f'{brE_e:>11}', "brP_e_val": f'{brP_e:>11}',
             # Internal class counts
-            "cor_i_val": f'{cor_i:>10}', "edg_i_val": f'{edg_i:>10}', "prf_i_val": f'{prf_i:>10}',
-            "isl_i_val": f'{isl_i:>10}', "bch_i_val": f'{bch_i:>10}',
-            "loo_i_val": f'{loo_i:>10}', "loE_i_val": f'{loE_i:>10}', "loP_i_val": f'{loP_i:>10}',
-            "brg_i_val": f'{brg_i:>10}', "brE_i_val": f'{brE_i:>10}', "brP_i_val": f'{brP_i:>10}',
+            "cor_i_val": f'{cor_i:>11}', "edg_i_val": f'{edg_i:>11}', "prf_i_val": f'{prf_i:>11}',
+            "isl_i_val": f'{isl_i:>11}', "bch_i_val": f'{bch_i:>11}',
+            "loo_i_val": f'{loo_i:>11}', "loE_i_val": f'{loE_i:>11}', "loP_i_val": f'{loP_i:>11}',
+            "brg_i_val": f'{brg_i:>11}', "brE_i_val": f'{brE_i:>11}', "brP_i_val": f'{brP_i:>11}',
             # Background group
-            "bgr_val": f'{bgr:>10}', "brd_opn_val": f'{brd_opn:>10}',
-            "cor_opn_val": f'{cor_opn:>10}', "ndata_val": f'{ndata:>10}',
+            "bgr_val": f'{bgr:>11}', "brd_opn_val": f'{brd_opn:>11}',
+            "cor_opn_val": f'{cor_opn:>11}', "ndata_val": f'{ndata:>11}',
 
             # Aggregated foreground pixel counts
-            "cor_Fnum": f'{agg["Core"]:>10}',
-            "edg_Fnum": f'{agg["Edge"]:>10}',
-            "prf_Fnum": f'{agg["Perforation"]:>10}',
-            "isl_Fnum": f'{agg["Islet"]:>10}',
-            "bch_Fnum": f'{agg["Branch"]:>10}',
-            "loo_Fnum": f'{agg["Loop"]:>10}',
-            "brg_Fnum": f'{agg["Bridge"]:>10}',
+            "cor_Fnum": f'{agg["Core"]:>11}',
+            "edg_Fnum": f'{agg["Edge"]:>11}',
+            "prf_Fnum": f'{agg["Perforation"]:>11}',
+            "isl_Fnum": f'{agg["Islet"]:>11}',
+            "bch_Fnum": f'{agg["Branch"]:>11}',
+            "loo_Fnum": f'{agg["Loop"]:>11}',
+            "brg_Fnum": f'{agg["Bridge"]:>11}',
 
             # Aggregated foreground percentages
             "cor_Frel": f'{rel(agg["Core"]):6.2f}',
@@ -440,7 +440,7 @@ def _get_mspa_stats(mspa_freq,
     }
     output_stats_dict = {
         "class freq": out_freq,
-        "aggregated foregr": {k: int(v) for k, v in agg.items()},
+        "class freq aggr": {k: int(v) for k, v in agg.items()},
         "integral foregr": ifrgr,
         "porosity": poros
     }

@@ -347,12 +347,12 @@ def _get_spa_stats(spa_freq,
             "path txt" : str(txt_file)
             }
     input_stats_dict = {
-        "foreground pxl" : fgrnd,
-        "background pxl" : bgrnd,
-        "missing pxl" : ndata
+        "foreground pxl" : int(fgrnd),
+        "background pxl" : int(bgrnd),
+        "missing pxl" : int(ndata)
         }
     output_stats_dict = {
-        "class freq" : out_freq
+        "class freq" : {k:int(v) for k,v in out_freq.items()}
         }
     stats_dict = {
         "output paths" : path_stats_dict,

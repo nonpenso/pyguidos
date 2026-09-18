@@ -80,7 +80,7 @@ def test_mspa_stats_standalone(mspa_result):
     out_tif = mspa_result["output paths"]["path tif"]
     stats = mspa_stats(out_tif, stat_files=True)
     assert stats["input stats"]["foreground pxl"] == 100
-    assert "aggregated foregr" in stats["output stats"]
+    assert "class freq aggr" in stats["output stats"]
     assert "porosity" in stats["output stats"]
 
 

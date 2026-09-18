@@ -313,7 +313,7 @@ Accessing the result:
 
     # Fragmentation indices and class pixel counts
     print(result["output stats"])
-    # {{'1 rare pxl': 1200, '2 patch pxl': 2300, '3 trans pxl': 3100,
+    # {'class_freq': {'1 rare pxl': 1200, '2 patch pxl': 2300, '3 trans pxl': 3100,
     #  '4 domin pxl': 4200, '5 inter pxl': 1700}, 'fad_av': 62.3, 'avcon': 58.1}
 
     # Output file paths

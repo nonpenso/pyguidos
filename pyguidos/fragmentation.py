@@ -293,8 +293,14 @@ def _get_frag_stats(frag_freq,
     ruarea = fgrnd + bgrnd + bgr3 + bgr4
     sum_prod = sum(v * frag_freq[v] for v in range(101))
 
-    fad_av = sum_prod / fgrnd
-    avcon = sum_prod / ruarea
+    fad_av = sum_prod/fgrnd if fgrnd>0 else 0
+    avcon = sum_prod/ruarea if ruarea>0 else 0
+    
+    rare_r  =rare / fgrnd * 100 if fgrnd>0 else 0
+    patch_r =patchy / fgrnd * 100 if fgrnd>0 else 0
+    trans_r =trans / fgrnd * 100 if fgrnd>0 else 0
+    domin_r =domin / fgrnd * 100 if fgrnd>0 else 0
+    inter_r =inter / fgrnd * 100 if fgrnd>0 else 0
 
     if outfile:
 
@@ -364,17 +370,17 @@ def _get_frag_stats(frag_freq,
 
             "output_file": f"{out_name}.tif",
             "rep_unit_pxl": ruarea,
-            "foreg_area_rel": (fgrnd / ruarea * 100),
+            "foreg_area_rel": fgrnd/ruarea * 100  if ruarea>0 else 0,
             "rare_val": f"{rare:>9}",
             "patch_val": f"{patchy:>9}",
             "trans_val": f"{trans:>9}",
             "domin_val": f"{domin:>9}",
             "inter_val": f"{inter:>9}",
-            "rare_pro": f"{(rare / fgrnd) * 100:7.4f}",
-            "patch_pro": f"{(patchy / fgrnd) * 100:7.4f}",
-            "trans_pro": f"{(trans / fgrnd) * 100:7.4f}",
-            "domin_pro": f"{(domin / fgrnd) * 100:7.4f}",
-            "inter_pro": f"{(inter / fgrnd) * 100:7.4f}",
+            "rare_pro": f"{rare_r:7.4f}",
+            "patch_pro": f"{patch_r:7.4f}",
+            "trans_pro": f"{trans_r:7.4f}",
+            "domin_pro": f"{domin_r:7.4f}",
+            "inter_pro": f"{inter_r:7.4f}",
             "fad_av_idx": fad_av,
             "avcon_idx": avcon,
         }
@@ -392,23 +398,23 @@ def _get_frag_stats(frag_freq,
             "path png" : str(png_file)
             }
     input_stats_dict = {
-        "foreground pxl" : fgrnd,
-        "background pxl" : bgrnd,
-        "missing pxl" : ndata,
-        "backgr3 pxl" : bgr3,
-        "backgr4 pxl" : bgr4
+        "foreground pxl" : int(fgrnd),
+        "background pxl" : int(bgrnd),
+        "missing pxl" : int(ndata),
+        "backgr3 pxl" : int(bgr3),
+        "backgr4 pxl" : int(bgr4)
         }
     class_freq = {
-        "1 rare pxl" : rare,
-        "2 patch pxl" : patchy,
-        "3 trans pxl" : trans,
-        "4 domin pxl" : domin,
-        "5 inter pxl" : inter
+        "1 rare pxl" : int(rare),
+        "2 patch pxl" : int(patchy),
+        "3 trans pxl" : int(trans),
+        "4 domin pxl" : int(domin),
+        "5 inter pxl" : int(inter)
     }
     output_stats_dict = {
         "class freq" : class_freq,
-        "fad_av" : fad_av,
-        "avcon" : avcon
+        "fad_av" : float(fad_av),
+        "avcon" : float(avcon)
         }
     stats_dict = {
         "output paths" : path_stats_dict,

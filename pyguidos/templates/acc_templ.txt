@@ -28,7 +28,7 @@ Output image: {output_file}
 
 Patch classification table
 ---------------------------------------------------------------------------------
-CLASS  PXL VAL  COLOR   PXL SIZE CLASS        N.PXL   FOREGR.%  N.PATCH   PATCH % 
+CLASS  PXL VAL  COLOR   PXL SIZE CLASS         N.PXL     FG%    N.PATCH   PATCH% 
 {table_rows}
 
 Total number of patches: {tot_pch}

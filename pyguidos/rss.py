@@ -103,12 +103,16 @@ def rss(
         median_size = np.median(patch_sizes)
         largest_size = np.max(patch_sizes)
     
-        sizes_array = np.array(patch_sizes, dtype=np.int32)
+        sizes_array = np.array(patch_sizes, dtype=np.float64)
         total_area = fgrnd + bgrnd
         RAC = (fgrnd / total_area * 100) if total_area > 0 else 0.0
-        ECA = np.sqrt(np.sum(sizes_array**2))
+        ECA = float(np.sqrt(np.sum(sizes_array**2)))
         COH = (ECA / fgrnd) * 100
-        CNOA = 1.0 + ((2.0 * fgrnd * ECA**2)/(fgrnd**2 - ECA**2))
+        denom = fgrnd**2 - ECA**2
+        if np.isclose(denom, 0):
+            CNOA = -9999
+        else:
+            CNOA = 1.0 + ((2.0 * fgrnd * ECA**2)/denom)
         RPOT = 100 - COH
 
         if stat_files:
@@ -155,22 +159,22 @@ def rss(
                 "path txt" : str(txt_file)
                 }
         input_stats_dict = {
-            "foreground pxl" : fgrnd,
-            "background pxl" : bgrnd,
-            "missing pxl" : ndata,
-            "backgr3 pxl" : bgr3,
-            "backgr4 pxl" : bgr4
+            "foreground pxl" : int(fgrnd),
+            "background pxl" : int(bgrnd),
+            "missing pxl" : int(ndata),
+            "backgr3 pxl" : int(bgr3),
+            "backgr4 pxl" : int(bgr4)
             }
         output_stats_dict = {
-            "total patches": tot_pch,
-            "average patch size": avg_size,
-            "median patch size": median_size,
-            "largest patch size": largest_size,
-            "CNOA": CNOA,
-            "ECA": ECA,
-            "RAC": RAC,
-            "COH": COH,
-            "REST_POT": RPOT
+            "total patches": int(tot_pch),
+            "average patch size": float(avg_size),
+            "median patch size": float(median_size),
+            "largest patch size": int(largest_size),
+            "CNOA": int(round(CNOA)),
+            "ECA": int(round(ECA)),
+            "RAC": float(RAC),
+            "COH": float(COH),
+            "REST_POT": float(RPOT)
             }
         stats_dict = {
             "output paths" : path_stats_dict,

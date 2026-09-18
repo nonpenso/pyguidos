@@ -297,9 +297,9 @@ The ``mspa()`` function returns a :class:`dict` with three sections:
     * **missing pxl** (:class:`int`): Count of NoData pixels.
 
 * **output stats** (:class:`dict`)
-    * **class freq** (:class:`dict`): Per-value pixel counts, grouped into
+    * **class freq** (:class:`dict`): Pixel counts for all classes, grouped into
       External, Internal and Background sections.
-    * **aggregated foregr** (:class:`dict`): Pixel counts for the seven
+    * **class freq aggr** (:class:`dict`): Pixel counts for the 7
       aggregated foreground classes (Core, Edge, Perforation, Islet, Branch,
       Loop, Bridge).
     * **integral foregr** (:class:`int`): Integral Foreground derived from

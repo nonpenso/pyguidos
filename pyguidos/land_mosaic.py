@@ -661,15 +661,15 @@ def _get_lm_stats(lm_freq,
             "path png" : str(png_file)
             }
     input_stats_dict = {
-        "class1 pxl": class1,
-        "class2 pxl": class2,
-        "class3 pxl": class3,
-        "foreground pxl": foregr,
-        "missing pxl": NoData
+        "class1 pxl": int(class1),
+        "class2 pxl": int(class2),
+        "class3 pxl": int(class3),
+        "foreground pxl": int(foregr),
+        "missing pxl": int(NoData)
         }
     output_stats_dict = {
-        "pxl numb 103cl": lm_pixel_freq,
-        "pxl numb 19cl": lm_pixel_freq_19,
+        "pxl numb 103cl": {int(k):int(v) for k,v in lm_pixel_freq.items()},
+        "pxl numb 19cl": {int(k):int(v) for k,v in lm_pixel_freq_19.items()},
         }
     stats_dict = {
         "output paths" : path_stats_dict,

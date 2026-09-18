@@ -427,23 +427,23 @@ def _get_frag_gray_stats(frag_freq,
             "path png": str(png_file)
         }
     input_stats_dict = {
-        "in foreground pxl": inFG,
-        "in background pxl": inBG,
-        "out foreground pxl": fgrnd,
-        "out background pxl": bgrnd,
-        "missing pxl": ndata
+        "in foreground pxl": int(inFG),
+        "in background pxl": int(inBG),
+        "out foreground pxl": int(fgrnd),
+        "out background pxl": int(bgrnd),
+        "missing pxl": int(ndata)
     }
     class_freq = {
-        "1 rare pxl": rare,
-        "2 patch pxl": patchy,
-        "3 trans pxl": trans,
-        "4 domin pxl": domin,
-        "5 inter pxl": inter
+        "1 rare pxl": int(rare),
+        "2 patch pxl": int(patchy),
+        "3 trans pxl": int(trans),
+        "4 domin pxl": int(domin),
+        "5 inter pxl": int(inter)
     }
     output_stats_dict = {
         "class freq": class_freq,
-        "fad_av": fad_av,
-        "avcon": avcon
+        "fad_av": float(fad_av),
+        "avcon": float(avcon)
     }
     stats_dict = {
         "output paths": path_stats_dict,

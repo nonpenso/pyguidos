@@ -283,7 +283,7 @@ def _get_acc_stats(acc_freq,
     bgrnd = acc_freq[0]
     bgr3 = acc_freq[105]
     bgr4 = acc_freq[176]
-    ndata =  acc_freq[129]
+    ndata = acc_freq[129]
     fgrnd = (tiff_info["rows"] * tiff_info["cols"]) - bgrnd - bgr3 - bgr4 - ndata
 
     # Counting patches and pixels per class
@@ -307,49 +307,50 @@ def _get_acc_stats(acc_freq,
         median_size = np.median(patch_sizes)
         largest_size = np.max(patch_sizes)
 
+
+    color_seq = ["black", "red", "yellow", "orange", "brown", "green"]
+    rows_list = []
+    num_thr = len(thresholds)
+
+    class_pxl_out = {}
+    class_pth_out = {}
+    for i in range(num_thr + 1):
+        # Determine Class Value and Color from the sequences
+        val = ACC_VALUES[i]
+        color = color_seq[i]
+
+        # Determine the Size String
+        if i == 0:
+            size_raw = f"[1-{thresholds[i]}]"
+        elif i < num_thr:
+            size_raw = f"[{thresholds[i-1]+1}-{thresholds[i]}]"
+        else:
+            size_raw = f"[>{thresholds[-1]}]"
+
+        size_col = f"{size_raw:<16}"
+
+        # Pixel class count and freq
+        p_count = int(acc_freq[val])
+        p_pct = (p_count / fgrnd * 100) if fgrnd > 0 else 0
+        class_pxl_out[f'{i+1} {size_raw}'] = p_count
+
+        # Patch class count and freq
+        o_count_txt = "         -"
+        o_pct_txt = "       -"
+        if lab_freq:
+            o_count = int(class_pch.get(val, 0))
+            o_pct = (o_count / tot_pch * 100) if tot_pch > 0 else 0
+            o_count_txt = f"{o_count:>10}"
+            o_pct_txt = f"{o_pct:>8.2f}"
+            class_pth_out[f'{i+1} {size_raw}']=o_count
+
+        # Format the row string
+        row = (f"{i+1:<6} {val:<8} {color:<7} {size_col} "
+               f"{p_count:>11} {p_pct:>7.2f} {o_count_txt} {o_pct_txt}")
+        rows_list.append(row)
+
     if outfile:
         ### TXT Template Reporting ###
-
-        color_seq = ["black", "red", "yellow", "orange", "brown", "green"]
-        rows_list = []
-        num_thr = len(thresholds)
-
-        class_pxl_out = {}
-        class_pth_out = {}
-        for i in range(num_thr + 1):
-            # Determine Class Value and Color from the sequences
-            val = ACC_VALUES[i]
-            color = color_seq[i]
-
-            # Determine the Size String
-            if i == 0:
-                size_raw = f"[1-{thresholds[i]}]"
-            elif i < num_thr:
-                size_raw = f"[{thresholds[i-1]+1}-{thresholds[i]}]"
-            else:
-                size_raw = f"[>{thresholds[-1]}]"
-
-            size_col = f"{size_raw:<16}"
-
-            # Pixel class count and freq
-            p_count = acc_freq[val]
-            p_pct = (p_count / fgrnd * 100) if fgrnd > 0 else 0
-            class_pxl_out[f'{i+1} {size_raw}'] = p_count
-
-            # Patch class count and freq
-            o_count_txt = "        -"
-            o_pct_txt = "       -"
-            if lab_freq:
-                o_count = class_pch.get(val, 0)
-                o_pct = (o_count / tot_pch * 100) if tot_pch > 0 else 0
-                o_count_txt = f"{o_count:>9}"
-                o_pct_txt = f"{o_pct:>8.2f}"
-                class_pth_out[f'{i+1} {size_raw}']=o_count
-
-            # Format the row string
-            row = (f"{i+1:<6} {val:<8} {color:<7} {size_col} "
-                   f"{p_count:>10} {p_pct:>8.2f} {o_count_txt} {o_pct_txt}")
-            rows_list.append(row)
 
         # Combine rows into a single string
         table_body = "\n".join(rows_list)
@@ -390,11 +391,11 @@ def _get_acc_stats(acc_freq,
             "path txt" : str(txt_file)
             }
     input_stats_dict = {
-        "foreground pxl" : fgrnd,
-        "background pxl" : bgrnd,
-        "missing pxl" : ndata,
-        "backgr3 pxl" : bgr3,
-        "backgr4 pxl" : bgr4
+        "foreground pxl" : int(fgrnd),
+        "background pxl" : int(bgrnd),
+        "missing pxl" : int(ndata),
+        "backgr3 pxl" : int(bgr3),
+        "backgr4 pxl" : int(bgr4)
         }
     output_stats_dict = {
         "class pxl": class_pxl_out,
