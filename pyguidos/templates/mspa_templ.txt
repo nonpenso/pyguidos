@@ -28,7 +28,7 @@ RESULTS
 Output image: {output_file}
 
 ---------------------------------------------------------------------------------
-MSPA CLASS      PXL VALUE  PXL NUMBER 
+MSPA CLASS      PXL VALUE   PXL NUMBER 
    External
 Core            17         {cor_e_val}
 Edge            3          {edg_e_val}
@@ -69,7 +69,7 @@ are counted with the class they cross:
   Loop, Bridge = only pixels not touching an Edge or Perforation
 ---------------------------------------------------------------------------------
 
-    MSPA CLASS     PXL NUMBER    FOREGR. %
+    MSPA CLASS      PXL NUMBER   FOREGR. %
     Core           {cor_Fnum}    {cor_Frel}
     Edge           {edg_Fnum}    {edg_Frel}
     Perforation    {prf_Fnum}    {prf_Frel}

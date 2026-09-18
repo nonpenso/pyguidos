@@ -26,13 +26,12 @@ RESULTS
 Output image: {output_file}
 
 ---------------------------------------------------------
-MSPA CLASS     PXL VALUE   PXL NUMBER    FOREGR. %
-
+MSPA CLASS    PXL VALUE   PXL NUMBER    FOREGR. %
 {table_rows}
 
-Core-Opening     100       {cor_opn_val:>10}
-Background         0       {bgr_val:>10}
-Missing data     129       {ndata_val:>10}
+Core-Opening  100        {cor_opn_val:>11}
+Background    0          {bgr_val:>11}
+Missing data  129        {ndata_val:>11}
 
 
 Computational time: 

@@ -246,64 +246,71 @@ def _get_spa_stats(spa_freq,
     perf = spa_freq[5]
     marg = spa_freq[1]
 
+
     bgrnd = spa_freq[0]
     cor_opn = spa_freq[100]
 
     ndata = spa_freq[129]
     fgrnd = (tiff_info["rows"] * tiff_info["cols"]) - bgrnd - ndata
+    
+    core_r = core/fgrnd*100 if fgrnd >0 else 0
+    isle_r = isle/fgrnd*100 if fgrnd >0 else 0
+    edge_r = edge/fgrnd*100 if fgrnd >0 else 0
+    perf_r = perf/fgrnd*100 if fgrnd >0 else 0
+    marg_r = marg/fgrnd*100 if fgrnd >0 else 0
 
     if classes == '2':
-        out_freq = {"1 Contiguous (17)" : core,
-                    "2 Margin (1)" : marg,
-                    "3 Background (0)" : bgrnd,
-                    "4 Missing (129)" : ndata}
+        out_freq = {"1 Contiguous (17)" : int(core),
+                    "2 Margin (1)" : int(marg),
+                    "3 Background (0)" : int(bgrnd),
+                    "4 Missing (129)" : int(ndata)}
     elif classes == '3':
-        out_freq = {"1 Core (17)" : core,
-                    "2 Margin (1)" : marg,
-                    "3 Core-opening (100)": cor_opn,
-                    "4 Background (0)" : bgrnd,
-                    "5 Missing (129)" : ndata}
+        out_freq = {"1 Core (17)" : int(core),
+                    "2 Margin (1)" : int(marg),
+                    "3 Core-opening (100)": int(cor_opn),
+                    "4 Background (0)" : int(bgrnd),
+                    "5 Missing (129)" : int(ndata)}
     elif classes == '5':
-        out_freq = {"1 Core (17)" : core,
-                    "2 Edge (3)" : edge,
-                    "3 Perforation (5)" : perf,
-                    "4 Margin (1)" : marg,
-                    "5 Core-opening (100)": cor_opn,
-                    "6 Background (0)" : bgrnd,
-                    "7 Missing (129)" : ndata}
+        out_freq = {"1 Core (17)" : int(core),
+                    "2 Edge (3)" : int(edge),
+                    "3 Perforation (5)" : int(perf),
+                    "4 Margin (1)" : int(marg),
+                    "5 Core-opening (100)": int(cor_opn),
+                    "6 Background (0)" : int(bgrnd),
+                    "7 Missing (129)" : int(ndata)}
     elif classes == '6':
-        out_freq = {"1 Core (17)" : core,
-                    "2 Edge (3)" : edge,
-                    "3 Perforation (5)" : perf,
-                    "4 Islet (9)" : isle,
-                    "5 Margin (1)" : marg,
-                    "6 Core-opening (100)": cor_opn,
-                    "7 Background (0)" : bgrnd,
-                    "8 Missing (129)" : ndata}
+        out_freq = {"1 Core (17)" : int(core),
+                    "2 Edge (3)" : int(edge),
+                    "3 Perforation (5)" : int(perf),
+                    "4 Islet (9)" : int(isle),
+                    "5 Margin (1)" : int(marg),
+                    "6 Core-opening (100)": int(cor_opn),
+                    "7 Background (0)" : int(bgrnd),
+                    "8 Missing (129)" : int(ndata)}
 
     if outfile:
         ### TXT Template Reporting ###
 
         if classes == '2':
-            r1 = f"Contiguous        17       {core:>10}    {core/fgrnd*100:7.2f}"
-            r2 = f"Margin             1       {marg:>10}    {marg/fgrnd*100:7.2f}"
+            r1 = f"Contiguous    17         {core:>11}     {core_r:8.4f}"
+            r2 = f"Margin        1          {marg:>11}     {marg_r:8.4f}"
             table_body = "\n".join([r1,r2])
         elif classes == '3':
-            r1 = f"Core              17       {core:>10}    {core/fgrnd*100:7.2f}"
-            r2 = f"Margin             1       {marg:>10}    {marg/fgrnd*100:7.2f}"
+            r1 = f"Core          17         {core:>11}     {core_r:8.4f}"
+            r2 = f"Margin        1          {marg:>11}     {marg_r:8.4f}"
             table_body = "\n".join([r1,r2])
         elif classes == '5':
-            r1 = f"Core              17       {core:>10}    {core/fgrnd*100:7.2f}"
-            r2 = f"Edge               3       {edge:>10}    {edge/fgrnd*100:7.2f}"
-            r3 = f"Perforation        5       {perf:>10}    {perf/fgrnd*100:7.2f}"
-            r4 = f"Margin             1       {marg:>10}    {marg/fgrnd*100:7.2f}"
+            r1 = f"Core          17         {core:>11}     {core_r:8.4f}"
+            r2 = f"Edge          3          {edge:>11}     {edge_r:8.4f}"
+            r3 = f"Perforation   5          {perf:>11}     {perf_r:8.4f}"
+            r4 = f"Margin        1          {marg:>11}     {marg_r:8.4f}"
             table_body = "\n".join([r1,r2,r3,r4])
         elif classes == '6':
-            r1 = f"Core              17       {core:>10}    {core/fgrnd*100:7.2f}"
-            r2 = f"Edge               3       {edge:>10}    {edge/fgrnd*100:7.2f}"
-            r3 = f"Perforation        5       {perf:>10}    {perf/fgrnd*100:7.2f}"
-            r4 = f"Islet              9       {isle:>10}    {isle/fgrnd*100:7.2f}"
-            r5 = f"Margin             1       {marg:>10}    {marg/fgrnd*100:7.2f}"
+            r1 = f"Core          17         {core:>11}     {core_r:8.4f}"
+            r2 = f"Edge          3          {edge:>11}     {edge_r:8.4f}"
+            r3 = f"Perforation   5          {perf:>11}     {perf_r:8.4f}"
+            r4 = f"Islet         9          {isle:>11}     {isle_r:8.4f}"
+            r5 = f"Margin        1          {marg:>11}     {marg_r:8.4f}"
             table_body = "\n".join([r1,r2,r3,r4,r5])
 
         content = {
@@ -328,12 +335,6 @@ def _get_spa_stats(spa_freq,
             "cor_opn_val":cor_opn,
             "bgr_val":bgrnd,
             "ndata_val":ndata,
-
-            "core_rel":f'{core/fgrnd*100:6.2f}',
-            "edge_rel":f'{edge/fgrnd*100:6.2f}',
-            "perf_rel":f'{perf/fgrnd*100:6.2f}',
-            "isle_rel":f'{isle/fgrnd*100:6.2f}',
-            "marg_rel":f'{marg/fgrnd*100:6.2f}',
         }
 
         txt_file = out_dir / f'{out_name}.txt'
