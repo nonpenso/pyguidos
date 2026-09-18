@@ -661,9 +661,9 @@ def _get_lm_stats(lm_freq,
             "path png" : str(png_file)
             }
     input_stats_dict = {
-        "class1 pxl": int(class1),
-        "class2 pxl": int(class2),
-        "class3 pxl": int(class3),
+        "class1 pxl": class1 if isinstance(class1, str) else int(class1),
+        "class2 pxl": class2 if isinstance(class2, str) else int(class2),
+        "class3 pxl": class3 if isinstance(class3, str) else int(class3),
         "foreground pxl": int(foregr),
         "missing pxl": int(NoData)
         }

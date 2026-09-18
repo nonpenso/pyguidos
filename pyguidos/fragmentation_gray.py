@@ -427,8 +427,8 @@ def _get_frag_gray_stats(frag_freq,
             "path png": str(png_file)
         }
     input_stats_dict = {
-        "in foreground pxl": int(inFG),
-        "in background pxl": int(inBG),
+        "in foreground pxl": inFG if isinstance(inFG, str) else int(inFG),
+        "in background pxl": inBG if isinstance(inBG, str) else int(inBG),
         "out foreground pxl": int(fgrnd),
         "out background pxl": int(bgrnd),
         "missing pxl": int(ndata)
