@@ -9,7 +9,7 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
-2.6.0 - 2026-09-07
+2.6.0 - 2026-09-21
 ------------------
 
 **Overview**
@@ -29,7 +29,15 @@ Version 2.6.0 reintroduces full Morphological Spatial Pattern Analysis (MSPA) vi
 
 - License changed to GPLv3: because the vendored ``miallib`` MSPA sources are GPLv3, the distributed pyGuidos package is now provided under the GNU General Public License v3. The original pyGuidos code remains available under the EUPL-1.2. Original authorship (Soille and Vogt) and the ``miallib`` provenance are credited in the ``NOTICE`` file.
 - Consistent ``*_stats()`` input validation: ``spa_stats``, ``frag_stats``, ``frag_gray_stats``, ``landmos_stats``, ``acc_stats`` and ``mspa_stats`` now report two distinct errors (not a GTB output vs. a GTB output from a different tool) instead of conflating them.
+- Input/output path validation: all analysis functions now resolve the output directory strictly and fail up front if it does not exist, instead of running the full computation and only failing at write time. Input paths are resolved non-strictly, since ``rasterio`` already raises a clear error immediately if a file is missing.
+- Native Python types in statistics: the ``*_stats()`` result dictionaries now return native ``int``/``float`` values rather than NumPy scalars, for cleaner downstream use and serialization.
 - Documentation: added a dedicated MSPA usage page and linked it from the user-guide index; added ``mspa()`` to the README module list and to the memory-usage tables; reordered the function lists to lead with morphology (MSPA, SPA); and restructured all tool usage pages to a consistent section order (Parameters with an inline example, Output Files, Output Classes, then a Statistics section split into "Result Dictionary" and "Computing Statistics Separately").
+
+**Fixed**
+
+- MSPA large-image post-processing: isolated pixels left with value ``2`` by the ``miallib`` engine on some large images (an intermittent upstream issue) are reset to background (``0``) before the result is written, so every output pixel maps to a valid MSPA class.
+- ``acc_stats()`` on clipped rasters: building the per-class statistics no longer raises ``UnboundLocalError`` when called with ``stat_files=False``. Classes with no pixels (e.g. after ``extract_by_polygon()`` clipping) are reported as ``0`` rather than being dropped, and the full set of classes from the original image's thresholds is always preserved.
+- Standalone stats without a source raster: ``frag_gray_stats()`` and ``landmos_stats()`` no longer crash when converting input statistics to native types; the documented ``"n/a"`` placeholder for unavailable input counts is passed through unchanged.
 
 
 ----

@@ -7,7 +7,7 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.6.0] - 2026-09-07
+## [2.6.0] - 2026-09-21
 
 ### Overview
 Version 2.6.0 reintroduces full **Morphological Spatial Pattern Analysis (MSPA)** via `pg.mspa()`. Unlike the previous binary-wrapper approach, MSPA is now provided as an internal compiled Python extension built from the original `miallib` C sources of Soille and Vogt, vendored inside the package. The output is **bit-identical** to the GuidosToolbox (GTB) MSPA result for the same parameters, and the extension is built cross-platform via `cibuildwheel` so installation stays a plain `pip install pyguidos`.
@@ -23,7 +23,14 @@ Version 2.6.0 reintroduces full **Morphological Spatial Pattern Analysis (MSPA)*
 ### Changed
 - **License changed to GPLv3**: Because the vendored `miallib` MSPA sources are GPLv3, the distributed pyGuidos package as a whole is now provided under the GNU General Public License v3. The original pyGuidos code (everything except the vendored `miallib` sources) remains available under the EUPL-1.2. Original authorship (Soille and Vogt) and the `miallib` provenance are credited in the `NOTICE` file.
 - **Consistent `*_stats()` input validation**: `spa_stats`, `frag_stats`, `frag_gray_stats`, `landmos_stats`, `acc_stats` and `mspa_stats` now report two distinct errors: one when the input is not a GuidosToolbox output at all, and one when it is a GTB output produced by a *different* tool (naming the tool found). Previously these cases were conflated and could raise an `AttributeError` on non-GTB inputs.
+- **Input/output path validation**: All analysis functions now resolve the output directory strictly and fail up front if it does not exist, instead of running the full computation and only failing at write time. Input paths are resolved non-strictly, since `rasterio` already raises a clear error immediately if a file is missing.
+- **Native Python types in statistics**: The `*_stats()` result dictionaries now return native `int`/`float` values rather than NumPy scalars, for cleaner downstream use and serialization.
 - **Documentation**: Added a dedicated MSPA usage page (`docs/usage/morph_mspa.rst`) and linked it from the user-guide index; the SPA page (`docs/usage/morph_spa.rst`) continues to describe the Simplified Pattern Analysis subset. `mspa()` was added to the `README.md` module list and to the memory-usage tables in `README.md` and `docs/index.rst`. The function lists were reordered to lead with morphology (MSPA, SPA). All tool usage pages were restructured to a consistent section order (Parameters with an inline example, Output Files, Output Classes, then a Statistics section split into "Result Dictionary" and "Computing Statistics Separately").
+
+### Fixed
+- **MSPA large-image post-processing**: Isolated pixels left with value `2` by the `miallib` engine on some large images (an intermittent upstream issue) are reset to background (`0`) before the result is written, so every output pixel maps to a valid MSPA class.
+- **`acc_stats()` on clipped rasters**: Building the per-class statistics no longer raises `UnboundLocalError` when called with `stat_files=False`. Classes with no pixels (e.g. after `extract_by_polygon()` clipping) are reported as `0` rather than being dropped, and the full set of classes from the original image's thresholds is always preserved.
+- **Standalone stats without a source raster**: `frag_gray_stats()` and `landmos_stats()` no longer crash when converting input statistics to native types; the documented `"n/a"` placeholder for unavailable input counts is passed through unchanged.
 
 ### Notes for the miallib authors
 - **LLP64 pointer-truncation fix (Windows)**: The `FIFO4` queue stored pointer values as `long int`, which is 32-bit on Windows (LLP64) and truncates 64-bit pointers, causing an access violation in `label.c` and `wshed.c`. Widened the FIFO element type to a pointer-sized integer (`intptr_t`) and updated the pointer casts. No-op on Linux/macOS (LP64) where results are unchanged. Reported upstream.
