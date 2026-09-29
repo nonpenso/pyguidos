@@ -107,7 +107,7 @@ def rss(
         total_area = fgrnd + bgrnd
         RAC = (fgrnd / total_area * 100) if total_area > 0 else 0.0
         ECA = float(np.sqrt(np.sum(sizes_array**2)))
-        COH = (ECA / fgrnd) * 100
+        COH = (ECA / fgrnd) * 100 if fgrnd > 0 else 0.0
         denom = fgrnd**2 - ECA**2
         if np.isclose(denom, 0):
             CNOA = -9999

@@ -310,14 +310,14 @@ def _get_frag_stats(frag_freq,
             writer = csv.writer(f)
             writer.writerow(['pixel_value', 'pixel_count', 'foreground_proportion'])
             for v in range(101):
-                pct = (frag_freq[v] / fgrnd * 100)
+                pct = (frag_freq[v] / fgrnd * 100 if fgrnd>0 else 0)
                 writer.writerow([v, frag_freq[v], f"{pct:.6f}"])
 
         ### Histogram PNG figure ###
 
         # X & Y values
         pixel_values = list(range(101))
-        frag_pxl_prop = [frag_freq[i]/fgrnd * 100 for i in pixel_values]
+        frag_pxl_prop = [(frag_freq[i]/fgrnd * 100) if fgrnd>0 else 0 for i in pixel_values]
 
         # Create the colormap
         cmap_path = TEMPL_DIR / "frag_colormap.txt"

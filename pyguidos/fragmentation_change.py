@@ -235,14 +235,14 @@ def _get_frag_change_stats(frag_chan_tiff,
     tots_ch_matrix_A = ch_matrix.sum(axis=1)
     sum_prod_A = np.sum(np.arange(101) * tots_ch_matrix_A[0:101])
     ruarea_A = fgrnd_A + bgrTT_A
-    avcon_A = sum_prod_A / ruarea_A
-    fad_av_A = sum_prod_A / fgrnd_A
+    avcon_A = sum_prod_A / ruarea_A if ruarea_A>0 else 0
+    fad_av_A = sum_prod_A / fgrnd_A if fgrnd_A>0 else 0
     
     tots_ch_matrix_B = ch_matrix.sum(axis=0)
     sum_prod_B = np.sum(np.arange(101) * tots_ch_matrix_B[0:101])
     ruarea_B = fgrnd_B + bgrTT_B
-    avcon_B = sum_prod_B / ruarea_B
-    fad_av_B = sum_prod_B / fgrnd_B
+    avcon_B = sum_prod_B / ruarea_B if ruarea_B>0 else 0
+    fad_av_B = sum_prod_B / fgrnd_B if fgrnd_B>0 else 0
     
     # Fragmentation Change pixel counting
     with rasterio.open(frag_chan_tiff) as src:
@@ -274,7 +274,7 @@ def _get_frag_change_stats(frag_chan_tiff,
             writer = csv.writer(f)
             writer.writerow(['pixel_value', 'Delta_FAD', 'pixel_count', 'foreground_proportion'])
             for v in range(201):
-                pct = ((fragch_pxl_freq[v] / fgrnd_AB) * 100)
+                pct = ((fragch_pxl_freq[v] / fgrnd_AB) * 100) if fgrnd_AB>0 else 0
                 d_FAD = 100 - v
                 writer.writerow([v, d_FAD, fragch_pxl_freq[v], f"{pct:.6f}"])
 
@@ -285,7 +285,7 @@ def _get_frag_change_stats(frag_chan_tiff,
         frag_chag_pxl_prop = []
         for i in range(200, -1, -1):
             pixel_values.append(100 - i)
-            frag_chag_pxl_prop.append(fragch_pxl_freq[i]/fgrnd_AB * 100)
+            frag_chag_pxl_prop.append((fragch_pxl_freq[i]/fgrnd_AB * 100) if fgrnd_AB>0 else 0)
         
         # Create the colormap
         cmap_path = TEMPL_DIR / "frag_change_colormap.txt"
@@ -394,8 +394,8 @@ def _get_frag_change_stats(frag_chan_tiff,
 			"FD_valB": f"{fad_av_B:7.4f}",
 			"AV_abs": f"{avcon_B - avcon_A:7.4f}",
 			"FD_abs": f"{fad_av_B - fad_av_A:7.4f}",
-			"AV_rel": f"{(avcon_B - avcon_A)/avcon_A:7.4f}",
-			"FD_rel": f"{(fad_av_B - fad_av_A)/fad_av_A:7.4f}",
+			"AV_rel": f"{(avcon_B - avcon_A)/avcon_A if avcon_A>0 else 0:7.4f}",
+			"FD_rel": f"{(fad_av_B - fad_av_A)/fad_av_A if fad_av_A>0 else 0:7.4f}",
 			
 			"HD_val": f"{H_decr:>11}",
 			"MD_val": f"{M_decr:>11}",
@@ -404,13 +404,13 @@ def _get_frag_change_stats(frag_chan_tiff,
 			"LI_val": f"{L_incr:>11}",
 			"MI_val": f"{M_incr:>11}",
 			"HI_val": f"{H_incr:>11}",
-			"HD_rel": f"{(H_decr/fgrnd_AB)*100:7.4f}",
-			"MD_rel": f"{(M_decr/fgrnd_AB)*100:7.4f}",
-			"LD_rel": f"{(L_decr/fgrnd_AB)*100:7.4f}",
-			"IN_rel": f"{(Insign/fgrnd_AB)*100:7.4f}",
-			"LI_rel": f"{(L_incr/fgrnd_AB)*100:7.4f}",
-			"MI_rel": f"{(M_incr/fgrnd_AB)*100:7.4f}",
-			"HI_rel": f"{(H_incr/fgrnd_AB)*100:7.4f}",
+			"HD_rel": f"{(H_decr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
+			"MD_rel": f"{(M_decr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
+			"LD_rel": f"{(L_decr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
+			"IN_rel": f"{(Insign/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
+			"LI_rel": f"{(L_incr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
+			"MI_rel": f"{(M_incr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
+			"HI_rel": f"{(H_incr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
         }
 
         matrix_dict = {f"CM_{c}{r}": f"{ch_matrix_clas[c, r]:>11}" for r in range(6) for c in range(6)}

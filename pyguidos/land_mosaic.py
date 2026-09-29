@@ -315,7 +315,8 @@ def _get_lm_stats(lm_freq,
     lm_pixel_freq = lm_freq
     NoData = lm_pixel_freq[0]
     foregr = (tiff_info["rows"] * tiff_info["cols"]) - NoData
-    lm_pixel_prop = {k: v / foregr * 100 for k, v in lm_pixel_freq.items()}
+    lm_pixel_prop = {k: (v / foregr * 100) if foregr>0 else 0 
+                     for k, v in lm_pixel_freq.items()}
 
     # Max value
     max_key = max((k for k in lm_pixel_prop if k > 0), key=lm_pixel_prop.get)
@@ -332,7 +333,7 @@ def _get_lm_stats(lm_freq,
         if new_class is not None:
             lm_pixel_freq_19[new_class] += count
 
-    lm_pixel_prop_19 = Counter({k: v / foregr *100
+    lm_pixel_prop_19 = Counter({k: (v / foregr *100) if foregr>0 else 0
                                 for k, v in lm_pixel_freq_19.items()})
 
     A_rel = lm_pixel_prop_19[1]

@@ -21,6 +21,7 @@ env/
 *.obj
 *.lib
 *.exp
+*.nfs*
 
 # IDE and Editor files
 .idea/
