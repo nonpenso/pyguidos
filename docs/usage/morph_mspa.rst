@@ -16,91 +16,126 @@ and the `MSPA guide
     (Simplified Pattern Analysis, SPA).
 
 
-Parameters
-----------
+Functions
+---------
 
-.. list-table::
-   :header-rows: 1
+.. py:function:: pyguidos.mspa(in_tiff, connectivity=8, edge_width=1, transition=True, intext=True, outdir=None, statists=True, stat_files=True, verb=False)
 
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``in_tiff``
-     - str or Path
-     - --
-     - Path to input GeoTIFF (0=NoData, 1=Background, 2=Foreground)
-   * - ``connectivity``
-     - int
-     - 8
-     - Foreground connectivity, 8 or 4
-   * - ``edge_width``
-     - int
-     - 1
-     - Width of the edge/transition zone in pixels (>= 1)
-   * - ``transition``
-     - bool
-     - True
-     - If True, distinguish transition pixels (Loop/Bridge in Edge/Perf.)
-   * - ``intext``
-     - bool
-     - True
-     - If True, separate internal (+100) from external features
-   * - ``outdir``
-     - str or Path
-     - None
-     - Output directory. If None (default), outputs are written to the input file's directory.
-   * - ``statists``
-     - bool
-     - True
-     - If True, computes and returns statistics
-   * - ``stat_files``
-     - bool
-     - True
-     - If True, writes a .txt report file
-   * - ``verb``
-     - bool
-     - False
-     - If True, prints progress messages
+   MSPA segments the foreground of a binary pattern into mutually exclusive
+   morphological classes (core, islet, edge, perforation, bridge, loop,
+   branch, and their variants).
 
-Example with all parameters:
+   :param in_tiff: Path to input GeoTIFF (0=NoData, 1=Background, 2=Foreground).
+   :type in_tiff: str or Path
+   :param connectivity: Foreground connectivity, 8 or 4.
+   :type connectivity: int, optional
+   :param edge_width: Width of the edge/transition zone in pixels (>= 1).
+   :type edge_width: int, optional
+   :param transition: If ``True``, distinguish transition pixels (Loop/Bridge in Edge/Perf.).
+   :type transition: bool, optional
+   :param intext: If ``True``, separate internal (+100) from external features.
+   :type intext: bool, optional
+   :param outdir: Output directory. If ``None`` (default), outputs are written to the input file's directory.
+   :type outdir: str or Path, optional
+   :param statists: If ``True``, computes and returns statistics.
+   :type statists: bool, optional
+   :param stat_files: If ``True``, writes a .txt report file.
+   :type stat_files: bool, optional
+   :param verb: If ``True``, prints progress messages.
+   :type verb: bool, optional
 
-.. code-block:: python
+   :returns: **dict** -- A dictionary containing three main sections:
+   
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif"`` (*str*) -- Absolute path to the result GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+       * ``"input stats"`` (*dict*):
+           * ``"foreground pxl"`` (*int*) -- Count of foreground pixels.
+           * ``"background pxl"`` (*int*) -- Count of background pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"class freq"`` (*dict*) -- Pixel counts for all 23 + 3 classes groupped in External, Internal and Background.
+           * ``"class freq aggr"`` (*dict*) -- Pixel counts for the 7 + 1 aggregated classes.
+           * ``"integral foregr"`` (*int*) -- Integral foreground pixel count.
+           * ``"porosity"`` (*float*) -- Porosity percentage.
+       
+       
+   :outputs: The function writes the following output files with ``stat_files=True``:
+	   
+       * ``<input_filename>_<connectivity>_<edge_width>_<transition>_<intext>.tif``: MSPA result GeoTIFF with color palette
+       * ``<input_filename>_<connectivity>_<edge_width>_<transition>_<intext>.txt``: Statistics report
+   
+   .. rubric:: Example
+   Standard execution of MSPA analysis with default parameters using the Forest/Non-Forest 
+   GeoTIFF file of Corsica stored on ``pyguidos/data`` folder:
 
-    import pyguidos as pg
+   .. code-block:: python
 
-    result = pg.mspa(
-        in_tiff="my_input.tif",
-        connectivity=8,
-        edge_width=1,
-        transition=True,
-        intext=True,
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        verb=False
-    )
+        >>> import pyguidos as pg
+        >>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"		
+        >>> mspa_result = pg.mspa(in_tiff=tiff, connectivity=8, edge_width=1,
+        ... transition=True, intext=True, outdir="output/", statists=True,
+        ... stat_files=True, verb=False)
+        >>> mspa_result['output stats']['class freq aggr']
+        {'Core': 200934,
+         'Edge': 61706,
+         'Perforation': 9331,
+         'Islet': 978,
+         'Branch': 22054,
+         'Loop': 1896,
+         'Bridge': 3838}
+        >>> mspa_result['output paths']['path txt']
+        'output/CLC2018_corsica_FNF_8_1_1_1.tif'        
 
 
-Output Files
+.. py:function:: pyguidos.mspa_stats(mspa_tiff, stat_files=True, outdir=None, source_tiff=None)
+   
+   Computes statistics for an existing MSPA result GeoTIFF.
+
+   :param mspa_tiff: Path to input GeoTIFF (0=NoData, 1=Background, 2=Foreground).
+   :type mspa_tiff: str or Path
+   :param stat_files: If ``True``, writes the .txt report file.
+   :type stat_files: bool, optional
+   :param outdir: Directory for output files. Defaults to the input file's directory.
+   :type outdir: str or Path, optional
+   :param source_tiff: Path to the original input GeoTIFF used to generate the MSPA result.
+   :type source_tiff: str or Path, optional
+   
+   :returns: **dict** -- A dictionary containing three main sections:
+   
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif"`` (*str*) -- Absolute path to the used mspa GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+       * ``"input stats"`` (*dict*):
+           * ``"foreground pxl"`` (*int*) -- Count of foreground pixels.
+           * ``"background pxl"`` (*int*) -- Count of background pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"class freq"`` (*dict*) -- Pixel counts for all 23 + 3 classes groupped in External, Internal and Background.
+           * ``"class freq aggr"`` (*dict*) -- Pixel counts for the 7 + 1 aggregated classes.
+           * ``"integral foregr"`` (*int*) -- Integral foreground pixel count.
+           * ``"porosity"`` (*float*) -- Porosity percentage.
+       
+       
+   :outputs: The function writes the following output file with ``stat_files=True``:
+	   
+       * ``<input_filename>_<connectivity>_<edge_width>_<transition>_<intext>.txt``: Statistics report
+   
+   .. rubric:: Example
+   After executing the MSPA analysis of Corsica, pass the resulting GeoTIFF to 
+   ``mspa_stats()`` to extract detailed summary statistics.
+
+   .. code-block:: python
+
+        >>> mspa_tiff = 'output/CLC2018_corsica_FNF_8_1_1_1.tif'
+        >>> mspa_stats = pg.mspa_stats(mspa_tiff=mspa_tiff, stat_files=True,
+        ... outdir='output/', source_tiff=None)
+        >>> mspa_stats['output stats']['porosity']
+        4.893938440234152
+
+
+MSPA Classes
 ------------
-
-.. list-table::
-   :header-rows: 1
-
-   * - File
-     - Description
-   * - ``<name>_<conn>_<ew>_<trans>_<intext>.tif``
-     - MSPA result GeoTIFF with color palette
-   * - ``<name>_<conn>_<ew>_<trans>_<intext>.txt``
-     - Statistics report
-
-For example, ``input.tif`` analysed with ``connectivity=8``, ``edge_width=1``,
-``transition=True`` and ``intext=True`` produces ``input_8_1_1_1.tif``.
-
-
-Output Classes
---------------
 
 Each foreground pixel is assigned to one of the seven morphological classes and
 mapped in the output GeoTIFF as a byte value with an associated display color.
@@ -243,14 +278,11 @@ match the GuidosToolbox (GTB) MSPA output.
     MSPA output without transition pixels and with internal pixels.
 
 
-Statistics
-----------
+Aggregated classes
+^^^^^^^^^^^^^^^^^^
 
-Definitions
-^^^^^^^^^^^
-
-**Aggregated foreground classes.** The 22 morphological pixel values are
-summarised into seven aggregated classes. Transition pixels (Loop or Bridge
+The 22 morphological pixel values are
+summarised into 7 aggregated classes. Transition pixels (Loop or Bridge
 crossing an Edge or a Perforation) are counted with the class they cross,
 not with Loop/Bridge:
 
@@ -263,98 +295,49 @@ not with Loop/Bridge:
 * **Bridge** = only the plain Bridge pixels not touching an Edge or Perforation
   (external and internal).
 
-**Integral Foreground.** The foreground footprint including its internal
-openings:
+
+Morphological indices
+---------------------
+
+.. raw:: html
+
+   <span style="font-size: 1.3em; font-weight: bold;">Integral Foreground</span>
+   
+The foreground footprint including its internal openings:
 
 .. math::
 
    \text{Integral FG} = \text{Foreground} + \text{Core-Opening} + \text{Border-Opening}
 
-where *Foreground* is the sum of all 22 morphological pixels.
+where *Foreground* is the sum of all 22 morphological class pixels.
 
-**Porosity [%].** The share of the contiguous foreground occupied by
-core-openings, where *Contiguous* = Core + Edge + Perforation (using the
-aggregated Edge/Perforation above):
+
+.. raw:: html
+
+   <span style="font-size: 1.3em; font-weight: bold;">Porosity</span>
+
+The share of the contiguous foreground occupied by core-openings:
 
 .. math::
 
    \text{Porosity} = 100 - 100 \times \frac{\text{Contiguous}}{\text{Contiguous} + \text{Core-Opening}}
 
 
-Result Dictionary
-^^^^^^^^^^^^^^^^^^
-
-The ``mspa()`` function returns a :class:`dict` with three sections:
-
-* **output paths** (:class:`dict` or :obj:`None`)
-    * **path tif** (:class:`str`): Absolute path to the MSPA result GeoTIFF.
-    * **path txt** (:class:`str`): Absolute path to the MSPA statistics report.
-    * *Note: This key is* ``None`` *if* ``stat_files=False``.
-
-* **input stats** (:class:`dict`)
-    * **foreground pxl** (:class:`int`): Count of foreground pixels.
-    * **background pxl** (:class:`int`): Count of background pixels.
-    * **missing pxl** (:class:`int`): Count of NoData pixels.
-
-* **output stats** (:class:`dict`)
-    * **class freq** (:class:`dict`): Pixel counts for all classes, grouped into
-      External, Internal and Background sections.
-    * **class freq aggr** (:class:`dict`): Pixel counts for the 7
-      aggregated foreground classes (Core, Edge, Perforation, Islet, Branch,
-      Loop, Bridge).
-    * **integral foregr** (:class:`int`): Integral Foreground derived from
-      Foreground and openings.
-    * **porosity** (:class:`float`): derived from Core + Edge + Perforation.
-
-Accessing the result:
-
-.. code-block:: python
-
-    result = pg.mspa("my_input.tif", edge_width=1)
-
-    # Output file paths
-    tif_path = result['output paths']['path tif']
-    txt_path = result['output paths']['path txt']
-
-    # Input pixel counts
-    fg = result['input stats']['foreground pxl']
-
-    # Class frequencies and derived indicators
-    freq = result['output stats']['class freq']
-    porosity = result['output stats']['porosity']
-
-
-Computing Statistics Separately
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you already have an MSPA output GeoTIFF, you can compute statistics
-without re-running the analysis:
-
-.. code-block:: python
-
-    stats = pg.mspa_stats(
-        mspa_tiff="output/input_8_1_1_1.tif",
-        stat_files=True,
-        outdir="output/",
-        source_tiff="input.tif"
-    )
-
-.. note::
-    ``mspa_stats()`` requires the input GeoTIFF to contain the ``GTB_MSPA``
-    metadata tag (written automatically by ``mspa()``).
+where *Contiguous* is Core + Edge + Perforation using the aggregated Edge/Perforation (see above)
 
 
 License note
 ------------
 
-MSPA is computed by the original ``miallib`` C implementation of Soille and
-Vogt, bundled inside pyGuidos and compiled as an internal extension. The
-output is **bit-identical** to the GuidosToolbox (GTB) MSPA result for the
-same parameters.
-The vendored ``miallib`` MSPA sources are licensed under the GNU General
-Public License v3 (GPLv3). Because MSPA is compiled into pyGuidos, the
-distributed package as a whole is provided under the GPLv3. See the project
-``LICENSE`` file and :doc:`../index` for details.
+MSPA is computed by a native-Python re-implementation of the original
+``miallib`` MSPA algorithm of Soille and Vogt. The output is **bit-identical**
+to the GuidosToolbox (GTB) MSPA result for the same parameters on the image
+interior (the only difference is a one-pixel symmetric border treatment on the
+right/bottom edges).
+Because the engine is a derivative work of the GPLv3-licensed ``miallib``
+sources, the distributed pyGuidos package as a whole is provided under the GNU
+General Public License v3 (GPLv3). See the project ``LICENSE`` file and
+:doc:`../index` for details.
 
 
 References

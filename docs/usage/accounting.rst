@@ -9,97 +9,117 @@ Further details about Accounting analysis are available in the
 `Accounting product sheet
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Objects-Accounting.pdf>`_.
 
-
-Parameters
-----------
-
-.. list-table::
-   :header-rows: 1
-
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``in_tiff``
-     - str or Path
-     - --
-     - Path to input GeoTIFF
-   * - ``thresholds``
-     - list, tuple or array
-     - --
-     - 1 to 5 unique positive integers defining size class boundaries
-   * - ``outdir``
-     - str or Path
-     - None
-     - Output directory. If None (default), outputs are written to the input file's directory.
-   * - ``statists``
-     - bool
-     - True
-     - Compute statistics
-   * - ``stat_files``
-     - bool
-     - True
-     - Write statistics to files
-   * - ``verb``
-     - bool
-     - False
-     - Print progress messages
-
-Example with all parameters:
-
-.. code-block:: python
-
-    import pyguidos as pg
-
-    result = pg.acc(
-        in_tiff="my_map.tif",
-        thresholds=[10, 100, 1000, 10000],
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        verb=False
-    )
-
-The ``thresholds`` parameter defines the patch size class boundaries
-in pixels. For example, ``thresholds=[10, 100, 1000, 10000]`` creates 5 size
-classes:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Class
-     - Size range
-   * - 1
-     - 1 -- 10 pixels
-   * - 2
-     - 11 -- 100 pixels
-   * - 3
-     - 101 -- 1000 pixels
-   * - 4
-     - 1001 -- 10000 pixels
-   * - 5
-     - > 10000 pixels
-
 .. note::
-    A minimum of 1 and a maximum of 5 thresholds are allowed.
-    Duplicate values are automatically removed and the list is
-    sorted before processing. Thresholds are expressed in pixels: to convert
-    to area units, multiply by the pixel area (e.g. at 25 m resolution,
-    1 pixel = 0.0625 ha, so a threshold of 200 pixels = 12.5 hectares).
+    A minimum of 1 and a maximum of 5 thresholds are allowed. Duplicate
+    values are automatically removed and the list is sorted before
+    processing. Thresholds are expressed in pixels: to convert to area
+    units, multiply by the pixel area (e.g. at 25 m resolution, 1 pixel =
+    0.0625 ha, so a threshold of 200 pixels = 12.5 hectares).
 
 
-Output Files
-------------
+Functions
+---------
 
-.. list-table::
-   :header-rows: 1
+.. py:function:: pyguidos.acc(in_tiff, thresholds, outdir=None, statists=True, stat_files=True, verb=False)
 
-   * - File
-     - Description
-   * - ``<name>_acc.tif``
-     - Accounting result GeoTIFF with colour palette
-   * - ``<name>_acc.txt``
-     - Statistics report
+   Performs Foreground Patch Size Accounting (ACC) on a binary or
+   multi-class raster. Each foreground patch is classified into size
+   categories defined by the user-provided thresholds, enabling analysis
+   of the patch size distribution across the landscape.
+
+   :param in_tiff: Path to input GeoTIFF (0=NoData, 1=Background, 2=Foreground; optionally 3/4 for special background classes).
+   :type in_tiff: str or Path
+   :param thresholds: Sequence of 1 to 5 unique positive integers defining the patch size class boundaries in pixels. For example, ``[10, 100, 1000]`` creates 4 classes: [1-10], [11-100], [101-1000], [>1000].
+   :type thresholds: list, tuple or numpy.ndarray
+   :param outdir: Output directory. If ``None`` (default), outputs are written to the input file's directory.
+   :type outdir: str or Path, optional
+   :param statists: If ``True``, computes and returns statistics.
+   :type statists: bool, optional
+   :param stat_files: If ``True``, writes a .txt report file.
+   :type stat_files: bool, optional
+   :param verb: If ``True``, prints progress messages.
+   :type verb: bool, optional
+
+   :returns: **dict** -- A dictionary containing three main sections:
+
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif"`` (*str*) -- Absolute path to the result GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+       * ``"input stats"`` (*dict*):
+           * ``"foreground pxl"`` (*int*) -- Count of foreground pixels.
+           * ``"background pxl"`` (*int*) -- Count of background pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+           * ``"backgr3 pxl"`` (*int*) -- Count of special background class 3 pixels.
+           * ``"backgr4 pxl"`` (*int*) -- Count of special background class 4 pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"class pxl"`` (*dict*) -- Pixel counts per accounting size class, keyed by class label (e.g. ``"1 [1-10]"``, ``"2 [11-100]"``, ``"3 [>1000]"``).
+           * ``"class patch"`` (*dict*) -- Patch (object) counts per accounting size class, using the same keys as ``"class pxl"``.
+
+   :outputs: The function writes the following output files with ``stat_files=True``:
+
+       * ``<input_filename>_acc.tif``: Accounting result GeoTIFF with color palette
+       * ``<input_filename>_acc.txt``: Statistics report
+
+   .. rubric:: Example
+   Standard execution of the Accounting analysis, splitting foreground
+   patches into five size classes:
+
+   .. code-block:: python
+
+        >>> import pyguidos as pg
+        >>> acc_result = pg.acc(in_tiff="my_map.tif",
+        ... thresholds=[10, 100, 1000, 10000], outdir="output/",
+        ... statists=True, stat_files=True, verb=False)
+        >>> acc_result['output stats']['class pxl']
+        {'1 [1-10]': ..., '2 [11-100]': ..., '3 [101-1000]': ...,
+         '4 [1001-10000]': ..., '5 [>10000]': ...}
+        >>> acc_result['output paths']['path tif']
+        'output/my_map_acc.tif'
+
+
+.. py:function:: pyguidos.acc_stats(acc_tiff, stat_files=True, outdir=None, source_tiff=None)
+
+   Computes statistics for an existing Accounting result GeoTIFF.
+
+   :param acc_tiff: Path to the accounting result GeoTIFF (must carry a valid ``GTB_ACC`` metadata tag).
+   :type acc_tiff: str or Path
+   :param stat_files: If ``True``, writes a .txt report file.
+   :type stat_files: bool, optional
+   :param outdir: Directory for output files. Defaults to the input file's directory.
+   :type outdir: str or Path, optional
+   :param source_tiff: Path to the original input GeoTIFF used to generate the accounting result.
+   :type source_tiff: str or Path, optional
+
+   :returns: **dict** -- A dictionary containing three main sections:
+
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif"`` (*str*) -- Absolute path to the result GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+       * ``"input stats"`` (*dict*):
+           * ``"foreground pxl"`` (*int*) -- Count of foreground pixels.
+           * ``"background pxl"`` (*int*) -- Count of background pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+           * ``"backgr3 pxl"`` (*int*) -- Count of special background class 3 pixels.
+           * ``"backgr4 pxl"`` (*int*) -- Count of special background class 4 pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"class pxl"`` (*dict*) -- Pixel counts per accounting size class.
+           * ``"class patch"`` (*dict*) -- Empty when computed from an existing GeoTIFF, since per-patch counts require the labelled array produced during the original ``acc()`` run.
+
+   :outputs: The function writes the following output file with ``stat_files=True``:
+
+       * ``<acc_filename>.txt``: Statistics report
+
+   .. rubric:: Example
+   After executing the Accounting analysis, pass the resulting GeoTIFF to
+   ``acc_stats()`` to extract summary statistics.
+
+   .. code-block:: python
+
+        >>> acc_tiff = 'output/my_map_acc.tif'
+        >>> acc_stats = pg.acc_stats(acc_tiff=acc_tiff, stat_files=True,
+        ... outdir='output/', source_tiff="my_map.tif")
+        >>> acc_stats['input stats']['foreground pxl']
+        12500
 
 
 Output Classes
@@ -170,72 +190,3 @@ and special pixel values:
    * - 176
      - Light Blue
      - Special background (value 4 in input)
-
-
-Statistics
-----------
-
-Result Dictionary
-^^^^^^^^^^^^^^^^^^
-
-The ``acc()`` function returns a :class:`dict` with three sections:
-
-* **output paths** (:class:`dict` or :obj:`None`)
-    * **path tif** (:class:`str`): Absolute path to the resulting Accounting GeoTIFF.
-    * **path txt** (:class:`str`): Absolute path to the statistics text report.
-    * *Note: This key is* ``None`` *if* ``stat_files=False``.
-
-* **input stats** (:class:`dict`)
-    * **foreground pxl** (:class:`int`): Count of pixels with value 2 (Forest).
-    * **background pxl** (:class:`int`): Count of pixels with value 1 (Background).
-    * **missing pxl** (:class:`int`): Count of NoData (0) pixels.
-    * **backgr3 pxl** (:class:`int`): Count of special background class 3 pixels.
-    * **backgr4 pxl** (:class:`int`): Count of special background class 4 pixels.
-
-* **output stats** (:class:`dict`)
-    * **pxl numb** (:class:`dict`): A dictionary where keys are class IDs and values are the total number of pixels belonging to that accounting class.
-    * **patch numb** (:class:`dict`): A dictionary where keys are class IDs and values represent the total number of discrete patches identified for that accounting class.
-
-Accessing the result:
-
-.. code-block:: python
-
-    result = pg.acc("my_map.tif", thresholds=[10, 100, 1000, 10000])
-
-    # Access statistics
-    print(result.keys())
-    # dict_keys(['output paths', 'input stats', 'output stats'])
-
-    # Input pixel counts
-    print(result["input stats"])
-    # {'foreground pxl': 12500, 'background pxl': 37500,
-    #  'missing pxl': 0, 'backgr3 pxl': 0, 'backgr4 pxl': 0}
-
-    # Per-class pixel and patch counts
-    print(result["output stats"])
-    # {'pxl numb': Counter({...}), 'patch numb': Counter({...})}
-
-    # Output file paths
-    print(result["output paths"])
-    # {'path tif': 'output/my_map_acc.tif',
-    #  'path txt': 'output/my_map_acc.txt'}
-
-
-Computing Statistics Separately
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you already have an accounting output GeoTIFF, you can compute
-statistics without rerunning the analysis:
-
-.. code-block:: python
-
-    stats = pg.acc_stats(
-        acc_tiff="output/my_map_acc.tif",
-        stat_files=True,
-        outdir="output/",
-        source_tiff="my_map.tif"
-    )
-
-.. note::
-    ``acc_stats()`` requires the input GeoTIFF to be a pyGuidos (or GTB)
-    Accounting output (``GTB_ACC`` tag). See :doc:`input_format` for details.

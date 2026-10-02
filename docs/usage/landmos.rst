@@ -10,82 +10,127 @@ The methodology is described in detail in the `Landscape Mosaic sheet
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Pattern-LM.pdf>`_.
 
 
-Parameters
-----------
+Functions
+---------
 
-.. list-table::
-   :header-rows: 1
+.. py:function:: pyguidos.landmos(in_tiff, window_size, outdir=None, statists=True, stat_files=True, out_colors='bgr', verb=False)
 
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``in_tiff``
-     - str or Path
-     - --
-     - Path to input GeoTIFF
-   * - ``window_size``
-     - int
-     - --
-     - Moving window size in pixels, odd integer >= 3
-   * - ``outdir``
-     - str or Path
-     - None
-     - Output directory. If None (default), outputs are written to the input file's directory.
-   * - ``statists``
-     - bool
-     - True
-     - Compute statistics
-   * - ``stat_files``
-     - bool
-     - True
-     - Write statistics to files
-   * - ``out_colors``
-     - str
-     - ``'bgr'``
-     - Color scheme for the 103-class output colormap
-   * - ``verb``
-     - bool
-     - False
-     - Print progress messages
+   Performs Landscape Mosaic analysis on a three-class raster using a moving
+   window. Each pixel is classified from the proportional composition of the
+   three land cover classes within the window, producing up to 103
+   compositional classes that are also remapped to 19 aggregated classes.
 
-Example with all parameters:
+   :param in_tiff: Path to input GeoTIFF (uint8: 0=NoData, 1=Class 1 e.g. Agriculture, 2=Class 2 e.g. Natural, 3=Class 3 e.g. Developed).
+   :type in_tiff: str or Path
+   :param window_size: Size of the moving window in pixels. Must be an odd integer >= 3.
+   :type window_size: int
+   :param outdir: Output directory. If ``None`` (default), outputs are written to the input file's directory.
+   :type outdir: str or Path, optional
+   :param statists: If ``True``, computes and returns statistics.
+   :type statists: bool, optional
+   :param stat_files: If ``True``, writes .txt, .csv and .png report files.
+   :type stat_files: bool, optional
+   :param out_colors: Color scheme for the 103-class output colormap: ``'agr'``, ``'ant'``, ``'bgr'``, ``'dev'``, ``'div'`` or ``'nat'``.
+   :type out_colors: str, optional
+   :param verb: If ``True``, prints progress messages.
+   :type verb: bool, optional
 
-.. code-block:: python
+   :returns: **dict** -- A dictionary containing three main sections:
 
-    import pyguidos as pg
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif 103cl"`` (*str*) -- Absolute path to the 103-class result GeoTIFF.
+           * ``"path tif 19cl"`` (*str*) -- Absolute path to the aggregated 19-class result GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+           * ``"path csv"`` (*str*) -- Absolute path to the per-value pixel count CSV.
+           * ``"path csv hm"`` (*str*) -- Absolute path to the ternary diagram data table CSV.
+           * ``"path png"`` (*str*) -- Absolute path to the ternary diagram heatmap.
+       * ``"input stats"`` (*dict*):
+           * ``"class1 pxl"`` (*int*) -- Count of input Class 1 pixels.
+           * ``"class2 pxl"`` (*int*) -- Count of input Class 2 pixels.
+           * ``"class3 pxl"`` (*int*) -- Count of input Class 3 pixels.
+           * ``"foreground pxl"`` (*int*) -- Total count of valid (non-missing) pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"pxl numb 103cl"`` (*dict*) -- Pixel counts for the detailed 103-class classification.
+           * ``"pxl numb 19cl"`` (*dict*) -- Pixel counts for the aggregated 19-class classification.
 
-    result = pg.landmos(
-        in_tiff="my_landcover.tif",
-        window_size=31,
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        out_colors='bgr',
-        verb=False
-    )
+   :outputs: The function writes the following output files with ``stat_files=True``:
+
+       * ``<input_filename>_lm_<window_size>_103class_<out_colors>.tif``: 103-class Landscape Mosaic result GeoTIFF with color palette
+       * ``<input_filename>_lm_<window_size>_19class.tif``: 19-class remapped result GeoTIFF
+       * ``<input_filename>_lm_<window_size>.txt``: Statistics report
+       * ``<input_filename>_lm_<window_size>.csv``: Per-value pixel counts and frequencies
+       * ``<input_filename>_lm_<window_size>_heatmap.csv``: Ternary diagram data table
+       * ``<input_filename>_lm_<window_size>_heatmap.png``: Ternary diagram heatmap
+
+   .. rubric:: Example
+   Standard execution of the Landscape Mosaic analysis on a three-class land
+   cover raster:
+
+   .. code-block:: python
+
+        >>> import pyguidos as pg
+        >>> lm_result = pg.landmos(in_tiff="my_landcover.tif", window_size=31,
+        ... outdir="output/", statists=True, stat_files=True,
+        ... out_colors='bgr', verb=False)
+        >>> lm_result['input stats']
+        {'class1 pxl': ..., 'class2 pxl': ..., 'class3 pxl': ...,
+         'foreground pxl': ..., 'missing pxl': ...}
+        >>> lm_result['output paths']['path tif 19cl']
+        'output/my_landcover_lm_31_19class.tif'
 
 
-Output Files
-------------
+.. py:function:: pyguidos.landmos_stats(lm_tiff, stat_files=True, outdir=None, source_tiff=None)
 
-.. list-table::
-   :header-rows: 1
+   Computes statistics for an existing 103-class Landscape Mosaic result
+   GeoTIFF and generates the ternary diagram heatmap.
 
-   * - File
-     - Description
-   * - ``<name>_lm_<window_size>_103class.tif``
-     - 103-class landscape mosaic result GeoTIFF
-   * - ``<name>_lm_<window_size>.tif``
-     - 19-class remapped result GeoTIFF
-   * - ``<name>_lm_<window_size>.txt``
-     - Statistics report
-   * - ``<name>_lm_<window_size>.csv``
-     - Per-value pixel counts and frequencies
-   * - ``<name>_lm_<window_size>_heatmap.csv``
-     - Ternary diagram data table
-   * - ``<name>_lm_<window_size>_heatmap.png``
-     - Ternary diagram heatmap
+   :param lm_tiff: Path to the 103-class Landscape Mosaic result GeoTIFF (must carry a valid ``GTB_LM`` metadata tag).
+   :type lm_tiff: str or Path
+   :param stat_files: If ``True``, writes .txt, .csv and .png report files.
+   :type stat_files: bool, optional
+   :param outdir: Directory for output files. Defaults to the input file's directory.
+   :type outdir: str or Path, optional
+   :param source_tiff: Path to the original three-class input GeoTIFF. When provided, per-class input pixel counts are reported; otherwise they are shown as ``"n/a"``.
+   :type source_tiff: str or Path, optional
+
+   :returns: **dict** -- A dictionary containing three main sections:
+
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif 103cl"`` (*str*) -- Absolute path to the used 103-class GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+           * ``"path csv"`` (*str*) -- Absolute path to the per-value pixel count CSV.
+           * ``"path csv hm"`` (*str*) -- Absolute path to the ternary diagram data table CSV.
+           * ``"path png"`` (*str*) -- Absolute path to the ternary diagram heatmap.
+       * ``"input stats"`` (*dict*):
+           * ``"class1 pxl"`` (*int* or *str*) -- Count of input Class 1 pixels, or ``"n/a"`` when ``source_tiff`` is not provided.
+           * ``"class2 pxl"`` (*int* or *str*) -- Count of input Class 2 pixels, or ``"n/a"``.
+           * ``"class3 pxl"`` (*int* or *str*) -- Count of input Class 3 pixels, or ``"n/a"``.
+           * ``"foreground pxl"`` (*int*) -- Total count of valid (non-missing) pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"pxl numb 103cl"`` (*dict*) -- Pixel counts for the detailed 103-class classification.
+           * ``"pxl numb 19cl"`` (*dict*) -- Pixel counts for the aggregated 19-class classification.
+
+   :outputs: The function writes the following output files with ``stat_files=True``:
+
+       * ``<lm_filename>.txt``: Statistics report
+       * ``<lm_filename>.csv``: Per-value pixel counts and frequencies
+       * ``<lm_filename>_heatmap.csv``: Ternary diagram data table
+       * ``<lm_filename>_heatmap.png``: Ternary diagram heatmap
+
+   .. rubric:: Example
+   After executing the Landscape Mosaic analysis, pass the 103-class result
+   GeoTIFF to ``landmos_stats()`` to extract summary statistics. Provide
+   ``source_tiff`` to report the per-class input pixel counts.
+
+   .. code-block:: python
+
+        >>> lm_tiff = 'output/my_landcover_lm_31_103class_bgr.tif'
+        >>> lm_stats = pg.landmos_stats(lm_tiff=lm_tiff, stat_files=True,
+        ... outdir='output/', source_tiff="my_landcover.tif")
+        >>> lm_stats['input stats']['foreground pxl']
+        45000
 
 
 Output Classes
@@ -254,83 +299,6 @@ proportions of the three input classes within the moving window:
      - [0]
      - [0]
      - [100]
-
-
-Statistics
-----------
-
-Result Dictionary
-^^^^^^^^^^^^^^^^^^
-
-The ``landmos()`` function returns a :class:`dict` with three sections:
-
-* **output paths** (:class:`dict` or :obj:`None`)
-    * **path tif 103cl** (:class:`str`): Absolute path to the 103-class Land Mosaic GeoTIFF.
-    * **path tif 19cl** (:class:`str`): Absolute path to the aggregated 19-class Land Mosaic GeoTIFF.
-    * **path txt** (:class:`str`): Absolute path to the statistics text report.
-    * **path csv** (:class:`str`): Absolute path to the pixel count CSV.
-    * **path csv hm** (:class:`str`): Absolute path to the Heatmap/Transition matrix CSV.
-    * **path png** (:class:`str`): Absolute path to the Land Mosaic tri-polar classification plot.
-    * *Note: This key is* ``None`` *if* ``stat_files=False``.
-
-* **input stats** (:class:`dict`)
-    * **class1 pxl** (:class:`int`): Count of pixels for Land Cover Class 1 (e.g., Natural).
-    * **class2 pxl** (:class:`int`): Count of pixels for Land Cover Class 2 (e.g., Agricultural).
-    * **class3 pxl** (:class:`int`): Count of pixels for Land Cover Class 3 (e.g., Developed/Urban).
-    * **foreground pxl** (:class:`int`): Total count of valid (non-missing) pixels.
-    * **missing pxl** (:class:`int`): Count of NoData (0) pixels.
-
-* **output stats** (:class:`dict`)
-    * **pxl numb 103cl** (:class:`dict`): Pixel counts for the detailed 103-class Land Mosaic classification.
-    * **pxl numb 19cl** (:class:`dict`): Pixel counts for the simplified 19-class Land Mosaic classification.
-
-Accessing the result:
-
-.. code-block:: python
-
-    result = pg.landmos("my_landcover.tif", window_size=33)
-
-    # Access statistics
-    print(result.keys())
-    # dict_keys(['output paths', 'input stats', 'output stats'])
-
-    # Input pixel counts
-    print(result["input stats"])
-    # {'class1 pxl': 15000, 'class2 pxl': 20000, 'class3 pxl': 10000,
-    #  'foreground pxl': 45000, 'missing pxl': 0}
-
-    # Pixel counts for both 103-class and 19-class outputs
-    print(result["output stats"].keys())
-    # dict_keys(['pxl numb 103cl', 'pxl numb 19cl'])
-
-    # Output file paths
-    print(result["output paths"])
-    # {'path tif 103cl': 'output/my_landcover_lm_33_103class.tif',
-    #  'path tif 19cl': 'output/my_landcover_lm_33.tif',
-    #  'path txt': 'output/my_landcover_lm_33.txt',
-    #  'path csv': 'output/my_landcover_lm_33.csv',
-    #  'path csv hm': 'output/my_landcover_lm_33_heatmap.csv',
-    #  'path png': 'output/my_landcover_lm_33_heatmap.png'}
-
-
-Computing Statistics Separately
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you already have a Landscape Mosaic output GeoTIFF, you can compute
-statistics without rerunning the analysis:
-
-.. code-block:: python
-
-    stats = pg.landmos_stats(
-        lm_tiff="output/my_landcover_lm_33_103class.tif",
-        stat_files=True,
-        outdir="output/",
-        source_tiff="my_landcover.tif"
-    )
-
-.. note::
-    ``landmos_stats()`` requires the input GeoTIFF to be a pyGuidos (or GTB)
-    Landscape Mosaic output (``GTB_LM`` tag). See :doc:`input_format` for details.
 
 
 References

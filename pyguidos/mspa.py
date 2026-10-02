@@ -7,35 +7,8 @@ import rasterio
 
 from . import utils
 from . import checks
+from . import engine_mspa
 from . import TEMPL_DIR
-
-# import lazily mspa.py in case of fail wheel installation
-try:
-    from ._mspa import _mspa
-    _MSPA_IMPORT_ERROR = None
-except ImportError as _exc:  # pragma: no cover - only on a broken/source install
-    _mspa = None
-    _MSPA_IMPORT_ERROR = _exc
-
-_MSPA_MISSING_MSG = (
-    "The compiled MSPA extension 'pyguidos._mspa._mspa' is not available for "
-    "your platform/Python version, so pg.mspa() cannot run.\n"
-    "Normally `pip install pyguidos` installs a prebuilt wheel that already "
-    "contains this extension - no compiler is required. This error means no "
-    "matching wheel was found and pyGuidos was installed from source without "
-    "building the extension.\n"
-    "Fixes: (1) upgrade pip and reinstall to fetch a wheel "
-    "(`pip install --upgrade pip && pip install --force-reinstall pyguidos`); "
-    "(2) use a supported CPython (3.10-3.14) on a 64-bit platform; or "
-    "(3) if you must build from source, install a C compiler and reinstall."
-)
-
-
-def _require_mspa():
-    """Raise a clear error if the compiled MSPA extension is unavailable."""
-    if _mspa is None:
-        raise ImportError(_MSPA_MISSING_MSG) from _MSPA_IMPORT_ERROR
-    return _mspa
 
 
 def mspa(in_tiff,
@@ -46,14 +19,16 @@ def mspa(in_tiff,
          outdir=None,
          statists=True,
          stat_files=True,
+         n_jobs=None,
          verb=False):
     """
     Performs Morphological Spatial Pattern Analysis (MSPA) on a binary raster.
 
     MSPA segments the foreground of a binary pattern into mutually exclusive
     morphological classes (core, islet, edge, perforation, bridge, loop,
-    branch, and their variants). It is computed by the original miallib C
-    implementation of Soille and Vogt, bundled unmodified inside pyGuidos.
+    branch, and their variants). It is computed by a native-Python engine
+    (``engine_mspa``) that reproduces the original MSPA algorithm of Soille
+    and Vogt (miallib / GuidosToolbox).
 
     Parameters
     ----------
@@ -75,6 +50,13 @@ def mspa(in_tiff,
         If True (default), computes and returns statistics.
     stat_files : bool, optional
         If True (default), writes statistics to a .txt report file.
+    n_jobs : int, optional
+        Number of worker threads for the mutually independent MSPA stages
+        (edge/core/islet/hole detection). The result is identical regardless
+        of this value. None (default) uses up to 4 threads; 1 forces a serial
+        run. On a many-core machine processing very large rasters, a higher
+        value can reduce wall-clock time (the heavy stages release the GIL),
+        though speed-up is bounded because much of MSPA is inherently serial.
     verb : bool, optional
         If True, prints progress messages. Default False.
 
@@ -92,10 +74,6 @@ def mspa(in_tiff,
     - <in_name>_<connectivity>_<edge_width>_<transition>_<intext>.tif : MSPA result
     """
     start_time = time.time()
-
-    # Fail fast with a clear message if the compiled extension is unavailable,
-    # before doing any I/O or validation work.
-    _require_mspa()
 
     # Log
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
@@ -136,15 +114,17 @@ def mspa(in_tiff,
         # Log
         utils.log_msg(verb, "[   START   ]  Computing MSPA...")
 
-        # Compute MSPA via the embedded miallib engine.
-        # segmentBinaryPatterns(imin, size, graphfg, transition, internal)
-        mspa_engine = _require_mspa()
-        mspa_array, _ = mspa_engine.mspa(input_data,
-                                   float(edge_width),
-                                   int(connectivity),
-                                   trans_i,
-                                   intext_i)
-        # Post-process to fix miallib bug: if pixels = 2 appear, they are converted to Background
+        # Compute MSPA via the native-Python engine.
+        # segment_binary_patterns(imin, edge_width, graphfg, transition, internal)
+        mspa_array = engine_mspa.segment_binary_patterns(
+            input_data,
+            edge_width=int(edge_width),
+            graphfg=int(connectivity),
+            transition=trans_i,
+            internal=intext_i,
+            n_jobs=n_jobs,
+        )
+        # Guard: any stray value 2 (not a valid MSPA class) -> Background.
         mspa_array[mspa_array == 2] = 0
         
         # Save Final GeoTIFF with palette and tags. 

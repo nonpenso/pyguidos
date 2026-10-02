@@ -261,12 +261,13 @@ License
 
 pyGuidos is distributed under the
 [GNU General Public License v3 (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.html).
-This is because the package bundles the GPLv3-licensed
-[`miallib`](https://github.com/ec-jrc/jeolib-miallib) MSPA engine of Soille and
-Vogt, which is compiled into pyGuidos.
+This is because the MSPA engine (`pyguidos/engine_mspa.py`) is a native-Python
+re-implementation of the GPLv3-licensed
+[`miallib`](https://github.com/ec-jrc/jeolib-miallib) MSPA algorithm of Soille
+and Vogt, and is therefore a derivative work of those GPLv3 sources.
 
-The original pyGuidos code (everything except the vendored `miallib` sources
-under `pyguidos/_mspa/miallib/`) remains available under the
+The remaining pyGuidos code (everything except the MSPA engine
+`pyguidos/engine_mspa.py`) remains available under the
 [European Union Public Licence v1.2 (EUPL-1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12),
 which is compatible with the GPLv3.
 

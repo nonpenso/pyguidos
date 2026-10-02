@@ -7,6 +7,22 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.6.1] - 2026-10-02
+
+### Overview
+Version 2.6.1 replaces the compiled MSPA C extension introduced in 2.6.0 with a **native-Python MSPA engine** (`pyguidos/engine_mspa.py`). The engine reproduces the GuidosToolbox (GTB) / `miallib` MSPA result **bit-for-bit on the image interior** across edge widths, 4- and 8-connectivity, and the `transition`/`intext` options. pyGuidos is pure Python again: there is no C to compile, so installation needs no build toolchain and ships as a single platform-independent wheel.
+
+### Changed
+- **MSPA is now pure Python**: `pg.mspa()` calls the new `engine_mspa.segment_binary_patterns()` instead of the compiled `pyguidos._mspa` extension. The public API, class codes, palettes and `.txt` report are unchanged.
+- **Border handling**: The only intentional deviation from `miallib` is a symmetric treatment of the right/bottom image edges (`miallib` has a one-pixel asymmetry there); the interior is identical. Documented in `engine_mspa.py` for the upstream authors.
+- **Packaging simplified**: Removed the vendored `miallib` C sources (`pyguidos/_mspa/`), `setup.py`, the `cibuildwheel` configuration and the per-platform wheel-build CI jobs. The build is now a plain declarative `pyproject.toml`; CI publishes a single pure-Python wheel plus sdist.
+- **Licensing**: Unchanged at GPLv3. `engine_mspa.py` is a derivative work (a line-by-line port) of the GPLv3 `miallib` sources, so the GPLv3 still applies to the package as a whole; the `NOTICE` and `README` wording was updated to describe the ported engine rather than vendored C.
+
+### Fixed
+- **Bridge vs. loop at a one-pixel neck (`edge_width=1`)**: Two distinct cores separated by a single connector pixel are now correctly classified as a **bridge** (not a loop). The core-label propagation in `getcorridor` was reimplemented as a faithful ordered FIFO flood (`_wsfah`, porting `miallib`'s `wsfah`) instead of a distance watershed, which could hand a thin connector to a single core and collapse the bridge test.
+
+---
+
 ## [2.6.0] - 2026-09-21
 
 ### Overview

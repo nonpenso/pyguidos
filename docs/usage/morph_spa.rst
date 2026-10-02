@@ -14,74 +14,110 @@ Further details about SPA and MSPA are available in the `MSPA product sheet
     :doc:`morph_mspa`.
 
 
-Parameters
-----------
+Functions
+---------
 
-.. list-table::
-   :header-rows: 1
+.. py:function:: pyguidos.spa(in_tiff, edge_width, classes=6, outdir=None, statists=True, stat_files=True, verb=False)
 
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``in_tiff``
-     - str or Path
-     - --
-     - Path to input GeoTIFF (0=NoData, 1=Background, 2=Foreground)
-   * - ``edge_width``
-     - int
-     - --
-     - Width of the edge zone in pixels (>= 1)
-   * - ``classes``
-     - int
-     - 6
-     - Number of morphological classes (2, 3, 5, or 6)
-   * - ``outdir``
-     - str or Path
-     - None
-     - Output directory. If None (default), outputs are written to the input file's directory.
-   * - ``statists``
-     - bool
-     - True
-     - If True, computes and returns statistics
-   * - ``stat_files``
-     - bool
-     - True
-     - If True, writes a .txt report file
-   * - ``verb``
-     - bool
-     - False
-     - If True, prints progress messages
+   SPA classifies the foreground of a binary pattern into structural
+   categories based on their spatial context, with four classification
+   levels (2, 3, 5 or 6 classes).
 
-Example with all parameters:
+   :param in_tiff: Path to input GeoTIFF (0=NoData, 1=Background, 2=Foreground).
+   :type in_tiff: str or Path
+   :param edge_width: Width of the edge zone in pixels (>= 1).
+   :type edge_width: int
+   :param classes: Number of morphological classes: 2, 3, 5 or 6.
+   :type classes: int, optional
+   :param outdir: Output directory. If ``None`` (default), outputs are written to the input file's directory.
+   :type outdir: str or Path, optional
+   :param statists: If ``True``, computes and returns statistics.
+   :type statists: bool, optional
+   :param stat_files: If ``True``, writes a .txt report file.
+   :type stat_files: bool, optional
+   :param verb: If ``True``, prints progress messages.
+   :type verb: bool, optional
 
-.. code-block:: python
+   :returns: **dict** -- A dictionary containing three main sections:
 
-    import pyguidos as pg
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif"`` (*str*) -- Absolute path to the result GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+       * ``"input stats"`` (*dict*):
+           * ``"foreground pxl"`` (*int*) -- Count of foreground pixels.
+           * ``"background pxl"`` (*int*) -- Count of background pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"class freq"`` (*dict*) -- Pixel counts for the SPA classes selected by the ``classes`` parameter.
 
-    result = pg.spa(
-        in_tiff="my_input.tif",
-        edge_width=1,
-        classes=6,
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        verb=False
-    )
+   :outputs: The function writes the following output files with ``stat_files=True``:
+
+       * ``<input_filename>_spa_<edge_width>_<classes>.tif``: SPA result GeoTIFF with color palette
+       * ``<input_filename>_spa_<edge_width>_<classes>.txt``: Statistics report
+
+   .. rubric:: Example
+   Standard execution of SPA analysis using the Forest/Non-Forest GeoTIFF
+   file of Corsica stored in the ``pyguidos/data`` folder:
+
+   .. code-block:: python
+
+        >>> import pyguidos as pg
+        >>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> spa_result = pg.spa(in_tiff=tiff, edge_width=1, classes=6,
+        ... outdir="output/", statists=True, stat_files=True, verb=False)
+        >>> spa_result['output stats']['class freq']
+        {'1 Core (17)': 200934,
+         '2 Edge (3)': 61706,
+         '3 Perforation (5)': 9331,
+         '4 Islet (9)': 978,
+         '5 Margin (1)': 27788,
+         '6 Core-opening (100)': 10344,
+         '7 Background (0)': 1134686,
+         '8 Missing (129)': 0}
+        >>> spa_result['output paths']['path tif']
+        'output/CLC2018_corsica_FNF_spa_1_6.tif'
 
 
-Output Files
-------------
+.. py:function:: pyguidos.spa_stats(spa_tiff, stat_files=True, outdir=None, source_tiff=None)
 
-.. list-table::
-   :header-rows: 1
+   Computes statistics for an existing SPA result GeoTIFF.
 
-   * - File
-     - Description
-   * - ``<name>_spa_<ew>_<cl>.tif``
-     - SPA result GeoTIFF with color palette
-   * - ``<name>_spa_<ew>_<cl>.txt``
-     - Statistics report
+   :param spa_tiff: Path to the SPA result GeoTIFF (must carry a ``GTB_SPA`` metadata tag).
+   :type spa_tiff: str or Path
+   :param stat_files: If ``True``, writes the .txt report file.
+   :type stat_files: bool, optional
+   :param outdir: Directory for output files. Defaults to the input file's directory.
+   :type outdir: str or Path, optional
+   :param source_tiff: Path to the original input GeoTIFF used to generate the SPA result.
+   :type source_tiff: str or Path, optional
+
+   :returns: **dict** -- A dictionary containing three main sections:
+
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif"`` (*str*) -- Absolute path to the used SPA GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+       * ``"input stats"`` (*dict*):
+           * ``"foreground pxl"`` (*int*) -- Count of foreground pixels.
+           * ``"background pxl"`` (*int*) -- Count of background pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"class freq"`` (*dict*) -- Pixel counts for the SPA classes.
+
+   :outputs: The function writes the following output file with ``stat_files=True``:
+
+       * ``<spa_filename>.txt``: Statistics report
+
+   .. rubric:: Example
+   After executing the SPA analysis, pass the resulting GeoTIFF to
+   ``spa_stats()`` to extract summary statistics.
+
+   .. code-block:: python
+
+        >>> spa_tiff = 'output/CLC2018_corsica_FNF_spa_1_6.tif'
+        >>> spa_stats = pg.spa_stats(spa_tiff=spa_tiff, stat_files=True,
+        ... outdir='output/', source_tiff=None)
+        >>> spa_stats['input stats']['foreground pxl']
+        301747
 
 
 Output Classes
@@ -142,63 +178,6 @@ each level:
     :alt: SPA 6 classes
 
     Derived SPA maps with 2, 3, 5 and 6 classes and edge width 1.
-
-
-Statistics
-----------
-
-Result Dictionary
-^^^^^^^^^^^^^^^^^^
-
-The ``spa()`` function returns a :class:`dict` with three sections:
-
-* **output paths** (:class:`dict` or :obj:`None`)
-    * **path tif** (:class:`str`): Absolute path to the SPA result GeoTIFF.
-    * **path txt** (:class:`str`): Absolute path to the SPA statistics report.
-    * *Note: This key is* ``None`` *if* ``stat_files=False``.
-
-* **input stats** (:class:`dict`)
-    * **foreground pxl** (:class:`int`): Count of pixels classified as foreground.
-    * **background pxl** (:class:`int`): Count of pixels classified as background.
-    * **missing pxl** (:class:`int`): Count of NoData pixels.
-
-* **output stats** (:class:`dict`)
-    * **class freq** (:class:`dict`): Breakdown of pixel counts for the specific SPA classes chosen.
-
-Accessing the result:
-
-.. code-block:: python
-
-    result = pg.spa("my_input.tif", edge_width=1, classes=6)
-
-    # Output file paths
-    tif_path = result['output paths']['path tif']
-
-    # Input pixel counts
-    fg = result['input stats']['foreground pxl']
-
-    # Class frequencies
-    freq = result['output stats']['class freq']
-
-
-Computing Statistics Separately
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you already have an SPA output GeoTIFF, you can compute statistics
-without re-running the analysis:
-
-.. code-block:: python
-
-    stats = pg.spa_stats(
-        spa_tiff="output/my_map_spa_6_1.tif",
-        stat_files=True,
-        outdir="output/",
-        source_tiff="my_map.tif"
-    )
-
-.. note::
-    ``spa_stats()`` requires the input GeoTIFF to contain the ``GTB_SPA``
-    metadata tag (written automatically by ``spa()``).
 
 
 References

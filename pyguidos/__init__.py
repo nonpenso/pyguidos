@@ -15,7 +15,7 @@ DATA_DIR = MODULE_ROOT / "data"
 
 
 # Package metadata
-__version__ = "2.6.0"
+__version__ = "2.6.1"
 __author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
@@ -100,7 +100,7 @@ def info(tool: str = None):
         "mspa": {
             "title": "Morphological Spatial Pattern Analysis (MSPA)",
             "desc": "Full morphological segmentation of binary patterns into core, islet, "
-                    "edge, perforation, bridge, loop, branch and their variants (miallib).",
+                    "edge, perforation, bridge, loop, branch and their variants.",
             "guide": "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/usage/morph_mspa.html",
             "sheet": "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"
         },

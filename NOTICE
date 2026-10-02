@@ -15,10 +15,14 @@ any later version. See the LICENSE file for the full license text, or
 Licensing note (dual-licensing history)
 ========================================
 pyGuidos was originally released under the European Union Public Licence
-(EUPL-1.2). Starting with version 2.6.0, which incorporates the
-GPLv3-licensed miallib MSPA engine, the project is formally distributed
-under the GNU General Public License v3 or later. The EUPL-1.2 is listed as
-compatible with the GPLv3, and the GPLv3 applies to the package as a whole.
+(EUPL-1.2). Starting with version 2.6.0, which incorporated the
+GPLv3-licensed miallib MSPA engine, the project is distributed under the GNU
+General Public License v3 or later. Version 2.6.1 replaces the vendored
+miallib C sources with a native-Python re-implementation of the same MSPA
+algorithm (`pyguidos/engine_mspa.py`). This Python module is a derivative
+work of the GPLv3 miallib sources (it is a line-by-line port that reproduces
+the original algorithm), so the GPLv3 continues to apply to the package as a
+whole. The EUPL-1.2 is listed as compatible with the GPLv3.
 
 
 Third-party components and attribution
@@ -26,7 +30,8 @@ Third-party components and attribution
 
 Morphological Spatial Pattern Analysis (MSPA)
 ---------------------------------------------
-The MSPA engine in `pyguidos/_mspa/miallib/` is a vendored subset of the
+The MSPA engine in `pyguidos/engine_mspa.py` is a native-Python
+re-implementation of the MSPA algorithm (`segmentBinaryPatterns`) from the
 `miallib` C library (Morphological Image Analysis library), Copyright (C)
 Pierre Soille and collaborators, distributed under the GNU General Public
 License v3 or later. The MSPA algorithm and its GuidosToolbox implementation
@@ -38,13 +43,11 @@ Reference:
   Pattern Recognition Letters 30(4):456-459.
   DOI: 10.1016/j.patrec.2008.10.015
 
-Because pyGuidos incorporates and compiles these GPLv3 sources, the pyGuidos
-package as a whole is distributed under the GPLv3 (see LICENSE).
+Because `pyguidos/engine_mspa.py` is derived from these GPLv3 sources, the
+pyGuidos package as a whole is distributed under the GPLv3 (see LICENSE).
 
-The vendored miallib sources retain their original GPL headers and are kept
-as close to upstream as possible. The only substantive change is a
-portability fix for 64-bit Windows (LLP64): the FIFO4 queue element type was
-widened from `long int` to a pointer-sized integer (`intptr_t`) in
-`fifo.h`/`fifo.c`, with matching cast updates in `label.c` and `wshed.c`.
-This change is a no-op on LP64 platforms (Linux, macOS) and produces
-identical results. It has been reported to the upstream authors.
+The Python port reproduces the miallib result bit-for-bit on the interior of
+the image across edge widths, 4- and 8-connectivity, and the transition and
+internal options. The only intentional deviation is a symmetric border
+treatment on the right/bottom image edges (miallib has a one-pixel
+asymmetry there); see the notes in `pyguidos/engine_mspa.py`.
