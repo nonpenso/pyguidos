@@ -24,7 +24,7 @@ Functions
    :type in_tiff: str or Path
    :param window_size: Size of the moving window in pixels. Must be an odd integer >= 3.
    :type window_size: int
-   :param outdir: Output directory. If ``None`` (default), outputs are written to the input file's directory.
+   :param outdir: Output directory. If ``None`` (default, outputs are written to the input file's directory.
    :type outdir: str or Path, optional
    :param statists: If ``True``, computes and returns statistics.
    :type statists: bool, optional
@@ -70,14 +70,32 @@ Functions
    .. code-block:: python
 
         >>> import pyguidos as pg
-        >>> lm_result = pg.landmos(in_tiff="my_landcover.tif", window_size=31,
+        >>> land_mosaic = pg.DATA_DIR / "CLC2018_corsica_LandMos.tif"
+        >>> lm_result = pg.landmos(in_tiff=land_mosaic, window_size=31,
         ... outdir="output/", statists=True, stat_files=True,
         ... out_colors='bgr', verb=False)
-        >>> lm_result['input stats']
-        {'class1 pxl': ..., 'class2 pxl': ..., 'class3 pxl': ...,
-         'foreground pxl': ..., 'missing pxl': ...}
+        >>> lm_result
         >>> lm_result['output paths']['path tif 19cl']
-        'output/my_landcover_lm_31_19class.tif'
+        {'0-NoData': 932069,
+         '1-A': 6529,
+         '2-D': 67,
+         '3-N': 255326,
+         '4-Ad': 2881,
+         '5-An': 22953,
+         '6-Dn': 1127,
+         '7-Da': 147,
+         '8-Na': 155467,
+         '9-Nd': 12571,
+         '10-Adn': 3107,
+         '11-Dan': 414,
+         '12-Nad': 11010,
+         '13-ad': 595,
+         '14-an': 35228,
+         '15-dn': 1874,
+         '16-adn': 32867,
+         '17-NN': 330442,
+         '18-AA': 326,
+         '19-DD': 0}
 
 
 .. py:function:: pyguidos.landmos_stats(lm_tiff, stat_files=True, outdir=None, source_tiff=None)
@@ -129,8 +147,12 @@ Functions
         >>> lm_tiff = 'output/my_landcover_lm_31_103class_bgr.tif'
         >>> lm_stats = pg.landmos_stats(lm_tiff=lm_tiff, stat_files=True,
         ... outdir='output/', source_tiff="my_landcover.tif")
-        >>> lm_stats['input stats']['foreground pxl']
-        45000
+        >>> lm_stats['input stats']
+        {'class1 pxl': 98525,
+         'class2 pxl': 751504,
+         'class3 pxl': 22902,
+         'foreground pxl': 872931,
+         'missing pxl': 932069}
 
 
 Output Classes

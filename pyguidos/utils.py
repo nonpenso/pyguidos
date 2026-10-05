@@ -6,8 +6,6 @@ import numpy as np
 
 import rasterio
 from rasterio.enums import ColorInterp
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 from numba import njit, prange
 
 
@@ -511,6 +509,11 @@ def get_tif_colormap(tiff_path):
     Reads the embedded GTB colormap from a pyGuidos output GeoTIFF
     and returns a matplotlib ListedColormap and Normalize.
     """
+    # Lazy import: matplotlib is only needed for this plotting helper, so it is
+    # not loaded on `import pyguidos` (keeps import time low for non-plot use).
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+
     with rasterio.open(tiff_path) as src:
         cmap_dict = src.colormap(1)
 

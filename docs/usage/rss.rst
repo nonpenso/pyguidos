@@ -69,12 +69,15 @@ Functions
    .. code-block:: python
 
         >>> import pyguidos as pg
-        >>> rss_result = pg.rss(in_tiff="my_map.tif", outdir="output/",
+        >>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> rss_result = pg.rss(in_tiff=tiff, outdir="output/",
         ... stat_files=True, verb=False)
         >>> rss_result['output stats']['COH']
-        70.1
+        8.123809429358433
+        >>> rss_result['output stats']['median patch size']
+		726.4178743961353
         >>> rss_result['output paths']['path txt']
-        'output/my_map_rss.txt'
+        'output/CLC2018_corsica_FNF_rss.txt'
 
 
 Connectivity Indices

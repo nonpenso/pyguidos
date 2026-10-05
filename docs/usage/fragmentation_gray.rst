@@ -100,14 +100,18 @@ Functions
    .. code-block:: python
 
         >>> import pyguidos as pg
-        >>> frag_result = pg.frag_gray(in_tiff="tree_cover_density.tif",
-        ... method="FAD", window_size=27, for_threshold=1, outdir="output/",
+        >>> forest_density = pg.DATA_DIR / "TCD2023_sardinia.tif"
+        >>> frag_gray_result = pg.frag_gray(in_tiff=forest_density,
+        ... method="FAD", window_size=27, for_threshold=30, outdir="output/",
         ... statists=True, stat_files=True, verb=False)
-        >>> frag_result['output stats']['class freq']
-        {'1 rare pxl': ..., '2 patch pxl': ..., '3 trans pxl': ...,
-         '4 domin pxl': ..., '5 inter pxl': ...}
-        >>> frag_result['output paths']['path tif']
-        'output/tree_cover_density_frag_gray_fad_27_t1.tif'
+        >>> frag_gray_result['output stats']['class freq']
+        {'1 rare pxl': 27328,
+         '2 patch pxl': 357578,
+         '3 trans pxl': 181611,
+         '4 domin pxl': 63055,
+         '5 inter pxl': 0}
+        >>> frag_gray_result['output paths']['path tif']
+        'output/TCD2023_sardinia_frag_gray_fad_27_t30.tif'
 
 
 .. py:function:: pyguidos.frag_gray_stats(frag_tiff, stat_files=True, outdir=None, source_tiff=None)
@@ -154,12 +158,12 @@ Functions
 
    .. code-block:: python
 
-        >>> frag_tiff = 'output/tree_cover_density_frag_gray_fad_27_t1.tif'
-        >>> frag_stats = pg.frag_gray_stats(frag_tiff=frag_tiff,
+        >>> frag_tiff = 'output/TCD2023_sardinia_frag_gray_fad_27_t30.tif'
+        >>> frag_gray_stats = pg.frag_gray_stats(frag_tiff=frag_tiff,
         ... stat_files=True, outdir='output/',
-        ... source_tiff="tree_cover_density.tif")
-        >>> frag_stats['input stats']['out foreground pxl']
-        301747
+        ... source_tiff=pg.DATA_DIR / "TCD2023_sardinia.tif")
+        >>> frag_gray_stats['input stats']['out foreground pxl']
+        629572
 
 
 Methods

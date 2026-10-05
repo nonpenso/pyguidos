@@ -90,9 +90,8 @@ Functions
         >>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
         >>> frag_result = pg.frag(in_tiff=tiff, method="FAD", window_size=27,
         ... outdir="output/", statists=True, stat_files=True, verb=False)
-        >>> frag_result['output stats']['class freq']
-        {'1 rare pxl': ..., '2 patch pxl': ..., '3 trans pxl': ...,
-         '4 domin pxl': ..., '5 inter pxl': ...}
+        >>> frag_result['output stats']['avcon']
+        22.755996751175065
         >>> frag_result['output paths']['path tif']
         'output/CLC2018_corsica_FNF_frag_fad_27.tif'
 
@@ -144,7 +143,7 @@ Functions
         >>> frag_stats = pg.frag_stats(frag_tiff=frag_tiff, stat_files=True,
         ... outdir='output/', source_tiff=None)
         >>> frag_stats['input stats']['foreground pxl']
-        301747
+        300737
 
 
 Methods

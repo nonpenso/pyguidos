@@ -2,12 +2,10 @@ import os
 from pathlib import Path
 import sys
 
-import pyogrio
 import rasterio
 from rasterio.mask import mask as rio_mask
 from rasterio.transform import Affine
 from rasterio.enums import ColorInterp
-from shapely.geometry import box, mapping, Polygon, MultiPolygon
 
 from . import utils
 
@@ -72,6 +70,11 @@ def extract_by_polygon(
     ------------
     - <output_dir>/<name_prefix><id_field_value>.tif : one per polygon feature
     """
+    # Lazy imports: pyogrio and shapely (and the geopandas they pull in) are
+    # only needed by this utility, so they are not loaded on `import pyguidos`.
+    import pyogrio
+    from shapely.geometry import box, mapping, Polygon, MultiPolygon
+
     os.makedirs(output_dir, exist_ok=True)
 
     # Check the supported vector files

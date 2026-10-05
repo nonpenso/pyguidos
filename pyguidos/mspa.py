@@ -125,7 +125,7 @@ def mspa(in_tiff,
             n_jobs=n_jobs,
         )
         # Guard: any stray value 2 (not a valid MSPA class) -> Background.
-        mspa_array[mspa_array == 2] = 0
+        #mspa_array[mspa_array == 2] = 0
         
         # Save Final GeoTIFF with palette and tags. 
         weblink = "https://forest.jrc.ec.europa.eu/en/activities/lpa/mspa/"

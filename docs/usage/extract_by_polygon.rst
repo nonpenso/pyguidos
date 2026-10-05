@@ -48,18 +48,18 @@ Functions
        * ``<output_dir>/<name_prefix><id_field_value>.tif``: Clipped and masked GeoTIFF for each polygon feature. In each filename, spaces in the ``id_field`` value are replaced with underscores and forward slashes with hyphens.
 
    .. rubric:: Example
-   Extract a pyGuidos output map for each country polygon in a shapefile,
-   prefixing every output filename with ``country_``:
+   Extract the forest map for each polygon in the vector file of administrative subdivisions,
+   prefixing every output filename with ``for_maps_``:
 
    .. code-block:: python
 
         >>> import pyguidos as pg
+        >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> admin_boundaries = pg.DATA_DIR / "GISCO_adm_corsica.gpkg"
         >>> pg.extract_by_polygon(
-        ... vector_path="countries.shp", geotiff_path="europe_mspa.tif",
-        ... output_dir="output/countries/", id_field="NAME",
-        ... name_prefix="country_", nodata_value=None, layer=None)
-        >>> # Output files: output/countries/country_France.tif,
-        >>> #               output/countries/country_Germany.tif, ...
+        ... vector_path=admin_boundaries, geotiff_path=forest_map,
+        ... output_dir="output/for_maps/", id_field="ADM_ID",
+        ... name_prefix="for_maps_")
 
 
 NoData Handling

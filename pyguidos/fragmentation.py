@@ -2,7 +2,6 @@ import sys
 import time
 from pathlib import Path
 import csv
-import matplotlib.pyplot as plt
 
 import rasterio
 import numpy as np
@@ -314,6 +313,10 @@ def _get_frag_stats(frag_freq,
                 writer.writerow([v, frag_freq[v], f"{pct:.6f}"])
 
         ### Histogram PNG figure ###
+
+        # Lazy import: matplotlib is only needed when writing the stats PNG, so
+        # it is not loaded on `import pyguidos`.
+        import matplotlib.pyplot as plt
 
         # X & Y values
         pixel_values = list(range(101))

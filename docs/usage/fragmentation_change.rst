@@ -75,18 +75,22 @@ Functions
    .. code-block:: python
 
         >>> import pyguidos as pg
+        >>> frag_t1 = pg.frag(in_tiff=pg.DATA_DIR / "CLC2000_corsica_FNF.tif",
+        ... method="FAD", window_size=27, outdir="output/")
+        >>> frag_t2 = pg.frag(in_tiff=pg.DATA_DIR / "CLC2018_corsica_FNF.tif",
+        ... method="FAD", window_size=27, outdir="output/")
         >>> change_result = pg.frag_change(
-        ... in_tiff_t1="forest_map_2015_frag_fad_27.tif",
-        ... in_tiff_t2="forest_map_2020_frag_fad_27.tif",
+        ... in_tiff_t1=frag_t1['output paths']['path tif'],
+        ... in_tiff_t2=frag_t2['output paths']['path tif'],
         ... outdir="output/", statists=True, stat_files=True, verb=False)
         >>> change_result['output stats']['Frag change freq']
-        {'1 Frag High decrease': ...,
-         '2 Frag Medium decrease': ...,
-         '3 Frag Low decrease': ...,
-         '4 Insign/no change': ...,
-         '5 Frag Low increase': ...,
-         '6 Frag Medium increase': ...,
-         '7 Frag High increase': ...}
+        {'1 Frag High decrease': 12017,
+         '2 Frag Medium decrease': 12988,
+         '3 Frag Low decrease': 39276,
+         '4 Insign/no change': 177619,
+         '5 Frag Low increase': 13655,
+         '6 Frag Medium increase': 1876,
+         '7 Frag High increase': 614}
         >>> change_result['output paths']['path tif']
         'output/FOS_change.tif'
 

@@ -7,14 +7,16 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.6.1] - 2026-10-02
+## [2.6.1] - 2026-10-05
 
 ### Overview
 Version 2.6.1 replaces the compiled MSPA C extension introduced in 2.6.0 with a **native-Python MSPA engine** (`pyguidos/engine_mspa.py`). The engine reproduces the GuidosToolbox (GTB) / `miallib` MSPA result **bit-for-bit on the image interior** across edge widths, 4- and 8-connectivity, and the `transition`/`intext` options. pyGuidos is pure Python again: there is no C to compile, so installation needs no build toolchain and ships as a single platform-independent wheel.
 
 ### Changed
 - **MSPA is now pure Python**: `pg.mspa()` calls the new `engine_mspa.segment_binary_patterns()` instead of the compiled `pyguidos._mspa` extension. The public API, class codes, palettes and `.txt` report are unchanged.
+- **Faster MSPA on large images**: the engine's scalar hot spots (anchored thinning `binOIthin_FIFO` and the `wsfah` core-label flood) are now Numba-compiled, and the bridge/loop test (`getcorridor`) was rewritten from a per-segment image scan to a single-pass vectorised labelled reduction, removing a quadratic cost on large rasters. A new optional `n_jobs` parameter on `mspa()` runs the mutually independent stages (edge/core/islet/hole detection) on worker threads; the result is identical regardless of `n_jobs`.
 - **Border handling**: The only intentional deviation from `miallib` is a symmetric treatment of the right/bottom image edges (`miallib` has a one-pixel asymmetry there); the interior is identical. Documented in `engine_mspa.py` for the upstream authors.
+- **Faster import (lazy dependencies)**: heavy optional dependencies are now imported on first use instead of at `import pyguidos`. `matplotlib` loads only when a statistics plot is written, `scikit-image` only when SPA runs, `python-ternary` only when the Landscape Mosaic diagram is drawn, and `pyogrio`/`shapely` (and the `geopandas` they pull in) only when `extract_by_polygon()` runs. Workflows that do not use these paths — including large MSPA batch runs — no longer pay their load time.
 - **Packaging simplified**: Removed the vendored `miallib` C sources (`pyguidos/_mspa/`), `setup.py`, the `cibuildwheel` configuration and the per-platform wheel-build CI jobs. The build is now a plain declarative `pyproject.toml`; CI publishes a single pure-Python wheel plus sdist.
 - **Licensing**: Unchanged at GPLv3. `engine_mspa.py` is a derivative work (a line-by-line port) of the GPLv3 `miallib` sources, so the GPLv3 still applies to the package as a whole; the `NOTICE` and `README` wording was updated to describe the ported engine rather than vendored C.
 

@@ -67,14 +67,18 @@ Functions
    .. code-block:: python
 
         >>> import pyguidos as pg
-        >>> acc_result = pg.acc(in_tiff="my_map.tif",
+		>>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> acc_result = pg.acc(in_tiff=tiff,
         ... thresholds=[10, 100, 1000, 10000], outdir="output/",
         ... statists=True, stat_files=True, verb=False)
         >>> acc_result['output stats']['class pxl']
-        {'1 [1-10]': ..., '2 [11-100]': ..., '3 [101-1000]': ...,
-         '4 [1001-10000]': ..., '5 [>10000]': ...}
+        {'1 [1-10]': 104,
+         '2 [11-100]': 11274,
+         '3 [101-1000]': 38570,
+         '4 [1001-10000]': 22617,
+         '5 [>10000]': 228172}
         >>> acc_result['output paths']['path tif']
-        'output/my_map_acc.tif'
+        'output/CLC2018_corsica_FNF_acc.tif'
 
 
 .. py:function:: pyguidos.acc_stats(acc_tiff, stat_files=True, outdir=None, source_tiff=None)
@@ -119,7 +123,7 @@ Functions
         >>> acc_stats = pg.acc_stats(acc_tiff=acc_tiff, stat_files=True,
         ... outdir='output/', source_tiff="my_map.tif")
         >>> acc_stats['input stats']['foreground pxl']
-        12500
+        300737
 
 
 Output Classes

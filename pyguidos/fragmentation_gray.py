@@ -2,7 +2,6 @@ import sys
 import time
 from pathlib import Path
 import csv
-import matplotlib.pyplot as plt
 
 import rasterio
 import numpy as np
@@ -358,7 +357,8 @@ def _get_frag_gray_stats(frag_freq,
         colors, _ = utils.get_colormap(cmap_path)
         bar_colors = [colors.get(v) for v in pixel_values]
 
-        # Create the figure with bar chart
+        # Create the figure with bar chart (lazy matplotlib import)
+        import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(7, 6))
         ax.bar(pixel_values, frag_pxl_prop, color=bar_colors, width=1.0,
                edgecolor='black', linewidth=0.4)

@@ -71,9 +71,9 @@ Functions
          '3 Perforation (5)': 9331,
          '4 Islet (9)': 978,
          '5 Margin (1)': 27788,
-         '6 Core-opening (100)': 10344,
-         '7 Background (0)': 1134686,
-         '8 Missing (129)': 0}
+         '6 Core-opening (100)': 13995,
+         '7 Background (0)': 558199,
+         '8 Missing (129)': 932069}
         >>> spa_result['output paths']['path tif']
         'output/CLC2018_corsica_FNF_spa_1_6.tif'
 
@@ -117,7 +117,7 @@ Functions
         >>> spa_stats = pg.spa_stats(spa_tiff=spa_tiff, stat_files=True,
         ... outdir='output/', source_tiff=None)
         >>> spa_stats['input stats']['foreground pxl']
-        301747
+        314732
 
 
 Output Classes

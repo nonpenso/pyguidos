@@ -6,11 +6,6 @@ from collections import Counter
 
 import numpy as np
 import rasterio
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.collections import PatchCollection
-import ternary
-from ternary.helpers import project_point
 
 from . import engine
 from . import utils
@@ -378,6 +373,15 @@ def _get_lm_stats(lm_freq,
             for i in range(10, 0, -1):
                 tri_seq += value_ids[i]
 
+            # Lazy imports: matplotlib and python-ternary are only needed to
+            # draw the ternary diagram, so they are not loaded on
+            # `import pyguidos`.
+            import matplotlib.pyplot as plt
+            import matplotlib.patches as patches
+            from matplotlib.collections import PatchCollection
+            import ternary
+            from ternary.helpers import project_point
+
             fig, ax = plt.subplots(figsize=(10, 8))
 
             # Initialize the tax object
@@ -624,26 +628,46 @@ def _get_lm_stats(lm_freq,
 
             "output_file": f'{out_name}.tif',
 
-            "A_val": f'{A_rel:6.3f}',
-            "D_val": f'{D_rel:6.3f}',
-            "N_val": f'{N_rel:6.3f}',
-            "Ad_val": f'{Ad_rel:6.3f}',
-            "An_val": f'{An_rel:6.3f}',
-            "Dn_val": f'{Dn_rel:6.3f}',
-            "Da_val": f'{Da_rel:6.3f}',
-            "Na_val": f'{Na_rel:6.3f}',
-            "Nd_val": f'{Nd_rel:6.3f}',
-            "Adn_val": f'{Adn_rel:6.3f}',
-            "Dan_val": f'{Dan_rel:6.3f}',
-            "Nad_val": f'{Nad_rel:6.3f}',
-            "ad_val": f'{ad_rel:6.3f}',
-            "an_val": f'{an_rel:6.3f}',
-            "dn_val": f'{dn_rel:6.3f}',
-            "adn_val": f'{adn_rel:6.3f}',
-            "NN_val": f'{NN_rel:6.3f}',
-            "AA_val": f'{AA_rel:6.3f}',
-            "DD_val": f'{DD_rel:6.3f}',
-            "NoD_val": f'{NoD_rel:6.3f}',
+            "A_val": f'{A_rel:8.3f}',
+            "D_val": f'{D_rel:8.3f}',
+            "N_val": f'{N_rel:8.3f}',
+            "Ad_val": f'{Ad_rel:8.3f}',
+            "An_val": f'{An_rel:8.3f}',
+            "Dn_val": f'{Dn_rel:8.3f}',
+            "Da_val": f'{Da_rel:8.3f}',
+            "Na_val": f'{Na_rel:8.3f}',
+            "Nd_val": f'{Nd_rel:8.3f}',
+            "Adn_val": f'{Adn_rel:8.3f}',
+            "Dan_val": f'{Dan_rel:8.3f}',
+            "Nad_val": f'{Nad_rel:8.3f}',
+            "ad_val": f'{ad_rel:8.3f}',
+            "an_val": f'{an_rel:8.3f}',
+            "dn_val": f'{dn_rel:8.3f}',
+            "adn_val": f'{adn_rel:8.3f}',
+            "NN_val": f'{NN_rel:8.3f}',
+            "AA_val": f'{AA_rel:8.3f}',
+            "DD_val": f'{DD_rel:8.3f}',
+            "NoD_val": f'{NoD_rel:8.3f}',
+
+            "A_pxl": f'{lm_pixel_freq_19[1]:>10d}',
+            "D_pxl": f'{lm_pixel_freq_19[2]:>10d}',
+            "N_pxl": f'{lm_pixel_freq_19[3]:>10d}',
+            "Ad_pxl": f'{lm_pixel_freq_19[4]:>10d}',
+            "An_pxl": f'{lm_pixel_freq_19[5]:>10d}',
+            "Dn_pxl": f'{lm_pixel_freq_19[6]:>10d}',
+            "Da_pxl": f'{lm_pixel_freq_19[7]:>10d}',
+            "Na_pxl": f'{lm_pixel_freq_19[8]:>10d}',
+            "Nd_pxl": f'{lm_pixel_freq_19[9]:>10d}',
+            "Adn_pxl": f'{lm_pixel_freq_19[10]:>10d}',
+            "Dan_pxl": f'{lm_pixel_freq_19[11]:>10d}',
+            "Nad_pxl": f'{lm_pixel_freq_19[12]:>10d}',
+            "ad_pxl": f'{lm_pixel_freq_19[13]:>10d}',
+            "an_pxl": f'{lm_pixel_freq_19[14]:>10d}',
+            "dn_pxl": f'{lm_pixel_freq_19[15]:>10d}',
+            "adn_pxl": f'{lm_pixel_freq_19[16]:>10d}',
+            "NN_pxl": f'{lm_pixel_freq_19[17]:>10d}',
+            "AA_pxl": f'{lm_pixel_freq_19[18]:>10d}',
+            "DD_pxl": f'{lm_pixel_freq_19[19]:>10d}',
         }
         txt_file = out_dir / f'{out_name}.txt'
         utils.generate_text_report(TEMPL_DIR / 'lm_templ.txt', txt_file, content)
@@ -668,9 +692,20 @@ def _get_lm_stats(lm_freq,
         "foreground pxl": int(foregr),
         "missing pxl": int(NoData)
         }
+    # 19-class labels consistent with the output class codes (value -> "N-CODE")
+    lm_19cl_labels = {
+        0: "0-NoData", 1: "1-A", 2: "2-D", 3: "3-N", 4: "4-Ad", 5: "5-An",
+        6: "6-Dn", 7: "7-Da", 8: "8-Na", 9: "9-Nd", 10: "10-Adn", 11: "11-Dan",
+        12: "12-Nad", 13: "13-ad", 14: "14-an", 15: "15-dn", 16: "16-adn",
+        17: "17-NN", 18: "18-AA", 19: "19-DD",
+    }
+    pxl_numb_19cl = {
+        lm_19cl_labels.get(k, str(k)): int(lm_pixel_freq_19.get(k, 0))
+        for k in sorted(lm_19cl_labels)
+    }
     output_stats_dict = {
         "pxl numb 103cl": {int(k):int(v) for k,v in lm_pixel_freq.items()},
-        "pxl numb 19cl": {int(k):int(v) for k,v in lm_pixel_freq_19.items()},
+        "pxl numb 19cl": pxl_numb_19cl,
         }
     stats_dict = {
         "output paths" : path_stats_dict,

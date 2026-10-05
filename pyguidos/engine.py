@@ -1,7 +1,5 @@
 import numpy as np
 from scipy.ndimage import distance_transform_edt, binary_fill_holes, label, generate_binary_structure
-from skimage.segmentation import flood_fill
-from skimage.morphology import reconstruction
 import math
 import gc
 from numba import njit, prange
@@ -901,6 +899,11 @@ def compute_spa(input_arr, s, n_classes):
 
     Output: 2D NumPy array (uint8) with MSPA classes.
     """
+    # Lazy import: scikit-image is only needed by SPA, so it is not loaded on
+    # `import pyguidos` (keeps import time low for the other tools).
+    from skimage.segmentation import flood_fill
+    from skimage.morphology import reconstruction
+
     # Metrics
     threshold = s + 0.98
     size_param = (s + 0.98) / math.sqrt(2.0)
