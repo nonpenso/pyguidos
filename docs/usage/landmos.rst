@@ -65,7 +65,7 @@ Functions
 
    .. rubric:: Example
    Standard execution of the Landscape Mosaic analysis on a three-class land
-   cover raster:
+   cover GeoTIFF file of Corsica stored on ``pyguidos/data`` folder:
 
    .. code-block:: python
 

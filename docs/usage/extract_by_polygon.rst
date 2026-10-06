@@ -49,7 +49,8 @@ Functions
 
    .. rubric:: Example
    Extract the forest map for each polygon in the vector file of administrative subdivisions,
-   prefixing every output filename with ``for_maps_``:
+   using the Forest/Non-Forest GeoTIFF file of Corsica stored on ``pyguidos/data`` folder 
+   and prefixing every output filename with ``for_maps_``:
 
    .. code-block:: python
 

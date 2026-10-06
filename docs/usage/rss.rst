@@ -63,14 +63,14 @@ Functions
        * ``<input_filename>_rss.txt``: Statistics report with all connectivity indices
 
    .. rubric:: Example
-   Standard execution of the RSS analysis on a binary foreground/background
-   raster:
+   Standard execution of the RSS analysis with default parameters using the Forest/Non-Forest 
+   GeoTIFF file of Corsica stored on ``pyguidos/data`` folder:
 
    .. code-block:: python
 
         >>> import pyguidos as pg
-        >>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
-        >>> rss_result = pg.rss(in_tiff=tiff, outdir="output/",
+        >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> rss_result = pg.rss(in_tiff=forest_map, outdir="output/",
         ... stat_files=True, verb=False)
         >>> rss_result['output stats']['COH']
         8.123809429358433

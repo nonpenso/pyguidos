@@ -93,9 +93,9 @@ Functions
        * ``<input_filename>_frag_gray_<method><connectivity>_<window_size>_t<for_threshold>.png``: Foreground pixel histogram
 
    .. rubric:: Example
-   Standard execution of a grayscale FAD Fragmentation analysis on a tree
-   cover density raster, treating all non-zero pixels as foreground
-   (``for_threshold=1``):
+   Standard execution of a grayscale FAD Fragmentation analysis using a tree
+   cover density GeoTIFF file of Sardinia stored on ``pyguidos/data`` folder with
+   a threshold set at 30% of forest cover density:
 
    .. code-block:: python
 

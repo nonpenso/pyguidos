@@ -62,8 +62,8 @@ Functions
    .. code-block:: python
 
         >>> import pyguidos as pg
-        >>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
-        >>> spa_result = pg.spa(in_tiff=tiff, edge_width=1, classes=6,
+        >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> spa_result = pg.spa(in_tiff=forest_map, edge_width=1, classes=6,
         ... outdir="output/", statists=True, stat_files=True, verb=False)
         >>> spa_result['output stats']['class freq']
         {'1 Core (17)': 200934,

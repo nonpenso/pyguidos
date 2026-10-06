@@ -3,9 +3,9 @@ Pure-Python engine for Morphological Spatial Pattern Analysis (MSPA).
 
 This module is a native-Python re-implementation of the MSPA algorithm
 (``segmentBinaryPatterns``) originally written in C by Pierre Soille and
-Peter Vogt as part of the ``miallib`` library (GuidosToolbox). It reproduces
-the GTB/miallib MSPA result and removes the need for a compiled C extension:
-pyGuidos is now pure Python.
+Peter Vogt as ``miallib`` and available on GitHub repository:
+https://github.com/ec-jrc/jeolib-miallib
+It reproduces the MSPA result and removes the need for a compiled C extension.
 
 Public entry point
 ------------------

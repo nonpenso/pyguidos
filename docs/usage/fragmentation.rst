@@ -87,8 +87,8 @@ Functions
    .. code-block:: python
 
         >>> import pyguidos as pg
-        >>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
-        >>> frag_result = pg.frag(in_tiff=tiff, method="FAD", window_size=27,
+        >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> frag_result = pg.frag(in_tiff=forest_map, method="FAD", window_size=27,
         ... outdir="output/", statists=True, stat_files=True, verb=False)
         >>> frag_result['output stats']['avcon']
         22.755996751175065

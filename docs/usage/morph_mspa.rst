@@ -72,8 +72,8 @@ Functions
    .. code-block:: python
 
         >>> import pyguidos as pg
-        >>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"		
-        >>> mspa_result = pg.mspa(in_tiff=tiff, connectivity=8, edge_width=1,
+        >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"		
+        >>> mspa_result = pg.mspa(in_tiff=forest_map, connectivity=8, edge_width=1,
         ... transition=True, intext=True, outdir="output/", statists=True,
         ... stat_files=True, verb=False)
         >>> mspa_result['output stats']['class freq aggr']

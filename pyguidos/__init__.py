@@ -1,6 +1,27 @@
 from pathlib import Path
 import os
 import sys
+
+# Thread-count defaults for native math libraries (OpenMP / BLAS / MKL).
+def _setup_thread_env():
+    try:
+        n_cpu = os.cpu_count() or 1
+    except Exception:
+        n_cpu = 1
+    requested = os.environ.get("PYGUIDOS_NUM_THREADS")
+    if requested:
+        try:
+            n = max(1, int(requested))
+        except ValueError:
+            n = n_cpu
+    else:
+        n = n_cpu
+    for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+                "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+        os.environ.setdefault(var, str(n))
+
+_setup_thread_env()
+
 import inspect
 import platform
 import warnings

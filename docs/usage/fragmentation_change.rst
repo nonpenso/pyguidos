@@ -69,8 +69,9 @@ Functions
        * ``FOS_change.png``: Connectivity change frequency histogram
 
    .. rubric:: Example
-   Compare two Fragmentation outputs computed with identical parameters at two
-   different dates:
+   Compute and compare two fragmentation outputs with identical parameters at two
+   different dates using the Forest/Non-Forest GeoTIFF files of Corsica stored 
+   on ``pyguidos/data`` folder:
 
    .. code-block:: python
 

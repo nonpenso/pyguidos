@@ -61,14 +61,15 @@ Functions
        * ``<input_filename>_acc.txt``: Statistics report
 
    .. rubric:: Example
-   Standard execution of the Accounting analysis, splitting foreground
-   patches into five size classes:
+   Standard execution of the Accounting analysis using the Forest/Non-Forest 
+   GeoTIFF file of Corsica stored on ``pyguidos/data`` folder, splitting the
+   foreground patches into five size classes:
 
    .. code-block:: python
 
         >>> import pyguidos as pg
-		>>> tiff = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
-        >>> acc_result = pg.acc(in_tiff=tiff,
+        >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> acc_result = pg.acc(in_tiff=forest_map,
         ... thresholds=[10, 100, 1000, 10000], outdir="output/",
         ... statists=True, stat_files=True, verb=False)
         >>> acc_result['output stats']['class pxl']
