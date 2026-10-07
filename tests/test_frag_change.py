@@ -123,7 +123,7 @@ def test_get_frag_change_stats_reporting(
     mock_raster_info.return_value = {
         "tag": "GTB_FOS, <Binary,-1,8,FAD_5,100.0,7>, https",
         "epsg": 3035, 
-        "is_projected": False, 
+        "unit": "metres", 
         "resX": 1.0, 
         "resY": 1.0, 
         "rows": 5, 
