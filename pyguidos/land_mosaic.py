@@ -3,9 +3,11 @@ import time
 from pathlib import Path
 import csv
 from collections import Counter
+import warnings
 
 import numpy as np
 import rasterio
+from rasterio.errors import NotGeoreferencedWarning
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.collections import PatchCollection
@@ -17,6 +19,8 @@ from . import utils
 from . import checks
 from . import TEMPL_DIR
 
+# Ignore if input raster has no georeference
+warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 
 def landmos(in_tiff,
             window_size,
@@ -87,6 +91,11 @@ def landmos(in_tiff,
     in_name = in_tiff.stem
     out_name = f"{in_name}_lm_{window_size}"
     info = utils.get_raster_info(in_tiff)
+    if info["epsg"] == "No georeferencing":
+        warnings.warn(
+            f"{in_name} has no spatial georeferencing CSR. "
+            "Processing will continue using pixel-based units.",
+            category=UserWarning, stacklevel=2)
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
@@ -605,7 +614,7 @@ def _get_lm_stats(lm_freq,
         content = {
             "input_file": source_tiff.name if source_tiff else "n/a",
             "epsg_code": tiff_info["epsg"],
-            "unit_type": 'metres' if tiff_info["is_projected"] else 'degrees',
+            "unit_type": tiff_info["unit"],
             "resolx": tiff_info["resX"],
             "resoly": tiff_info["resY"],
             "rows_val": tiff_info["rows"],
@@ -619,8 +628,8 @@ def _get_lm_stats(lm_freq,
 
             "w_size": window_size,
             "out_cmap": cmap_type,
-            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["is_projected"] else '--',
-            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["is_projected"] else '--',
+            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["unit"]=='metres' else '--',
+            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["unit"]=='metres' else '--',
 
             "output_file": f'{out_name}.tif',
 

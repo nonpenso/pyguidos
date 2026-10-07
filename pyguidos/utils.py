@@ -1,16 +1,18 @@
 import re
 import collections
 from pathlib import Path
+import warnings
 
 import numpy as np
-
 import rasterio
 from rasterio.enums import ColorInterp
+from rasterio.errors import NotGeoreferencedWarning
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from numba import njit, prange
 
-
+# Ignore if input raster has no georeference
+warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 
 def get_raster_info(intiff_path):
     """
@@ -47,9 +49,14 @@ def get_raster_info(intiff_path):
         resX, resY = src.res
 
         # Get projection
-        epsg = src.crs.to_epsg(confidence_threshold=20)
-        if epsg is None:
-            epsg = "Unknown"
+        if src.crs is not None:
+            unit = "metres" if src.crs.is_projected else "degrees"
+            epsg = src.crs.to_epsg(confidence_threshold=20)
+            if epsg is None:
+                epsg = "Unknown"
+        else:
+            unit = "pixels"
+            epsg = "No georeferencing"
 
         # Get colormap
         try:
@@ -76,7 +83,7 @@ def get_raster_info(intiff_path):
             "is_tiled": is_tiled,
             "crs": src.crs,
             "epsg": epsg,
-            "is_projected": src.crs.is_projected,
+            "unit": unit,
             "bounds": src.bounds,
             "cmap": cmap,
             "tag": tag_descr

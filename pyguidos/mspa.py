@@ -1,13 +1,18 @@
 import sys
 import time
 from pathlib import Path
+import warnings
 
 import numpy as np
 import rasterio
+from rasterio.errors import NotGeoreferencedWarning
 
 from . import utils
 from . import checks
 from . import TEMPL_DIR
+
+# Ignore if input raster has no georeference
+warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 
 # import lazily mspa.py in case of fail wheel installation
 try:
@@ -114,6 +119,11 @@ def mspa(in_tiff,
     intext_i = 1 if intext else 0
     out_name = f"{in_name}_{connectivity}_{edge_width}_{trans_i}_{intext_i}"
     info = utils.get_raster_info(in_tiff)
+    if info["epsg"] == "No georeferencing":
+        warnings.warn(
+            f"{in_name} has no spatial georeferencing CSR. "
+            "Processing will continue using pixel-based units.",
+            category=UserWarning, stacklevel=2)
 
     # Read input GeoTIFF
     with rasterio.open(in_tiff) as src:
@@ -367,7 +377,7 @@ def _get_mspa_stats(mspa_freq,
         content = {
             "input_file": source_tiff.name if source_tiff else "n/a",
             "epsg_code": tiff_info["epsg"],
-            "unit_type": 'metres' if tiff_info["is_projected"] else 'degrees',
+            "unit_type": tiff_info["unit"],
             "resolx": tiff_info["resX"],
             "resoly": tiff_info["resY"],
             "rows_val": tiff_info["rows"],
