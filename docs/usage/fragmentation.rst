@@ -28,6 +28,124 @@ Further details about Fragmentation analysis are available in the
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf>`_.
 
 
+Functions
+---------
+
+.. py:function:: pyguidos.frag(in_tiff, method, window_size, connectivity=4, outdir=None, statists=True, stat_files=True, verb=False)
+
+   Performs Fragmentation analysis on a binary raster, computing the
+   proportion of foreground pixels within each moving window [0-100] and
+   classifying landscape fragmentation into five classes: Rare, Patchy,
+   Transitional, Dominant and Interior.
+
+   :param in_tiff: Path to input GeoTIFF (0=NoData, 1=Background, 2=Foreground; optionally 3/4 for special background classes).
+   :type in_tiff: str or Path
+   :param method: Fragmentation method: ``'FAD'`` (Foreground Area Density), ``'FAC'`` (Foreground Area Clustering) or ``'FED'`` (Foreground Edge Density).
+   :type method: str
+   :param window_size: Size of the moving window in pixels. Must be an odd integer >= 3.
+   :type window_size: int
+   :param connectivity: Pixel connectivity for FAC and FED methods, 4 or 8. Ignored for FAD.
+   :type connectivity: int, optional
+   :param outdir: Output directory. If ``None`` (default), outputs are written to the input file's directory.
+   :type outdir: str or Path, optional
+   :param statists: If ``True``, computes and returns statistics.
+   :type statists: bool, optional
+   :param stat_files: If ``True``, writes .txt, .csv and .png report files.
+   :type stat_files: bool, optional
+   :param verb: If ``True``, prints progress messages.
+   :type verb: bool, optional
+
+   :returns: **dict** -- A dictionary containing three main sections:
+
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif"`` (*str*) -- Absolute path to the result GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+           * ``"path csv"`` (*str*) -- Absolute path to the per-value pixel count CSV.
+           * ``"path png"`` (*str*) -- Absolute path to the foreground pixel histogram.
+       * ``"input stats"`` (*dict*):
+           * ``"foreground pxl"`` (*int*) -- Count of foreground pixels.
+           * ``"background pxl"`` (*int*) -- Count of background pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+           * ``"backgr3 pxl"`` (*int*) -- Count of special background class 3 pixels.
+           * ``"backgr4 pxl"`` (*int*) -- Count of special background class 4 pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"class freq"`` (*dict*) -- Pixel counts per fragmentation class (``"1 rare pxl"``, ``"2 patch pxl"``, ``"3 trans pxl"``, ``"4 domin pxl"``, ``"5 inter pxl"``).
+           * ``"fad_av"`` (*float*) -- Average Foreground Area Density index.
+           * ``"avcon"`` (*float*) -- Average Connectivity index.
+
+   :outputs: The function writes the following output files with ``stat_files=True``:
+
+       * ``<input_filename>_frag_<method><connectivity>_<window_size>.tif``: Fragmentation result GeoTIFF with color palette (connectivity is omitted for FAD).
+       * ``<input_filename>_frag_<method><connectivity>_<window_size>.txt``: Statistics report
+       * ``<input_filename>_frag_<method><connectivity>_<window_size>.csv``: Per-value pixel counts and frequencies
+       * ``<input_filename>_frag_<method><connectivity>_<window_size>.png``: Foreground pixel histogram
+
+   .. rubric:: Example
+   Standard execution of a FAD Fragmentation analysis using the Forest/Non-Forest
+   GeoTIFF file of Corsica stored in the ``pyguidos/data`` folder:
+
+   .. code-block:: python
+
+        >>> import pyguidos as pg
+        >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> frag_result = pg.frag(in_tiff=forest_map, method="FAD", window_size=27,
+        ... outdir="output/", statists=True, stat_files=True, verb=False)
+        >>> frag_result['output stats']['avcon']
+        22.755996751175065
+        >>> frag_result['output paths']['path tif']
+        'output/CLC2018_corsica_FNF_frag_fad_27.tif'
+
+
+.. py:function:: pyguidos.frag_stats(frag_tiff, stat_files=True, outdir=None, source_tiff=None)
+
+   Computes statistics for an existing (binary) Fragmentation result GeoTIFF.
+
+   :param frag_tiff: Path to the fragmentation result GeoTIFF (must carry a valid ``GTB_FOS`` metadata tag).
+   :type frag_tiff: str or Path
+   :param stat_files: If ``True``, writes .txt, .csv and .png report files.
+   :type stat_files: bool, optional
+   :param outdir: Directory for output files. Defaults to the input file's directory.
+   :type outdir: str or Path, optional
+   :param source_tiff: Path to the original input GeoTIFF used to generate the fragmentation result.
+   :type source_tiff: str or Path, optional
+
+   :returns: **dict** -- A dictionary containing three main sections:
+
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif"`` (*str*) -- Absolute path to the result GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+           * ``"path csv"`` (*str*) -- Absolute path to the per-value pixel count CSV.
+           * ``"path png"`` (*str*) -- Absolute path to the foreground pixel histogram.
+       * ``"input stats"`` (*dict*):
+           * ``"foreground pxl"`` (*int*) -- Count of foreground pixels.
+           * ``"background pxl"`` (*int*) -- Count of background pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+           * ``"backgr3 pxl"`` (*int*) -- Count of special background class 3 pixels.
+           * ``"backgr4 pxl"`` (*int*) -- Count of special background class 4 pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"class freq"`` (*dict*) -- Pixel counts per fragmentation class (``"1 rare pxl"``, ``"2 patch pxl"``, ``"3 trans pxl"``, ``"4 domin pxl"``, ``"5 inter pxl"``).
+           * ``"fad_av"`` (*float*) -- Average Foreground Area Density index.
+           * ``"avcon"`` (*float*) -- Average Connectivity index.
+
+   :outputs: The function writes the following output files with ``stat_files=True``:
+
+       * ``<frag_filename>.txt``: Statistics report
+       * ``<frag_filename>.csv``: Per-value pixel counts and frequencies
+       * ``<frag_filename>.png``: Foreground pixel histogram
+
+   .. rubric:: Example
+   After executing the Fragmentation analysis, pass the resulting GeoTIFF to
+   ``frag_stats()`` to extract summary statistics.
+
+   .. code-block:: python
+
+        >>> frag_tiff = 'output/CLC2018_corsica_FNF_frag_fad_27.tif'
+        >>> frag_stats = pg.frag_stats(frag_tiff=frag_tiff, stat_files=True,
+        ... outdir='output/', source_tiff=None)
+        >>> frag_stats['input stats']['foreground pxl']
+        300737
+
+
 Methods
 -------
 
@@ -122,112 +240,6 @@ As FAC, the total edges (denominator) depend on window size (W) supporting both 
     them (possible values: 0.5, 1, 1.5, or 2).
 
 
-Parameters
-----------
-
-.. list-table::
-   :header-rows: 1
-
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``in_tiff``
-     - str or Path
-     - --
-     - Path to input GeoTIFF
-   * - ``method``
-     - str
-     - --
-     - Fragmentation method: ``'FAD'``, ``'FAC'``, or ``'FED'``
-   * - ``window_size``
-     - int
-     - --
-     - Moving window size in pixels, odd integer >= 3
-   * - ``connectivity``
-     - int
-     - 4
-     - Pixel connectivity for FAC and FED: 4 or 8. Ignored for FAD.
-   * - ``outdir``
-     - str or Path
-     - None
-     - Output directory. If None (default), outputs are written to the input file's directory.
-   * - ``statists``
-     - bool
-     - True
-     - Compute statistics
-   * - ``stat_files``
-     - bool
-     - True
-     - Write statistics to files
-   * - ``verb``
-     - bool
-     - False
-     - Print progress messages
-
-Example with all parameters:
-
-.. code-block:: python
-
-    import pyguidos as pg
-
-    # FAD - Foreground Area Density
-    result = pg.frag(
-        in_tiff="my_map.tif",
-        method="FAD",
-        window_size=27,
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        verb=False
-    )
-
-    # FAC - Foreground Area Clustering (8-connected)
-    result = pg.frag(
-        in_tiff="my_map.tif",
-        method="FAC",
-        window_size=27,
-        connectivity=8
-    )
-
-    # FED - Foreground Edge Density (4-connected)
-    result = pg.frag(
-        in_tiff="my_map.tif",
-        method="FED",
-        window_size=27,
-        connectivity=4
-    )
-
-
-Output Files
-------------
-
-The output filename encodes the method and, for methods that use connectivity (FAC, FED),
-the connectivity value. FAD output names omit the connectivity since it is not applicable.
-
-.. list-table::
-   :header-rows: 1
-
-   * - File
-     - Description
-   * - ``<name>_frag_<method><conn>_<window_size>.tif``
-     - Fragmentation result GeoTIFF with colour palette
-   * - ``<name>_frag_<method><conn>_<window_size>.txt``
-     - Statistics report
-   * - ``<name>_frag_<method><conn>_<window_size>.csv``
-     - Per-value pixel counts and frequencies
-   * - ``<name>_frag_<method><conn>_<window_size>.png``
-     - Foreground pixel histogram
-
-Where ``<conn>`` is the connectivity value (4 or 8) for FAC and FED, or empty for FAD.
-
-Examples:
-
-- FAD: ``my_map_frag_fad_27.tif``
-- FAC 8-conn: ``my_map_frag_fac8_27.tif``
-- FED 4-conn: ``my_map_frag_fed4_27.tif``
-
-
 Output Classes
 --------------
 
@@ -263,85 +275,3 @@ grouped into 5 classes and colour-coded in the output map:
      - 90 -- 100%
      - Very high
      - Very low
-
-
-Statistics
-----------
-
-Result Dictionary
-^^^^^^^^^^^^^^^^^^
-
-The ``frag()`` function returns a :class:`dict` with three sections:
-
-* **output paths** (:class:`dict` or :obj:`None`)
-    * **path tif** (:class:`str`): Absolute path to the fragmentation result GeoTIFF.
-    * **path txt** (:class:`str`): Absolute path to the statistics text report.
-    * **path csv** (:class:`str`): Absolute path to the per-value pixel count CSV.
-    * **path png** (:class:`str`): Absolute path to the foreground pixel histogram image.
-    * *Note: This key is* ``None`` *if* ``stat_files=False``.
-
-* **input stats** (:class:`dict`)
-    * **foreground pxl** (:class:`int`): Count of pixels with value 2 (Forest).
-    * **background pxl** (:class:`int`): Count of pixels with value 1 (Background).
-    * **missing pxl** (:class:`int`): Count of NoData (0) pixels.
-    * **backgr3 pxl** (:class:`int`): Count of special background class 3 pixels.
-    * **backgr4 pxl** (:class:`int`): Count of special background class 4 pixels.
-
-* **output stats** (:class:`dict`)
-    * **class freq** (:class:`dict`): Breakdown of pixel counts per fragmentation category:
-        * ``1 rare pxl``: Pixels in the "Rare" category.
-        * ``2 patch pxl``: Pixels in the "Patchy" category.
-        * ``3 trans pxl``: Pixels in the "Transitional" category.
-        * ``4 domin pxl``: Pixels in the "Dominant" category.
-        * ``5 inter pxl``: Pixels in the "Interior" category.
-    * **fad_av** (:class:`float`): The average Forest Area Density index.
-    * **avcon** (:class:`float`): The Average Connectivity index.
-
-Accessing the result:
-
-.. code-block:: python
-
-    result = pg.frag("my_map.tif", method="FAD", window_size=27)
-
-    # Access statistics
-    print(result.keys())
-    # dict_keys(['output paths', 'input stats', 'output stats'])
-
-    # Input pixel counts
-    print(result["input stats"])
-    # {'foreground pxl': 12500, 'background pxl': 37500, 'missing pxl': 0, ...}
-
-    # Fragmentation indices and class pixel counts
-    print(result["output stats"])
-    # {'class_freq': {'1 rare pxl': 1200, '2 patch pxl': 2300, '3 trans pxl': 3100,
-    #  '4 domin pxl': 4200, '5 inter pxl': 1700}, 'fad_av': 62.3, 'avcon': 58.1}
-
-    # Output file paths
-    print(result["output paths"])
-    # {'path tif': 'output/my_map_frag_fad_27.tif',
-    #  'path txt': 'output/my_map_frag_fad_27.txt',
-    #  'path csv': 'output/my_map_frag_fad_27.csv',
-    #  'path png': 'output/my_map_frag_fad_27.png'}
-
-    # For FAC with 8-connectivity, paths would be:
-    # 'output/my_map_frag_fac8_27.tif', etc.
-
-
-Computing Statistics Separately
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you already have a fragmentation output GeoTIFF, you can compute
-statistics without rerunning the analysis:
-
-.. code-block:: python
-
-    stats = pg.frag_stats(
-        frag_tiff="output/my_map_frag_fad_27.tif",
-        stat_files=True,
-        outdir="output/",
-        source_tiff="my_map.tif"
-    )
-
-.. note::
-    ``frag_stats()`` requires the input GeoTIFF to be a pyGuidos (or GTB)
-    fragmentation output raster (``GTB_FOS`` tag). See :doc:`input_format` for details.

@@ -16,96 +16,51 @@ to the extracted outputs.
     disk; it does not return a statistics dictionary.
 
 
-Parameters
-----------
+Functions
+---------
 
-.. list-table::
-   :header-rows: 1
+.. py:function:: pyguidos.extract_by_polygon(vector_path, geotiff_path, output_dir, id_field, name_prefix="", nodata_value=None, layer=None)
 
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``vector_path``
-     - str or Path
-     - --
-     - Path to input vector file (.json, .shp, .kml, .gpkg, etc.)
-   * - ``geotiff_path``
-     - str or Path
-     - --
-     - Path to input GeoTIFF raster
-   * - ``output_dir``
-     - str or Path
-     - --
-     - Output directory, created if it does not exist
-   * - ``id_field``
-     - str
-     - --
-     - Attribute field used to name output files
-   * - ``name_prefix``
-     - str
-     - None
-     - Optional prefix prepended to each output filename
-   * - ``nodata_value``
-     - int
-     - None
-     - Value for pixels outside the polygon mask
-   * - ``layer``
-     - str
-     - None
-     - Layer name for multi-layer vector files (e.g., GeoPackage, FileGDB).
-       If None, reads the first layer. Exits with an error if multiple
-       layers are detected and this parameter is not specified.
+   Extracts and saves a separate GeoTIFF for each polygon feature in a
+   vector file, clipping and masking the input raster to each polygon's
+   extent and shape. The original colormap and GTB metadata tags from the
+   input GeoTIFF are preserved on every output.
 
-Example with all parameters:
+   :param vector_path: Path to the input vector file with polygon features. Supported formats: ESRI Shapefile (``.shp``), GeoPackage (``.gpkg``), GeoJSON (``.geojson``/``.json``), KML (``.kml``), FlatGeobuf (``.fgb``), ESRI FileGDB (``.gdb``).
+   :type vector_path: str or Path
+   :param geotiff_path: Path to the input GeoTIFF raster to extract from.
+   :type geotiff_path: str or Path
+   :param output_dir: Directory where output GeoTIFFs are saved. Created if it does not exist.
+   :type output_dir: str or Path
+   :param id_field: Attribute field name used to generate output filenames (e.g. ``"NAME"``, ``"ISO3"``). Falls back to ``feature_<index>`` if the field is not present in a feature.
+   :type id_field: str
+   :param name_prefix: Optional prefix prepended to each output filename. Default ``""`` (no prefix).
+   :type name_prefix: str, optional
+   :param nodata_value: Value assigned to pixels outside the polygon mask. If ``None`` (default), it is resolved from the GTB tag, then the TIFF nodata header, otherwise ``0``.
+   :type nodata_value: int, optional
+   :param layer: Name of the layer to read from multi-layer vector files (e.g. GeoPackage, FileGDB). If ``None`` (default), the first layer is read; if multiple layers exist and no layer is given, the function exits with an error listing the available layers.
+   :type layer: str, optional
 
-.. code-block:: python
+   :returns: **None** -- Output GeoTIFFs are written directly to ``output_dir``. Skipped or failed features are reported to stdout.
 
-    import pyguidos as pg
+   :outputs: The function writes one GeoTIFF per polygon feature:
 
-    pg.extract_by_polygon(
-        vector_path="regions.gpkg",
-        geotiff_path="my_map.tif",
-        output_dir="output/",
-        id_field="NAME",
-        name_prefix="region_",
-        nodata_value=None,
-        layer=None
-    )
+       * ``<output_dir>/<name_prefix><id_field_value>.tif``: Clipped and masked GeoTIFF for each polygon feature. In each filename, spaces in the ``id_field`` value are replaced with underscores and forward slashes with hyphens.
 
-Example using a name prefix:
+   .. rubric:: Example
+   Extract the forest map for each polygon in the vector file of administrative subdivisions,
+   using the Forest/Non-Forest GeoTIFF file of Corsica stored on ``pyguidos/data`` folder 
+   and prefixing every output filename with ``for_maps_``:
 
-.. code-block:: python
+   .. code-block:: python
 
-    # Extract MSPA results for each country
-    # Output files: country_France.tif, country_Germany.tif, ...
-    pg.extract_by_polygon(
-        vector_path="countries.shp",
-        geotiff_path="europe_mspa.tif",
-        output_dir="output/countries/",
-        id_field="NAME",
-        name_prefix="country_"
-    )
-
-.. tip::
-    The ``id_field`` value is used as the output filename. Spaces are
-    replaced with underscores and forward slashes with hyphens. If the
-    field is not found in a feature, the filename falls back to
-    ``feature_<index>``.
-
-
-Output Files
-------------
-
-One GeoTIFF per polygon feature:
-
-.. list-table::
-   :header-rows: 1
-
-   * - File
-     - Description
-   * - ``<output_dir>/<name_prefix><id_field_value>.tif``
-     - Clipped and masked GeoTIFF for each polygon feature
+        >>> import pyguidos as pg
+        >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> admin_boundaries = pg.DATA_DIR / "GISCO_adm_corsica.gpkg"
+        >>> pg.extract_by_polygon(
+        ... vector_path=admin_boundaries, geotiff_path=forest_map,
+        ... output_dir="output/for_maps/", id_field="ADM_ID",
+        ... name_prefix="for_maps_")
 
 
 NoData Handling

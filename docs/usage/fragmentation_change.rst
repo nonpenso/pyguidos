@@ -13,82 +13,87 @@ Further details about structural dynamics and change metrics are available in th
 `Fragmentation Change product sheet
 <https://ies-ows.jrc.ec.europa.eu/gtb/GTB/psheets/GTB-Fragmentation-FADFOS.pdf>`_.
 
-
-Parameters
-----------
-
-.. list-table::
-   :header-rows: 1
-
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``in_tiff_t1``
-     - str or Path
-     - --
-     - Path to the initial time-step Fragmentation GeoTIFF (Time A / T1)
-   * - ``in_tiff_t2``
-     - str or Path
-     - --
-     - Path to the subsequent time-step Fragmentation GeoTIFF (Time B / T2)
-   * - ``outdir``
-     - str or Path
-     - None
-     - Output directory. Defaults to the directory of ``in_tiff_t1``
-   * - ``statists``
-     - bool
-     - True
-     - Compute change transition statistics
-   * - ``stat_files``
-     - bool
-     - True
-     - Write text reports, tabular metrics, and histogram images to files
-   * - ``verb``
-     - bool
-     - False
-     - Print execution pipeline progress log messages
-
-Example with all parameters:
-
-.. code-block:: python
-
-    import pyguidos as pg
-
-    result = pg.frag_change(
-        in_tiff_t1="forest_map_2015_frag_fad_27.tif",
-        in_tiff_t2="forest_map_2020_frag_fad_27.tif",
-        outdir="output/",
-        statists=True,
-        stat_files=True,
-        verb=False
-    )
-
 .. note::
-    Both inputs must have been processed using identical parameter configurations
-    (same window dimensions, same connectivity rules, and identical grid geometry
-    metrics). The system runs validation routines automatically and raises an
-    error if any structural parameter discrepancies are encountered.
+    ``frag_change()`` computes its statistics as part of the main run; there is
+    no separate standalone ``*_stats()`` function for this tool. Both inputs
+    must have been processed with identical parameters (same window size,
+    connectivity rules and grid geometry); the inputs are validated
+    automatically and an error is raised on any structural discrepancy.
 
 
-Output Files
-------------
+Functions
+---------
 
-All generated files use the default standardized naming conventions inside the designated destination folder:
+.. py:function:: pyguidos.frag_change(in_tiff_t1, in_tiff_t2, outdir=None, statists=True, stat_files=True, verb=False)
 
-.. list-table::
-   :header-rows: 1
+   Performs a comparative Fragmentation Change analysis using two structural
+   fragmentation rasters (Time A/T1 and Time B/T2). It computes pixel-by-pixel
+   class transitions across a 7-tier matrix overlay, tracks localized delta
+   variations, and compiles global matrix statistics reporting land-cover and
+   connectivity class dynamics.
 
-   * - File
-     - Description
-   * - ``FOS_change.tif``
-     - Categorical fragmentation change layer grid containing custom embedded color palette
-   * - ``FOS_change.txt``
-     - Detailed structural analysis cross-tabulation report
-   * - ``FOS_change.csv``
-     - Tabular pixel count metrics per frequency index
-   * - ``FOS_change.png``
-     - Connectivity change distribution bar chart image
+   :param in_tiff_t1: Path to the initial time-step Fragmentation GeoTIFF (Time A/T1). Must be a valid Guidos ``GTB_FOS`` output.
+   :type in_tiff_t1: str or Path
+   :param in_tiff_t2: Path to the subsequent time-step Fragmentation GeoTIFF (Time B/T2). Must be a valid Guidos ``GTB_FOS`` output matching T1's spatial extent.
+   :type in_tiff_t2: str or Path
+   :param outdir: Output directory. If ``None`` (default), outputs are written to the directory of ``in_tiff_t1``.
+   :type outdir: str or Path, optional
+   :param statists: If ``True``, computes and returns change transition statistics.
+   :type statists: bool, optional
+   :param stat_files: If ``True`` (and ``statists=True``), writes .txt, .csv and .png report files.
+   :type stat_files: bool, optional
+   :param verb: If ``True``, prints progress messages.
+   :type verb: bool, optional
+
+   :returns: **dict** or **None** -- When ``statists=True``, a dictionary containing three main sections (returns ``None`` if ``statists=False``):
+
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path tif"`` (*str*) -- Absolute path to the categorical change result GeoTIFF.
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report.
+           * ``"path csv"`` (*str*) -- Absolute path to the per-value pixel count CSV.
+           * ``"path png"`` (*str*) -- Absolute path to the connectivity change histogram.
+       * ``"input stats"`` (*dict*): Raw pixel frequencies for T1 and T2 using the keys ``"A foregr pxl"``, ``"A backgr pxl"``, ``"A backgr3 pxl"``, ``"A backgr4 pxl"``, ``"A missing pxl"`` and the matching ``"B ..."`` keys.
+       * ``"output stats"`` (*dict*):
+           * ``"class freq"`` (*dict*) -- Per-class pixel counts for both time steps (``"A1 rare pxl"`` to ``"A5 inter pxl"`` and ``"B1 rare pxl"`` to ``"B5 inter pxl"``).
+           * ``"Frag change freq"`` (*dict*) -- Pixel counts for the 7 connectivity change classes (``"1 Frag High decrease"``, ``"2 Frag Medium decrease"``, ``"3 Frag Low decrease"``, ``"4 Insign/no change"``, ``"5 Frag Low increase"``, ``"6 Frag Medium increase"``, ``"7 Frag High increase"``).
+           * ``"Land change matrix"`` (*numpy.ndarray*) -- Aggregated 3x3 land-cover transition matrix (foreground / background / missing).
+           * ``"Class change matrix"`` (*numpy.ndarray*) -- 6x6 fragmentation-class transition matrix.
+           * ``"A fad_av"`` / ``"B fad_av"`` (*float*) -- Average Foreground Area Density index for Time A and Time B.
+           * ``"A avcon"`` / ``"B avcon"`` (*float*) -- Average Connectivity index for Time A and Time B.
+
+   :outputs: The function writes the following output files with ``stat_files=True``:
+
+       * ``FOS_change.tif``: Categorical fragmentation change result GeoTIFF with color palette
+       * ``FOS_change.txt``: Detailed cross-tabulation change matrix report
+       * ``FOS_change.csv``: Per-value pixel counts with delta values
+       * ``FOS_change.png``: Connectivity change frequency histogram
+
+   .. rubric:: Example
+   Compute and compare two fragmentation outputs with identical parameters at two
+   different dates using the Forest/Non-Forest GeoTIFF files of Corsica stored 
+   on ``pyguidos/data`` folder:
+
+   .. code-block:: python
+
+        >>> import pyguidos as pg
+        >>> frag_t1 = pg.frag(in_tiff=pg.DATA_DIR / "CLC2000_corsica_FNF.tif",
+        ... method="FAD", window_size=27, outdir="output/")
+        >>> frag_t2 = pg.frag(in_tiff=pg.DATA_DIR / "CLC2018_corsica_FNF.tif",
+        ... method="FAD", window_size=27, outdir="output/")
+        >>> change_result = pg.frag_change(
+        ... in_tiff_t1=frag_t1['output paths']['path tif'],
+        ... in_tiff_t2=frag_t2['output paths']['path tif'],
+        ... outdir="output/", statists=True, stat_files=True, verb=False)
+        >>> change_result['output stats']['Frag change freq']
+        {'1 Frag High decrease': 12017,
+         '2 Frag Medium decrease': 12988,
+         '3 Frag Low decrease': 39276,
+         '4 Insign/no change': 177619,
+         '5 Frag Low increase': 13655,
+         '6 Frag Medium increase': 1876,
+         '7 Frag High increase': 614}
+        >>> change_result['output paths']['path tif']
+        'output/FOS_change.tif'
 
 
 Output Classes
@@ -132,73 +137,3 @@ categorical change classes based on the variation of Fragmentation/Connectivity:
      - High decrease
      - [121, 200]
      - [-100, -21]
-
-
-Statistics
-----------
-
-Result Dictionary
-^^^^^^^^^^^^^^^^^^
-
-The ``frag_change()`` function returns a nested :class:`dict` with three sections:
-
-* **output paths** (:class:`dict` or :obj:`None`)
-    * **path tif** (:class:`str`): Absolute path to the categorical change output GeoTIFF.
-    * **path txt** (:class:`str`): Absolute path to the text report.
-    * **path csv** (:class:`str`): Absolute path to the frequency statistics CSV.
-    * **path png** (:class:`str`): Absolute path to the histogram chart figure.
-    * *Note: This entire key is* ``None`` *if* ``stat_files=False``.
-
-* **input stats** (:class:`dict`)
-    * **A foregr pxl** (:class:`int`): Foreground count at Time A.
-    * **A backgr pxl** (:class:`int`): Background count at Time A.
-    * **A missing pxl** (:class:`int`): NoData count at Time A.
-    * **B foregr pxl** (:class:`int`): Foreground count at Time B.
-    * **B backgr pxl** (:class:`int`): Background count at Time B.
-    * **B missing pxl** (:class:`int`): NoData count at Time B.
-    * *(Includes special background classes counts: ``A backgr3 pxl``, ``A backgr4 pxl``, etc.)*
-
-* **output stats** (:class:`dict`)
-    * **class freq** (:class:`dict`): Individual class distributions mapping across both frames (``A1 rare pxl`` to ``B5 inter pxl``).
-    * **Frag change freq** (:class:`dict`): Consolidated count grouping mapped across the 7 connectivity change classes:
-        * ``1 Frag High decrease``
-        * ``2 Frag Medium decrease``
-        * ``3 Frag Low decrease``
-        * ``4 Frag Insign/no change``
-        * ``5 Frag Low increase``
-        * ``6 Frag Medium increase``
-        * ``7 Frag High increase``
-    * **Land change matrix** (:class:`np.ndarray`): Aggregated land-cover transition grid tracking broader foreground/background changes.
-    * **Class change matrix** (:class:`np.ndarray`): 6x6 class dynamics matrix monitoring movements between specific fragmentation levels.
-    * **A fad_av** / **B fad_av** (:class:`float`): Average Forest Area Density for Time A and Time B.
-    * **A avcon** / **B avcon** (:class:`float`): Average Connectivity index for Time A and Time B.
-
-Accessing the result:
-
-.. code-block:: python
-
-    result = pg.frag_change("t1.tif", "t2.tif")
-
-    # Access main tracking categories
-    print(result.keys())
-    # dict_keys(['output paths', 'input stats', 'output stats'])
-
-    # Query transition distribution trends
-    print(result["output stats"]["Frag change freq"])
-    # {
-    #   '1 Frag High decrease': 450,
-    #   '2 Frag Medium decrease': 1200,
-    #   '3 Frag Low decrease': 3400,
-    #   '4 Frag Insign/no change': 45000,
-    #   '5 Frag Low increase': 5600,
-    #   '6 Frag Medium increase': 890,
-    #   '7 Frag High increase': 120
-    # }
-
-    # View absolute file locations
-    print(result["output paths"]["path tif"])
-    # "output/FOS_change.tif"
-
-.. note::
-    ``frag_change()`` computes its statistics as part of the main run; there is
-    no separate standalone ``*_stats()`` function for this tool.

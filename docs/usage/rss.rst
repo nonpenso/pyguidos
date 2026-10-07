@@ -13,7 +13,71 @@ available in the `RSS product sheet
 .. note::
     RSS produces a statistics report only; it does not write a classified
     output map. All results are returned in the dictionary and, optionally,
-    the ``.txt`` report.
+    the ``.txt`` report. ``rss()`` computes its statistics as part of the
+    main run; there is no separate standalone ``*_stats()`` function for
+    this tool.
+
+
+Functions
+---------
+
+.. py:function:: pyguidos.rss(in_tiff, outdir=None, stat_files=True, verb=False)
+
+   Performs Restoration Status Summary (RSS) analysis on a binary or
+   multi-class raster. Computes patch-based habitat network indices
+   including Equivalent Connected Area (ECA), Coherence (COH) and
+   Restoration Potential (REST_POT) from the patch size distribution.
+
+   :param in_tiff: Path to input GeoTIFF (0=NoData, 1=Background, 2=Foreground; optionally 3/4 for special background classes).
+   :type in_tiff: str or Path
+   :param outdir: Output directory. If ``None`` (default), outputs are written to the input file's directory.
+   :type outdir: str or Path, optional
+   :param stat_files: If ``True``, writes a .txt report file.
+   :type stat_files: bool, optional
+   :param verb: If ``True``, prints progress messages.
+   :type verb: bool, optional
+
+   :returns: **dict** -- A dictionary containing three main sections:
+
+       * ``"output paths"`` (*dict* or *None*):
+           * ``"path txt"`` (*str*) -- Absolute path to the statistics report (RSS writes no GeoTIFF).
+       * ``"input stats"`` (*dict*):
+           * ``"foreground pxl"`` (*int*) -- Count of foreground pixels.
+           * ``"background pxl"`` (*int*) -- Count of background pixels.
+           * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
+           * ``"backgr3 pxl"`` (*int*) -- Count of special background class 3 pixels.
+           * ``"backgr4 pxl"`` (*int*) -- Count of special background class 4 pixels.
+       * ``"output stats"`` (*dict*):
+           * ``"total patches"`` (*int*) -- Total number of discrete foreground patches.
+           * ``"average patch size"`` (*float*) -- Mean patch size in pixels.
+           * ``"median patch size"`` (*float*) -- Median patch size in pixels.
+           * ``"largest patch size"`` (*int*) -- Size of the largest single patch in pixels.
+           * ``"CNOA"`` (*int*) -- Critical New Object Area.
+           * ``"ECA"`` (*int*) -- Equivalent Connected Area.
+           * ``"RAC"`` (*float*) -- Reference Area Coverage (%).
+           * ``"COH"`` (*float*) -- Coherence index (%).
+           * ``"REST_POT"`` (*float*) -- Restoration Potential index (%), equal to ``100 - COH``.
+
+   :outputs: The function writes the following output file with ``stat_files=True``:
+
+       * ``<input_filename>_rss.txt``: Statistics report with all connectivity indices
+
+   .. rubric:: Example
+   Standard execution of the RSS analysis with default parameters using the Forest/Non-Forest 
+   GeoTIFF file of Corsica stored on ``pyguidos/data`` folder:
+
+   .. code-block:: python
+
+        >>> import pyguidos as pg
+        >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
+        >>> rss_result = pg.rss(in_tiff=forest_map, outdir="output/",
+        ... stat_files=True, verb=False)
+        >>> rss_result['output stats']['COH']
+        8.123809429358433
+        >>> rss_result['output stats']['median patch size']
+		726.4178743961353
+        >>> rss_result['output paths']['path txt']
+        'output/CLC2018_corsica_FNF_rss.txt'
 
 
 Connectivity Indices
@@ -53,116 +117,3 @@ RSS computes the following patch-based connectivity indices:
 In addition to these indices, RSS reports basic patch size statistics:
 total number of foreground patches, and the average, median and largest
 patch size (in pixels).
-
-
-Parameters
-----------
-
-.. list-table::
-   :header-rows: 1
-
-   * - Parameter
-     - Type
-     - Default
-     - Description
-   * - ``in_tiff``
-     - str or Path
-     - --
-     - Path to input GeoTIFF
-   * - ``outdir``
-     - str or Path
-     - None
-     - Output directory. If None (default), outputs are written to the input file's directory.
-   * - ``stat_files``
-     - bool
-     - True
-     - Write statistics to files
-   * - ``verb``
-     - bool
-     - False
-     - Print progress messages
-
-Example with all parameters:
-
-.. code-block:: python
-
-    import pyguidos as pg
-
-    result = pg.rss(
-        in_tiff="my_map.tif",
-        outdir="output/",
-        stat_files=True,
-        verb=False
-    )
-
-
-Output Files
-------------
-
-.. list-table::
-   :header-rows: 1
-
-   * - File
-     - Description
-   * - ``<name>_rss.txt``
-     - Statistics report with all connectivity indices
-
-
-Statistics
-----------
-
-Result Dictionary
-^^^^^^^^^^^^^^^^^^
-
-The ``rss()`` function returns a :class:`dict` with three sections:
-
-* **output paths** (:class:`dict` or :obj:`None`)
-    * **path txt** (:class:`str`): Absolute path to the comprehensive statistics report.
-    * *Note: This key is* ``None`` *if* ``stat_files=False``.
-
-* **input stats** (:class:`dict`)
-    * **foreground pxl** (:class:`int`): Count of pixels with value 2 (Forest).
-    * **background pxl** (:class:`int`): Count of pixels with value 1 (Background).
-    * **missing pxl** (:class:`int`): Count of NoData (0) pixels.
-    * **backgr3 pxl** (:class:`int`): Count of special background class 3 pixels.
-    * **backgr4 pxl** (:class:`int`): Count of special background class 4 pixels.
-
-* **output stats** (:class:`dict`)
-    * **total patches** (:class:`int`): The total number of discrete patches identified in the landscape.
-    * **average patch size** (:class:`float`): The mean size of patches (in pixel units).
-    * **median patch size** (:class:`float`): The median size of patches.
-    * **largest patch size** (:class:`int`): The size of the largest single patch found.
-    * **CNOA** (:class:`float`): Critical New Object Area.
-    * **ECA** (:class:`float`): Equivalent Connected Area.
-    * **RAC** (:class:`float`): Reference Area Coverage.
-    * **COH** (:class:`float`): Coherence index.
-    * **REST_POT** (:class:`float`): Restoration Potential index.
-
-Accessing the result:
-
-.. code-block:: python
-
-    result = pg.rss("my_map.tif")
-
-    # Access statistics
-    print(result.keys())
-    # dict_keys(['output paths', 'input stats', 'output stats'])
-
-    # Input pixel counts
-    print(result["input stats"])
-    # {'foreground pxl': 12500, 'background pxl': 37500,
-    #  'missing pxl': 0, 'backgr3 pxl': 0, 'backgr4 pxl': 0}
-
-    # Connectivity indices
-    print(result["output stats"])
-    # {'total patches': 142, 'average patch size': 88.0,
-    #  'median patch size': 12.0, 'largest patch size': 8542,
-    #  'ECA': 8764.3, 'COH': 70.1, 'CNOA': 3, 'REST_POT': 29.9, 'RAC': 25.0}
-
-    # Output file paths
-    print(result["output paths"])
-    # {'path txt': 'output/my_map_rss.txt'}
-
-.. note::
-    ``rss()`` computes its statistics as part of the main run; there is no
-    separate standalone ``*_stats()`` function for this tool.
