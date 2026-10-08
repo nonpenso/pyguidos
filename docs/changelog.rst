@@ -9,6 +9,20 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
+2.6.1 - 2026-10-08
+------------------
+
+**Overview**
+
+Version 2.6.1 processes also geotiff files without georeferencing. The ``mspa.c`` within ``miallib`` C library of Soille and Vogt has been updated to version 2.4.
+
+**Added**
+
+- All functions check if the input geotiff files have no CRS info and warn with a message of georeferencing absence. 
+- New function ``utils.get_raster_info()`` in case of no CRS, then ``epsg="No georeferencing"`` and ``unit="pixels"``.
+
+
+
 2.6.0 - 2026-09-21
 ------------------
 

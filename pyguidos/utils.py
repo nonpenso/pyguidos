@@ -36,8 +36,9 @@ def get_raster_info(intiff_path):
         - 'dtype' (str): data type string (e.g. 'uint8').
         - 'is_tiles' (bool): True if it is a tiled Geotiff.
         - 'crs' (str): CRS as Well Known Text.
-        - 'epsg' (int or str): EPSG code, or 'Unknown' if not resolvable.
-        - 'is_projected' (bool): True if CRS is a projected coordinate system.
+        - 'epsg' (int or str): EPSG code, 'No georeferencing' if no CRS
+                               or 'Unknown' if not resolvable.
+        - 'unit' (str): 'metres', 'degrees', or 'pixels' if no CRS.
         - 'bounds' (BoundingBox): raster bounding box.
         - 'cmap' (dict or None): colormap if present, otherwise None.
         - 'tag' (str): TIFFTAG_IMAGEDESCRIPTION value, or '--' if absent.

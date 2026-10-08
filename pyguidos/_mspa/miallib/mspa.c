@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille and Peter Vogt
-Copyright (C) 2008-2022 European Union (Joint Research Centre)
+Copyright (C) 2008-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -19,11 +19,11 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 ***********************************************************************/
 
 /** @file
- *  Morphological Segmentation of Binary Patterns \cite soille-vogt2009
- *  https://doi.org/10.1016/j.patrec.2008.10.015
- *  @author Pierre Soille and Peter Vogt
- *  Version 2.3, February 2022
- */
+*  Morphological Segmentation of Binary Patterns \cite soille-vogt2009
+*  https://doi.org/10.1016/j.patrec.2008.10.015
+*  @author Pierre Soille and Peter Vogt
+*  Version 2.4, October 2026
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -64,9 +64,9 @@ IMAGE *getexternalboundary(IMAGE *im, float size, float edu)
 }
 
 /*!
- * Image preparation assuming that the input iamge has 0 for no data,
- * 1 for background, and 2 for foreground pixels.
- */
+* Image preparation assuming that the input iamge has 0 for no data,
+* 1 for background, and 2 for foreground pixels.
+*/
 IMAGE *fm_preproc(IMAGE *fm, float size, float edu)
 {
   IMAGE *da, *fa, *dda, *dfa;
@@ -91,121 +91,158 @@ IMAGE *fm_preproc(IMAGE *fm, float size, float edu)
 
 
 /*!
- * Add a frame of width equal to size and propagate the values of each
- * respective image border into the frame to mitigate border effects.
- */
+* Add a frame of width equal to size and propagate the values of each
+* respective image border into the frame to mitigate border effects.
+* Propagate also the corner values in their respective enlarged
+* quadrants.
+*/
 IMAGE *fm_preproc2(IMAGE *im, int size)
 {
-  IMAGE *lb, *rb, *tb, *bb, *bbim, *lbim, *rbim, *tbim;
+  IMAGE *lb, *rb, *tb, *bb, *bbim, *lbim, *rbim, *tbim, *corner_im;
   int box[6];
+  UCHAR *p;
+  UCHAR ul_val, ur_val, ll_val, lr_val; /* corner values */
 
-/* 	 (lb (*imcut fm 0 0 0 0 (- (*getny fm) 1) 0)) */
+  mia_size_t nx = GetImNx(im);
+  mia_size_t ny = GetImNy(im);
+
+  /* get corner values */
+  p = (UCHAR *)GetImPtr(im);
+  ul_val = p[0];
+  ur_val = p[nx-1];
+  ll_val = p[nx*(ny-1)];
+  lr_val = p[(nx*ny)-1];
+
+/*    (lb (*imcut fm 0 0 0 0 (- (*getny fm) 1) 0)) */
   lb=imcut(im, 0, 0, 0, 0, GetImNy(im)-1, 0);
 
-/* 	 (lbim (*imcreate t_UCHAR size (*getny fm) 1)) */
+/*    (lbim (*imcreate t_UCHAR size (*getny fm) 1)) */
   lbim=create_image(t_UCHAR, size, GetImNy(im), 1);
-/* 	 (rb (*imcut fm (- (*getnx fm) 1) */
-/* 		     0 */
-/* 		     0 */
-/* 		     (- (*getnx fm) 1) */
-/* 		     (- (*getny fm) 1) */
-/* 		     0) */
-/* 	     ) */
+/*    (rb (*imcut fm (- (*getnx fm) 1) */
+/*          0 */
+/*          0 */
+/*          (- (*getnx fm) 1) */
+/*          (- (*getny fm) 1) */
+/*          0) */
+/*        ) */
   rb=imcut(im, GetImNx(im)-1, 0, 0, GetImNx(im)-1, GetImNy(im)-1, 0);
-/* 	 (rbim (*imcreate t_UCHAR size (*getny fm) 1)) */
+/*    (rbim (*imcreate t_UCHAR size (*getny fm) 1)) */
   rbim=create_image(t_UCHAR, size, GetImNy(im), 1);
-/* 	 (tb (*imcut fm */
-/* 		     0 */
-/* 		     0 */
-/* 		     0 */
-/* 		     (- (*getnx fm) 1) */
-/* 		     0 */
-/* 		     0) */
-/* 	     ) */
+/*    (tb (*imcut fm */
+/*          0 */
+/*          0 */
+/*          0 */
+/*          (- (*getnx fm) 1) */
+/*          0 */
+/*          0) */
+/*        ) */
   tb=imcut(im, 0, 0, 0, GetImNx(im)-1, 0, 0);
-/* 	 (tbim (*imcreate t_UCHAR (*getnx fm) size 1)) */
+/*    (tbim (*imcreate t_UCHAR (*getnx fm) size 1)) */
   tbim=create_image(t_UCHAR, GetImNx(im), size, 1);
-/* 	 (bb (*imcut fm */
-/* 		     0 */
-/* 		     (- (*getny fm) 1) */
-/* 		     0 */
-/* 		     (- (*getnx fm) 1) */
-/* 		     (- (*getny fm) 1) */
-/* 		     0) */
-/* 	     ) */
+/*    (bb (*imcut fm */
+/*          0 */
+/*          (- (*getny fm) 1) */
+/*          0 */
+/*          (- (*getnx fm) 1) */
+/*          (- (*getny fm) 1) */
+/*          0) */
+/*        ) */
   bb=imcut(im, 0, GetImNy(im)-1, 0, GetImNx(im)-1, GetImNy(im)-1, 0);
-/* 	 (bbim (*imcreate t_UCHAR (*getnx fm) size 1)) */
+/*    (bbim (*imcreate t_UCHAR (*getnx fm) size 1)) */
   bbim=create_image(t_UCHAR, GetImNx(im), size, 1);
-/* 	 (out (*addframebox fm size size size size 0 0 0)) */
+/*    (out (*addframebox fm size size size size 0 0 0)) */
   box[0]=box[1]=box[2]=box[3]=size;
   box[4]=box[5]=0;
   generic_addframebox(im, box, 0);
 
 /*     (@imputop out (@dirmax (@imputintop lbim lb */
-/* 					(- (*getnx lbim) 1) */
-/* 					0 */
-/* 					0 */
-/* 					OR_op) */
-/* 			   3) */
-/* 	      0 size 0 */
-/* 	      OR_op) */
+/*           (- (*getnx lbim) 1) */
+/*           0 */
+/*           0 */
+/*           OR_op) */
+/*          3) */
+/*         0 size 0 */
+/*         OR_op) */
   imputop(lbim, lb, GetImNx(lbim)-1, 0, 0, OR_op);
   dirmax(lbim, 3);
   imputop(im, lbim, 0, size, 0, 11);
 
 /*     (@imputop out (@dirmax (@imputintop rbim rb */
-/* 					0 */
-/* 					0 */
-/* 					0 */
-/* 					OR_op) */
-/* 			   1) */
-/* 	      (- (*getnx out) size 1) */
-/* 	      size */
-/* 	      0 */
-/* 	      OR_op) */
+/*           0 */
+/*           0 */
+/*           0 */
+/*           OR_op) */
+/*          1) */
+/*         (- (*getnx out) size 1) */
+/*         size */
+/*         0 */
+/*         OR_op) */
   imputop(rbim, rb, 0, 0, 0, 11);
   dirmax(rbim, 1);
-  imputop(im, rbim, GetImNx(im)-size-1, size, 0, OR_op);
+  imputop(im, rbim, GetImNx(im)-size, size, 0, OR_op);
 
 /*     (@imputop out (@dirmax (@imputintop tbim tb */
-/* 					0 */
-/* 					(- (*getny tbim) 1) */
-/* 					0 */
-/* 					OR_op) */
-/* 			   0) */
-/* 	      size */
-/* 	      0 */
-/* 	      0 */
-/* 	      OR_op) */
+/*           0 */
+/*           (- (*getny tbim) 1) */
+/*           0 */
+/*           OR_op) */
+/*          0) */
+/*         size */
+/*         0 */
+/*         0 */
+/*         OR_op) */
   imputop(tbim, tb, 0, GetImNy(tbim)-1, 0, OR_op);
   dirmax(tbim, 0);
   imputop(im, tbim, size, 0, 0, 11);
 
 /*     (@imputop out (@dirmax (@imputintop bbim bb */
-/* 					0 */
-/* 					0 */
-/* 					0 */
-/* 					OR_op) */
-/* 			   2) */
-/* 	      size */
-/* 	      (- (*getny out) size 1) */
+/*           0 */
+/*           0 */
+/*           0 */
+/*           OR_op) */
+/*          2) */
+/*         size */
+/*         (- (*getny out) size 1) */
 
-/* 	      0 */
-/* 	      OR_op) */
+/*         0 */
+/*         OR_op) */
   imputop(bbim, bb, 0, 0, 0, 11);
   dirmax(bbim, 2);
-  imputop(im, bbim, size, GetImNy(im)-size -1 , 0, OR_op);
+  imputop(im, bbim, size, GetImNy(im)-size, 0, OR_op);
 
   free_image(rb); free_image(lb); free_image(bb); free_image(tb);
   free_image(rbim); free_image(lbim); free_image(tbim); free_image(bbim);
+
+  /* create quadrant image, set it to each corner value, and insert it
+     the respective quadrant */
+  corner_im=create_image(t_UCHAR, size, size, 1);
+
+  /* upper left quadrant */
+  generic_blank(corner_im, ul_val);
+  imputop(im, corner_im, 0, 0, 0, OR_op);
+
+  /* upper right quadrant */
+  generic_blank(corner_im, ur_val);
+  imputop(im, corner_im, nx+size, 0, 0, OR_op);
+
+  /* lower left quadrant */
+  generic_blank(corner_im, ll_val);
+  imputop(im, corner_im, 0, ny+size, 0, OR_op);
+
+  /* lower right quadrant */
+  generic_blank(corner_im, lr_val);
+  imputop(im, corner_im, nx+size, ny+size, 0, OR_op);
+
+  free_image(corner_im);
+
   return im;
 }
 
 /*!
- * Give an input binary image, returns those foreground pixels that
- * are further away than a distance threshold (size in pixel units)
- * from the boundary of the foreground pixels.
- */
+* Give an input binary image, returns those foreground pixels that
+* are further away than a distance threshold (size in pixel units)
+* from the boundary of the foreground pixels.
+*/
 IMAGE *getcore(IMAGE *im, float size, float edu)
 {
   IMAGE *imsqedt, *edt;
@@ -226,9 +263,9 @@ IMAGE *getpatch(IMAGE *im, float size, int graphfg, float edu)
   IMAGE *core;
 
 /*   (*sub im (@rdil (*getcore im size) */
-/* 		  im */
-/* 		  graphfg) */
-/* 	) */
+/*       im */
+/*       graphfg) */
+/*   ) */
 /*   ) */
 
   core=getcore(im, size, edu);
@@ -336,16 +373,16 @@ IMAGE *getexternalboundarygeodesic(IMAGE *im, IMAGE *mask, float size, float edu
 IMAGE *getconnector2core(IMAGE *core, IMAGE *opening, IMAGE *residues, float size, int oitype, int graphfg, float edu)
 {
   //    (let* (
-  // 	 (sk (@sub (@binanchorskeloi (*or opening residues) core oitype)
-  // 		   core)
-  // 	     )
+  //    (sk (@sub (@binanchorskeloi (*or opening residues) core oitype)
+  //        core)
+  //        )
   //         ; (connector (*getexternalboundary sk (- size 1))) ; should be geodesic
-  // 	 (connector (*getexternalboundarygeodesic sk
-  // 						  (@or (*sub opening core) residues)
-  // 						  (- size 1))) ; should be geodesic
-  // 	 )
+  //    (connector (*getexternalboundarygeodesic sk
+  //               (@or (*sub opening core) residues)
+  //               (- size 1))) ; should be geodesic
+  //    )
   //     (@and (@or connector sk) (@or (*sub opening core) residues) )
-  // 					; we need to intersect with reconstruction
+  //           ; we need to intersect with reconstruction
   //    (@and connector (*rdil sk (@or (*sub opening core) residues) graphfg))
   //
   //    )
@@ -377,12 +414,12 @@ IMAGE *getconnector2core(IMAGE *core, IMAGE *opening, IMAGE *residues, float siz
 /* (defun *getcorridor (connector core opening size oitype) */
 /*   (let* ( */
 /*          (cor (@setregions (@labelgraph (*tolong connector) graphfg)  */
-/* 			   (*wsfah  */
-/* 			    (*labelgraph (*tolong core) graphfg)  */
-/* 			    (@setlevel (*or opening connector) 0 0 255)  */
-/* 			    graphfg 254)  */
-/* 			   20)); 20 for range */
-/* 	) */
+/*          (*wsfah  */
+/*           (*labelgraph (*tolong core) graphfg)  */
+/*           (@setlevel (*or opening connector) 0 0 255)  */
+/*           graphfg 254)  */
+/*          20)); 20 for range */
+/*   ) */
 /*     (@setlevel cor 2147483647 2147483647 0) */
 /*     (@thresh cor 1 2147483647 0 1) */
 /*     (@touchar cor) */
@@ -439,10 +476,6 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
   IMAGE **iml;
   IMAGE *tmp, *tmp2;
   IMAGE *out;
-  /* pyGuidos: 'disk' debug path (writing intermediate GeoTIFFs) is disabled.
-     It is dead code (disk is always 0) and its read_image/writeTiffOneStripPerLine
-     calls would pull in the TIFF/GDAL I/O layer. The blocks below are guarded
-     out with #if MSPA_ENABLE_DISK_IO so the MSPA subset needs no I/O libraries. */
   int disk = 0; /* use 1 to store intermediate results on disk: no files can be written for interapro */
   float edu = sqrt(2.0);  /* fixed value */
   int index;
@@ -452,10 +485,10 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
   int bufsize;
 
   sprintf(buf, "\nBased on Morphological Segmentation of Binary Patterns\n"
-	  "by Pierre Soille and Peter Vogt\n"
-	  "URL http://dx.doi.org/10.1016/j.patrec.2008.10.015\n"
-	  "File generated by mspa v2.2\n"
-	  "Parameters: size=%f, graphfg=%d, transition=%d internal=%d", size, graphfg, transition, internal);
+  	"by Pierre Soille and Peter Vogt\n"
+  	"URL http://dx.doi.org/10.1016/j.patrec.2008.10.015\n"
+	"File generated by mspa v2.4\n"
+	"Parameters: size=%f, graphfg=%d, transition=%d internal=%d", size, graphfg, transition, internal);
 
   size=(size+0.98)/sqrt(2);
 
@@ -520,7 +553,6 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
   // (setq edges (car iml))
   // (setq perforation (cadr iml))
 
-#if MSPA_ENABLE_DISK_IO
   if (disk==1){
     writeTiffOneStripPerLine(out, "disk_out.tif", NULL);
     free_image(out);
@@ -531,7 +563,6 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
     writeTiffOneStripPerLine(core, "disk_core.tif", NULL);
     free_image(core);
   }
-#endif
 
   iml=setedges(i0, size, graphfg, graphbg, edu);
 
@@ -541,7 +572,6 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
   //  (setq residues (*sub i0 core patch perforation edges))
   residues=i0;
 
-#if MSPA_ENABLE_DISK_IO
   if (disk==1){
     out=(IMAGE *)read_image("disk_out.tif");
     patch=(IMAGE *)read_image("disk_patch.tif");
@@ -553,7 +583,6 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
     remove("disk_patch.tif");
     remove("disk_out.tif");
   }
-#endif
 
   arith(residues, core, SUB_op);
   arith(residues, patch, SUB_op);
@@ -570,17 +599,16 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
   bitwise_op(out, edges, OR_op);
   free_image(edges);
   //  (if (= transition 2)
-  //	(progn
-  //	  (setq connector (*getconnector2opening opening residues size oitype))
-  //	  (setq corridor (*getcorridor2 connector opening size oitype))
-  // 	  )
+  //  (progn
+  //    (setq connector (*getconnector2opening opening residues size oitype))
+  //    (setq corridor (*getcorridor2 connector opening size oitype))
+  //     )
   //       (progn
-  //  	(setq connector (*getconnector2core core opening residues size oitype))
-  //	(setq corridor (*getcorridor connector core opening size oitype))
-  //	)
+  //    (setq connector (*getconnector2core core opening residues size oitype))
+  //  (setq corridor (*getcorridor connector core opening size oitype))
+  //  )
   //  )
 
-#if MSPA_ENABLE_DISK_IO
   if (disk==1){
     writeTiffOneStripPerLine(out, "disk_out.tif", NULL);
     free_image(out);
@@ -591,14 +619,12 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
     writeTiffOneStripPerLine(residues, "disk_residues.tif", NULL);
     free_image(residues);
   }
-#endif
 
   connector=getconnector2core(core, opening, residues, size, oitype, graphfg, edu);
 
   if( (size!=1) && (disk!=1) )
     free_image(residues);
 
-#if MSPA_ENABLE_DISK_IO
   if (disk==1){
     out=(IMAGE *)read_image("disk_out.tif");
     core=(IMAGE *)read_image("disk_core.tif");
@@ -610,7 +636,6 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
     remove("disk_opening.tif");
     remove("disk_residues.tif");
   }
-#endif
   corridor=getcorridor(connector, core, opening, size, oitype, graphfg);
   free_image(opening);
   shift(core, -4);
@@ -630,8 +655,8 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
     free_image(tmp);
 
   //  (@and corridor (@setlevel (@prune (@setlevel (*or opening corridor)  1 1 2) 2 4)
-  //  			      2 2 1)
-  //  	  )
+  //              2 2 1)
+  //      )
 
     tmp=copy_image(shortcut);
     dilate4(tmp, 1, 1);
@@ -643,8 +668,8 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
   }
 
   //  (@and shortcut (@setlevel (@prune (@setlevel (*or opening shortcut)  1 1 2) 2 4)
-  //			      2 2 1)
-  //	  )
+  //            2 2 1)
+  //    )
 
   //  ;; end of patch
 
@@ -869,3 +894,4 @@ IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg, int transitio
   return(out);
 }
 
+ 
