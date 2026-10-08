@@ -101,25 +101,29 @@ pages:
 #    wheels to the wheelhouse before publishing.
 build_wheels_linux:
   stage: deploy
-  image: python:3.12
+  image: docker:24.0.7
   tags:
     - shared-docker
   services:
-    - docker:dind
+    - name: docker:24.0.7-dind
+      command: ["--tls=false"]
   needs:
     - job: run_tests
       artifacts: false
   variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
     CIBW_BUILD_VERBOSITY: "1"
-    # Lab Linux machines are Intel/AMD (x86_64) and ARM64 (aarch64).
     CIBW_ARCHS_LINUX: "x86_64 aarch64"
   before_script:
-    # Register QEMU so the manylinux aarch64 (ARM64) images can run on this
-    # x86_64 runner. A native ARM64 runner would not need this step.
+    - apk add --no-cache python3 py3-pip
+    - python3 -m venv /venv
+    - . /venv/bin/activate
+    # Register QEMU for ARM64 cross-compilation
     - docker run --rm --privileged tonistiigi/binfmt --install arm64
   script:
-    - python -m pip install --upgrade pip cibuildwheel==2.21.*
-    - python -m cibuildwheel --output-dir wheelhouse
+    - pip install --upgrade pip cibuildwheel==2.21.*
+    - cibuildwheel --output-dir wheelhouse
   artifacts:
     paths:
       - wheelhouse/
