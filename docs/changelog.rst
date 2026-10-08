@@ -9,6 +9,19 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
+2.6.2 - 2026-10-08
+------------------
+
+**Fixed**
+
+- CI/CD Pipeline & Wheel Builds: Resolved Linux binary wheel build failures in GitLab CI (``build_wheels_linux``).
+  - Switched CI image environment to ``docker:24.0.7`` with Python venv to resolve missing Docker CLI issues inside the runner.
+  - Corrected ``docker:dind`` service configurations and host networking (``DOCKER_HOST``) for multi-arch ARM64 (``aarch64``) and x86_64 builds via ``cibuildwheel``.
+
+
+----
+
+
 2.6.1 - 2026-10-08
 ------------------
 
@@ -21,6 +34,8 @@ Version 2.6.1 processes also geotiff files without georeferencing. The ``mspa.c`
 - All functions check if the input geotiff files have no CRS info and warn with a message of georeferencing absence. 
 - New function ``utils.get_raster_info()`` in case of no CRS, then ``epsg="No georeferencing"`` and ``unit="pixels"``.
 
+
+----
 
 
 2.6.0 - 2026-09-21

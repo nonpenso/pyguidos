@@ -7,6 +7,15 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.6.2] - 2026-10-08
+
+### Fixed
+- **CI/CD Pipeline & Wheel Builds:** Resolved Linux binary wheel build failures in GitLab CI (`build_wheels_linux`).
+  - Switched CI image environment to `docker:24.0.7` with Python venv to resolve missing Docker CLI issues inside the runner.
+  - Corrected `docker:dind` service configurations and host networking (`DOCKER_HOST`) for multi-arch ARM64 (`aarch64`) and x86_64 builds via `cibuildwheel`.
+
+---
+
 ## [2.6.1] - 2026-10-08
 
 ### Overview
