@@ -2,8 +2,11 @@ import sys
 import time
 from pathlib import Path
 import csv
+import warnings
 
+import matplotlib.pyplot as plt
 import rasterio
+from rasterio.errors import NotGeoreferencedWarning
 import numpy as np
 
 from . import engine
@@ -11,6 +14,8 @@ from . import utils
 from . import checks
 from . import TEMPL_DIR
 
+# Ignore if input raster has no georeference
+warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 
 def frag_gray(
     in_tiff,
@@ -101,6 +106,11 @@ def frag_gray(
     conn_suffix = '' if method == 'FAD' else connectivity
     out_name = f"{in_name}_frag_gray_{method.lower()}{conn_suffix}_{window_size}_t{for_threshold}"
     info = utils.get_raster_info(in_tiff)
+    if info["epsg"] == "No georeferencing":
+        warnings.warn(
+            f"{in_name} has no spatial georeferencing CSR. "
+            "Processing will continue using pixel-based units.",
+            category=UserWarning, stacklevel=2)
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
@@ -357,8 +367,7 @@ def _get_frag_gray_stats(frag_freq,
         colors, _ = utils.get_colormap(cmap_path)
         bar_colors = [colors.get(v) for v in pixel_values]
 
-        # Create the figure with bar chart (lazy matplotlib import)
-        import matplotlib.pyplot as plt
+        # Create the figure with bar chart
         fig, ax = plt.subplots(figsize=(7, 6))
         ax.bar(pixel_values, frag_pxl_prop, color=bar_colors, width=1.0,
                edgecolor='black', linewidth=0.4)
@@ -384,7 +393,7 @@ def _get_frag_gray_stats(frag_freq,
         content = {
             "input_file": source_tiff.name if source_tiff else "n/a",
             "epsg_code": tiff_info["epsg"],
-            "unit_type": 'metres' if tiff_info["is_projected"] else 'degrees',
+            "unit_type": tiff_info["unit"],
             "resolx": tiff_info["resX"],
             "resoly": tiff_info["resY"],
             "rows_val": tiff_info["rows"],
@@ -398,8 +407,8 @@ def _get_frag_gray_stats(frag_freq,
             "pixel_conn": '-' if method == 'FAD' else f"{connect}-connected",
             "for_thresh": threshold,
             "window_size": window_size,
-            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["is_projected"] else '--',
-            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["is_projected"] else '--',
+            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["unit"]=='metres' else '--',
+            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["unit"]=='metres' else '--',
 
             "output_file": f"{out_name}.tif",
             "out_foreg_pxl": fgrnd,

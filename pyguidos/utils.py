@@ -1,14 +1,18 @@
 import re
 import collections
 from pathlib import Path
+import warnings
 
 import numpy as np
-
 import rasterio
 from rasterio.enums import ColorInterp
+from rasterio.errors import NotGeoreferencedWarning
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from numba import njit, prange
 
-
+# Ignore if input raster has no georeference
+warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 
 def get_raster_info(intiff_path):
     """
@@ -32,8 +36,9 @@ def get_raster_info(intiff_path):
         - 'dtype' (str): data type string (e.g. 'uint8').
         - 'is_tiles' (bool): True if it is a tiled Geotiff.
         - 'crs' (str): CRS as Well Known Text.
-        - 'epsg' (int or str): EPSG code, or 'Unknown' if not resolvable.
-        - 'is_projected' (bool): True if CRS is a projected coordinate system.
+        - 'epsg' (int or str): EPSG code, 'No georeferencing' if no CRS
+                               or 'Unknown' if not resolvable.
+        - 'unit' (str): 'metres', 'degrees', or 'pixels' if no CRS.
         - 'bounds' (BoundingBox): raster bounding box.
         - 'cmap' (dict or None): colormap if present, otherwise None.
         - 'tag' (str): TIFFTAG_IMAGEDESCRIPTION value, or '--' if absent.
@@ -45,9 +50,14 @@ def get_raster_info(intiff_path):
         resX, resY = src.res
 
         # Get projection
-        epsg = src.crs.to_epsg(confidence_threshold=20)
-        if epsg is None:
-            epsg = "Unknown"
+        if src.crs is not None:
+            unit = "metres" if src.crs.is_projected else "degrees"
+            epsg = src.crs.to_epsg(confidence_threshold=20)
+            if epsg is None:
+                epsg = "Unknown"
+        else:
+            unit = "pixels"
+            epsg = "No georeferencing"
 
         # Get colormap
         try:
@@ -74,7 +84,7 @@ def get_raster_info(intiff_path):
             "is_tiled": is_tiled,
             "crs": src.crs,
             "epsg": epsg,
-            "is_projected": src.crs.is_projected,
+            "unit": unit,
             "bounds": src.bounds,
             "cmap": cmap,
             "tag": tag_descr
@@ -509,11 +519,6 @@ def get_tif_colormap(tiff_path):
     Reads the embedded GTB colormap from a pyGuidos output GeoTIFF
     and returns a matplotlib ListedColormap and Normalize.
     """
-    # Lazy import: matplotlib is only needed for this plotting helper, so it is
-    # not loaded on `import pyguidos` (keeps import time low for non-plot use).
-    import matplotlib.pyplot as plt
-    from matplotlib.colors import ListedColormap
-
     with rasterio.open(tiff_path) as src:
         cmap_dict = src.colormap(1)
 

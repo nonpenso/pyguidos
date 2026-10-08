@@ -1,7 +1,9 @@
 import time
 from pathlib import Path
+import warnings
 
 import rasterio
+from rasterio.errors import NotGeoreferencedWarning
 import numpy as np
 
 from . import utils
@@ -9,6 +11,8 @@ from . import engine
 from . import checks
 from . import TEMPL_DIR
 
+# Ignore if input raster has no georeference
+warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 
 def rss(
     in_tiff,
@@ -58,6 +62,11 @@ def rss(
     in_name = in_tiff.stem
     out_name = f"{in_name}_rss"
     info = utils.get_raster_info(in_tiff)
+    if info["epsg"] == "No georeferencing":
+        warnings.warn(
+            f"{in_name} has no spatial georeferencing CSR. "
+            "Processing will continue using pixel-based units.",
+            category=UserWarning, stacklevel=2)
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
@@ -121,7 +130,7 @@ def rss(
             content = {
                 "input_file": in_tiff.name,
                 "epsg_code": info["epsg"],
-                "unit_type": 'metres' if info["is_projected"] else 'degrees',
+                "unit_type": info["unit"],
                 "resolx": info["resX"],
                 "resoly": info["resY"],
                 "rows_val": info["rows"],

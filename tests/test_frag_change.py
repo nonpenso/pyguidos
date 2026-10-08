@@ -28,7 +28,7 @@ def mock_raster_profiles():
         "resX": 1.0,
         "resY": 1.0,
         "epsg": 4326,
-        "is_projected": True,
+        "unit": "metres",
         "bounds": (0, 0, 10, 10)
     }
     return info

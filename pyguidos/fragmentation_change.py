@@ -1,6 +1,7 @@
 import time
 from pathlib import Path
 import csv
+import matplotlib.pyplot as plt
 
 import rasterio
 from rasterio.enums import ColorInterp
@@ -291,8 +292,7 @@ def _get_frag_change_stats(frag_chan_tiff,
         colors, _ = utils.get_colormap(cmap_path)
         bar_colors = [colors.get(100-v) for v in pixel_values]
 
-        # Create the figure with bar chart (lazy matplotlib import)
-        import matplotlib.pyplot as plt
+        # Create the figure with bar chart
         fig, ax = plt.subplots(figsize=(7, 6))
         ax.bar(pixel_values, frag_chag_pxl_prop, color=bar_colors, width=1.0,
                       edgecolor='black', linewidth=0.4)
@@ -318,7 +318,7 @@ def _get_frag_change_stats(frag_chan_tiff,
             "input_file1": tiff1.name,
 			"input_file2": tiff2.name,
             "epsg_code": minfo["epsg"],
-            "unit_type": 'metres' if minfo["is_projected"] else 'degrees',
+            "unit_type": minfo["unit"],
             "resolx": minfo["resX"],
             "resoly": minfo["resY"],
             "rows_val": minfo["rows"],
@@ -338,8 +338,8 @@ def _get_frag_change_stats(frag_chan_tiff,
 
             "used_method": method,
             "window_size": window_size,
-            "window_areaHA": f"{(window_size**2)*minfo['resX']*minfo['resY']/10000:.4f}" if minfo["is_projected"] else '--',
-            "window_areaAC": f"{(window_size**2)*minfo['resX']*minfo['resY']*0.000247105:.4f}" if minfo["is_projected"] else '--',
+            "window_areaHA": f"{(window_size**2)*minfo['resX']*minfo['resY']/10000:.4f}" if minfo["unit"]=='metres' else '--',
+            "window_areaAC": f"{(window_size**2)*minfo['resX']*minfo['resY']*0.000247105:.4f}" if minfo["unit"]=='metres' else '--',
 
             "output_file": f"{out_name}.tif",
 

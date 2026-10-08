@@ -2,8 +2,10 @@ import sys
 import time
 from pathlib import Path
 import collections
+import warnings
 
 import rasterio
+from rasterio.errors import NotGeoreferencedWarning
 import numpy as np
 
 from . import utils
@@ -11,6 +13,8 @@ from . import engine
 from . import checks
 from . import TEMPL_DIR
 
+# Ignore if input raster has no georeference
+warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 
 ACC_VALUES = [103, 33, 65, 1, 9, 17]
 
@@ -78,6 +82,11 @@ def acc(
     in_name = in_tiff.stem
     out_name = f"{in_name}_acc"
     info = utils.get_raster_info(in_tiff)
+    if info["epsg"] == "No georeferencing":
+        warnings.warn(
+            f"{in_name} has no spatial georeferencing CSR. "
+            "Processing will continue using pixel-based units.",
+            category=UserWarning, stacklevel=2)
 
     # Read the input Geotiff
     with rasterio.open(in_tiff) as src:
@@ -358,7 +367,7 @@ def _get_acc_stats(acc_freq,
         content = {
             "input_file": source_tiff.name if source_tiff else "n/a",
             "epsg_code": tiff_info["epsg"],
-            "unit_type": 'metres' if tiff_info["is_projected"] else 'degrees',
+            "unit_type": tiff_info["unit"],
             "resolx": tiff_info["resX"],
             "resoly": tiff_info["resY"],
             "rows_val": tiff_info["rows"],

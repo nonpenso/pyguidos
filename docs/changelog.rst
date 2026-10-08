@@ -9,12 +9,12 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
-2.6.1 - 2026-10-05
+2.7.0 - 2026-10-XX
 ------------------
 
 **Overview**
 
-Version 2.6.1 replaces the compiled MSPA C extension introduced in 2.6.0 with a native-Python MSPA engine (``pyguidos/engine_mspa.py``). The engine reproduces the GuidosToolbox (GTB) / ``miallib`` MSPA result bit-for-bit on the image interior across edge widths, 4- and 8-connectivity, and the ``transition``/``intext`` options. pyGuidos is pure Python again: there is no C to compile, so installation needs no build toolchain and ships as a single platform-independent wheel.
+Version 2.7.0 replaces the compiled MSPA C extension introduced in 2.6.0 with a native-Python MSPA engine (``pyguidos/engine_mspa.py``). The engine reproduces the GuidosToolbox (GTB) / ``miallib`` MSPA result bit-for-bit on the image interior across edge widths, 4- and 8-connectivity, and the ``transition``/``intext`` options. pyGuidos is pure Python again: there is no C to compile, so installation needs no build toolchain and ships as a single platform-independent wheel.
 
 **Changed**
 
@@ -28,6 +28,22 @@ Version 2.6.1 replaces the compiled MSPA C extension introduced in 2.6.0 with a 
 **Fixed**
 
 - Bridge vs. loop at a one-pixel neck (``edge_width=1``): two distinct cores separated by a single connector pixel are now correctly classified as a bridge (not a loop). The core-label propagation in ``getcorridor`` was reimplemented as a faithful ordered FIFO flood (``_wsfah``) instead of a distance watershed.
+
+
+----
+
+
+2.6.1 - 2026-10-08
+------------------
+
+**Overview**
+
+Version 2.6.1 processes also geotiff files without georeferencing. The ``mspa.c`` within ``miallib`` C library of Soille and Vogt has been updated to version 2.4.
+
+**Added**
+
+- All functions check if the input geotiff files have no CRS info and warn with a message of georeferencing absence. 
+- New function ``utils.get_raster_info()`` in case of no CRS, then ``epsg="No georeferencing"`` and ``unit="pixels"``.
 
 
 ----

@@ -14,15 +14,6 @@ wheels/
 venv/
 env/
 
-# Compiled C extension artifacts (built per-platform)
-*.pyd
-*.so
-*.o
-*.obj
-*.lib
-*.exp
-*.nfs*
-
 # IDE and Editor files
 .idea/
 .vscode/

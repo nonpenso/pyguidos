@@ -19,10 +19,7 @@ Fidelity
 --------
 Validated bit-for-bit against the original miallib MSPA on the interior of
 binary forest/non-forest maps across edge widths, 4- and 8-connectivity, and
-transition/intext on/off. The only known difference is a one-pixel border
-effect on the right/bottom image edges, caused by an asymmetry in miallib's
-border-propagation (``fm_preproc2``); pyGuidos uses the symmetric, more
-correct border handling instead (see ``fm_preproc2`` below).
+transition/intext on/off. 
 
 Algorithm map (miallib source -> function here)
 -----------------------------------------------
@@ -788,50 +785,29 @@ def fm_preproc(fm: np.ndarray, size: float, edu: float = EDU) -> np.ndarray:
 def fm_preproc2(im: np.ndarray, size: int) -> np.ndarray:
     """
     fm_preproc2 (mspa.c:96): add a frame of width ``size`` and propagate each
-    image border outward into the frame to mitigate border effects.
-
-    A zero frame is added, then each border row/column is replicated outward
-    into its side strip (left/right strips span only the original height;
-    top/bottom strips span only the original width). The four CORNER quadrants
-    are NOT written by any strip, so they stay 0 (nodata) - matching the C.
-
-    ------------------------------------------------------------------
-    OPEN POINTS TO DISCUSS WITH THE miallib DEVELOPER (border handling):
-
-    (1) Right/bottom off-by-one: the C fm_preproc2 places the left/top strips
-        flush but the right/bottom strips one pixel short, leaving their
-        outermost frame column/row at 0. This looks like an unintended
-        asymmetry. We deliberately use SYMMETRIC propagation (all four sides
-        flush), which we consider more correct.
-
-    (2) Corner quadrants left at 0: no strip writes the four corner quadrants,
-        so a block of foreground touching an image CORNER is NOT propagated
-        diagonally into the frame. Consequence: a solid-foreground corner that
-        should remain Core gets eroded to Edge (observed: v1 corner = Core,
-        v2 corner = Edge). Propagating the corner foreground into the diagonal
-        quadrant (8-connected border extension) would be more correct. For now
-        we match the C (corners = 0); flagged for the developer.
-    ------------------------------------------------------------------
+    image border and corners outward into the frame to mitigate border effects.
+    Each border row/column is replicated outward into its side strip and the 
+    four corner pixels into each corner quadrant.
     """
-    ny, nx = im.shape
-    out = np.zeros((ny + 2 * size, nx + 2 * size), dtype=im.dtype)
-    # original image in the centre
-    out[size:size + ny, size:size + nx] = im
-    # left/right strips: replicate the border column across `size` cols,
-    # over the original row span only (rows [size, size+ny)).
-    left_col = im[:, 0][:, None]            # (ny,1)
-    right_col = im[:, nx - 1][:, None]
-    out[size:size + ny, 0:size] = np.repeat(left_col, size, axis=1)
-    out[size:size + ny, size + nx:] = np.repeat(right_col, size, axis=1)
-    # top/bottom strips: replicate the border row across `size` rows,
-    # over the original column span only (cols [size, size+nx)).
-    top_row = im[0, :][None, :]             # (1,nx)
-    bot_row = im[ny - 1, :][None, :]
-    out[0:size, size:size + nx] = np.repeat(top_row, size, axis=0)
-    out[size + ny:, size:size + nx] = np.repeat(bot_row, size, axis=0)
-    # corners remain 0
-    return out
-
+    # ny, nx = im.shape
+    # out = np.zeros((ny + 2 * size, nx + 2 * size), dtype=im.dtype)
+    # # original image in the centre
+    # out[size:size + ny, size:size + nx] = im
+    # # left/right strips: replicate the border column across `size` cols,
+    # # over the original row span only (rows [size, size+ny)).
+    # left_col = im[:, 0][:, None]            # (ny,1)
+    # right_col = im[:, nx - 1][:, None]
+    # out[size:size + ny, 0:size] = np.repeat(left_col, size, axis=1)
+    # out[size:size + ny, size + nx:] = np.repeat(right_col, size, axis=1)
+    # # top/bottom strips: replicate the border row across `size` rows,
+    # # over the original column span only (cols [size, size+nx)).
+    # top_row = im[0, :][None, :]             # (1,nx)
+    # bot_row = im[ny - 1, :][None, :]
+    # out[0:size, size:size + nx] = np.repeat(top_row, size, axis=0)
+    # out[size + ny:, size:size + nx] = np.repeat(bot_row, size, axis=0)
+    # # corners remain 0
+    # return out
+    return np.pad(im,pad_width=size, mode="edge")
 
 # ===========================================================================
 # Connector generation: getconnector2core + geodesic external boundary (ced)
