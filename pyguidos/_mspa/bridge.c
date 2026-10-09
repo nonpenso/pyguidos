@@ -28,14 +28,15 @@
 /* Dummy stubs for miallib file I/O functions to satisfy MSVC linker (LNK2001).
  * pyGuidos processes images strictly in-memory via NumPy arrays, so these
  * file-based routines are never executed at runtime. */
-IMAGE *read_image(const char *filename) {
-    (void)filename;
+IMAGE *read_image(char *fn) {
+    (void)fn;
     return NULL;
 }
 
-int writeTiffOneStripPerLine(IMAGE *im, char *filename) {
+ERROR_TYPE writeTiffOneStripPerLine(IMAGE *im, char *fn, char *desc) {
     (void)im;
-    (void)filename;
+    (void)fn;
+    (void)desc;
     return 0;
 }
 
