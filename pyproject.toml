@@ -10,7 +10,7 @@ authors = [
 description = "Python interface to main GuidosToolbox (GTB) modules for spatial pattern analysis"
 readme = "README.md" 
 license = "GPL-3.0-or-later"
-license-file = ["LICENSE*"]
+license-files = ["LICENSE*"]
 requires-python = ">=3.10"
 keywords = [
     "landscape analysis",
