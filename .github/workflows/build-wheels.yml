@@ -25,6 +25,7 @@ jobs:
         with:
           python-version: '3.12'
 
+      # Required for cross-compiling ARM64 wheels on Ubuntu
       - name: Set up QEMU
         if: runner.os == 'Linux'
         uses: docker/setup-qemu-action@v3
@@ -38,6 +39,10 @@ jobs:
           CIBW_ARCHS_LINUX: "x86_64 aarch64"
           CIBW_ARCHS_WINDOWS: "AMD64"
           CIBW_ARCHS_MACOS: "x86_64 arm64"
+
+          # Prevent pip from attempting GDAL source builds during testing
+          CIBW_TEST_COMMAND: "python -c \"import pyguidos; print(pyguidos.__version__)\""
+          CIBW_ENVIRONMENT: "PIP_ONLY_BINARY=:all:"
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
