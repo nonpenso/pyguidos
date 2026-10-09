@@ -64,7 +64,7 @@ Requirements
 - numpy >2.0
 - rasterio >=1.4
 - scipy >=1.15
-- scikit-image>=0.26
+- scikit-image>=0.24
 - matplotlib >=3.10
 - pyogrio >=0.10
 - geopandas >=1.1

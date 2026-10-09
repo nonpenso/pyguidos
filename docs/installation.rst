@@ -27,7 +27,7 @@ which are installed automatically with pip:
      - >=1.15
      - Connected component labelling
    * - scikit-image
-     - >=0.26
+     - >=0.24
      - Image processing     
    * - matplotlib
      - >=3.10
