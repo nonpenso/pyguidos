@@ -44,8 +44,7 @@ jobs:
 
           # Install the built wheel WITHOUT pulling heavy external dependencies like rasterio in QEMU
           CIBW_TEST_REQUIRES: "numpy"
-          CIBW_TEST_COMMAND_ARGUMENTS: "--no-deps"          
-          CIBW_TEST_COMMAND: "python -c \"import pyguidos._mspa; print('MSPA C-extension loaded successfully!')\""
+          CIBW_TEST_COMMAND: "pip install --no-deps {wheel} && python -c \"import pyguidos._mspa; print('MSPA C-extension loaded successfully!')\""
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
