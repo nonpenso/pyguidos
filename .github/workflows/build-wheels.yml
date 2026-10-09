@@ -21,9 +21,14 @@ jobs:
           submodules: true
 
       - name: Set up Python
-        uses: actions/configure-pages@v5 # Standard setup step
+        uses: actions/setup-python@v5 # Standard setup step
         with:
           python-version: '3.12'
+      - name: Set up QEMU
+      - if: runner.os == 'Linux'
+      - uses: docker/setup-qemu-action@v3
+      - with:
+          platforms: all
 
       - name: Build wheels via cibuildwheel
         uses: pypa/cibuildwheel@v2.21.0
