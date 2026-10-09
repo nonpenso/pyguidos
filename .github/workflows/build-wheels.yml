@@ -1,9 +1,12 @@
 name: Build and Publish Wheels
 
 on:
-  push:
-    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "​Publish to PyPI after building"
+        type: boolean
+        default: false
 
 jobs:
   build_wheels:
@@ -12,20 +15,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-15-intel, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-
-      - uses: pypa/cibuildwheel@v3.2.0   # check the releases page for the current v3
-        env:
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
-          CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_28
-          CIBW_SKIP: "pp* *-musllinux*"
-          CIBW_TEST_REQUIRES: numpy
-          CIBW_TEST_COMMAND: python -c "import pyguidos._mspa"
-
+      - uses: pypa/cibuildwheel@v3.2.0
       - uses: actions/upload-artifact@v4
         with:
           name: cibw-wheels-${{ matrix.os }}
@@ -50,8 +45,8 @@ jobs:
 
   publish:
     needs: [build_wheels, build_sdist]
+    if: ${{ inputs.publish }}
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     environment: pypi
     permissions:
       id-token: write
@@ -62,3 +57,5 @@ jobs:
           pattern: cibw-*
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true

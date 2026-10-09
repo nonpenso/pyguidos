@@ -9,14 +9,33 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
+2.6.3 - 2026-10-09
+------------------
+
+**Added**
+
+- Prebuilt wheels (with the compiled MSPA C extension) are now published for Python 3.10-3.14 on Windows x64, Linux x86_64, Linux aarch64 and macOS arm64 (Apple Silicon).
+
+**Changed**
+
+- Wheels are built and tested with ``cibuildwheel`` in a GitHub Actions workflow that is started manually.
+
+**Notes**
+
+- No wheels for Intel Macs (x86_64) or musl-based Linux (e.g. Alpine). Those platforms install from the source distribution and need a C compiler. On Intel Macs, ``numba`` and ``llvmlite`` have no wheels either.
+
+
+----
+
+
 2.6.2 - 2026-10-08
 ------------------
 
 **Fixed**
 
 - CI/CD Pipeline & Wheel Builds: Resolved Linux binary wheel build failures in GitLab CI (``build_wheels_linux``).
-  - Switched CI image environment to ``docker:24.0.7`` with Python venv to resolve missing Docker CLI issues inside the runner.
-  - Corrected ``docker:dind`` service configurations and host networking (``DOCKER_HOST``) for multi-arch ARM64 (``aarch64``) and x86_64 builds via ``cibuildwheel``.
+- Switched CI image environment to ``docker:24.0.7`` with Python venv to resolve missing Docker CLI issues inside the runner.
+- Corrected ``docker:dind`` service configurations and host networking (``DOCKER_HOST``) for multi-arch ARM64 (``aarch64``) and x86_64 builds via ``cibuildwheel``.
 
 
 ----
