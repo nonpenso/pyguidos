@@ -21,14 +21,14 @@ jobs:
           submodules: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5 # Standard setup step
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Set up QEMU
-      - if: runner.os == 'Linux'
-      - uses: docker/setup-qemu-action@v3
-      - with:
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
           platforms: all
 
       - name: Build wheels via cibuildwheel
@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/configure-python@v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Build sdist
