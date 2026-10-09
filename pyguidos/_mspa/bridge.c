@@ -25,6 +25,20 @@
 #include "miallib/miallib.h"
 #include "miallib/mialtypes.h"
 
+/* Dummy stubs for miallib file I/O functions to satisfy MSVC linker (LNK2001).
+ * pyGuidos processes images strictly in-memory via NumPy arrays, so these
+ * file-based routines are never executed at runtime. */
+IMAGE *read_image(const char *filename) {
+    (void)filename;
+    return NULL;
+}
+
+int writeTiffOneStripPerLine(IMAGE *im, char *filename) {
+    (void)im;
+    (void)filename;
+    return 0;
+}
+
 /* Forward declaration of the MSPA entry point (defined in miallib/mspa.c). */
 extern IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg,
                                     int transition, int internal);
