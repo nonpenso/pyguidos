@@ -15,8 +15,8 @@ DATA_DIR = MODULE_ROOT / "data"
 
 
 # Package metadata
-__version__ = "2.6.3"
-__author__ = "Caudullo G. & Vogt P., European Commission, Joint Research Centre"
+__version__ = "2.6.4"
+__author__ = "Caudullo G., Vogt P., Soille P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
 def _setup_numba():
@@ -86,7 +86,7 @@ def info(tool: str = None):
     Displays quick-help and JRC documentation links for pyguidos tools.
 
     Usage:
-        pg.info()           # Lists all available tools
+        pg.info()          # Lists all available tools
         pg.info('acc')     # Shows details and documentation links for Accounting
     """
     registry = {

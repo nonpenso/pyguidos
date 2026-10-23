@@ -2,10 +2,11 @@
 
 [project]
 name = "pyguidos" 
-version = "2.6.3"
+version = "2.6.4"
 authors = [
   { name="Giovanni Caudullo", email="giovanni.caudullo@ext.ec.europa.eu" },
   { name="Peter Vogt", email="peter.vogt@ec.europa.eu" },
+  { name="Perre Soille", email="pierre.soille@ec.europa.eu" },
 ]
 description = "Python interface to main GuidosToolbox (GTB) modules for spatial pattern analysis"
 readme = "README.md" 

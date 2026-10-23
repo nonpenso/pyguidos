@@ -123,7 +123,10 @@ def save_output_geotiff(output_path, data, profile, colormap_input, tag_descr):
             dtype='uint8',
             nodata=None,
             compress='lzw',
-            predictor=2
+            predictor=2,
+            tiled=True,
+            blockxsize=256,
+            blockysize=256
     )
 
     # Estimate size in GB (assuming 1 byte per pixel for uint8)
@@ -536,15 +539,15 @@ def get_tif_colormap(tiff_path):
 def citation():
     """Prints the recommended scientific citations for pyguidos."""
     cite_text = """
-============================================================
+==================================================================
 RECOMENDED CITATIONS FOR PYGUIDOS
-============================================================
+==================================================================
 
-Caudullo G., Vogt P., 2026. PyGuidos, A cross-platform Python
-interface to GuidosToolbox for landscape pattern analysis.
-JOSS XX(XX), XXXX. https://doi.org/joss.XXXXXX
+Caudullo G., Vogt P., Soille P., 2026. PyGuidos, A cross-platform 
+Python interface to GuidosToolbox for landscape pattern analysis.
+JOSS in review
 
-============================================================
+==================================================================
     """
     print(cite_text)
     return cite_text

@@ -7,9 +7,12 @@ authors:
   - family-names: "Vogt"
     given-names: "Peter"
     affiliation: "European Commission, Joint Research Centre"
+  - family-names: "Soille"
+    given-names: "Pierre"
+    affiliation: "European Commission, Joint Research Centre"
 title: "pyguidos: A Python interface to main modules of GuidosToolbox"
-version: 2.6.3
-date-released: 2026-10-09
+version: 2.6.4
+date-released: 2026-10-22
 license: GPL-3.0-or-later
 url: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
 repository-code: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
@@ -35,6 +38,8 @@ preferred-citation:
       given-names: "Giovanni"
     - family-names: "Vogt"
       given-names: "Peter"
+    - family-names: "Soille"
+      given-names: "Pierre"
   title: "pyguidos"
   journal: "JOSS"
   year: 2026

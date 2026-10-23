@@ -33,6 +33,10 @@
 
 |pipeline| |coverage| |docs| |pypi| |downloads| |license| |JOSS|
 
+
+Introduction
+------------
+
 **pyGuidos** is a Python interface to the main modules of `GuidosToolbox <https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/>`_ (GTB), 
 a scientific software suite developed at the European Commission Joint Research Centre (JRC) for the 
 spatial pattern analysis of raster images.
@@ -41,27 +45,21 @@ pyGuidos follows the logic of the GTB-based command-line modules `GuidosToolbox 
 providing programmatic access to the main GTB analytical tools, enabling reproducible 
 landscape analysis workflows in Python scripts, Jupyter notebooks, and automated pipelines.
 
-.. note::
-   This documentation describes **pyGuidos version 2.6.3**. For older versions, 
-   please refer to the legacy documentation branch.
+The official upstream development workspace for ``pyguidos`` is hosted on `code.europa.eu <https://code.europa.eu/jrc-forest/guidos/pyguidos>`_, the open-source repository platform of the European Commission. Because this institutional forge restricts issue creation and merge requests to authorized internal accounts (EU Login), public community collaboration is mirrored to this `GitHub Repository <https://github.com/nonpenso/pyguidos/>`_. 
+For bug reports and feature requests, please do not use the **code.europa.eu** tracker for feedback. Instead, use our public **GitHub Mirror** to report code anomalies or file tickets visiting the public `GitHub Issue Tracker <https://github.com/nonpenso/pyguidos/issues>`_, or to submit patches or open-source optimizations, opening a Pull Request against the public **GitHub Repository Mirror**. Approved code updates will be vetted by the maintainers and integrated into the primary downstream build cycle.
 
 
-Project Infrastructure & Community
-----------------------------------
+Statement of need
+-----------------
 
-The official upstream development workspace for ``pyguidos`` is hosted on `code.europa.eu <https://code.europa.eu/jrc-forest/guidos/pyguidos>`_, the open-source repository platform of the European Commission. Because this institutional forge restricts issue creation and merge requests to authorized internal accounts (EU Login), public community collaboration is mirrored to GitHub.
+Landscape analysis benefits from a wide array of existing software packages, desktop applications, and libraries, ranging from classic tools like FRAGSTATS and Circuitscape to R packages and Python modules. However, a persistent challenge has been the programmatic automation of the established `GuidosToolbox <https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/>`_ developed at the European Commission Joint Research Centre (JRC). Historically, GuidoToolbox capabilities were confined to desktop applications or platform-constrained Linux command-line binaries that presented architecture limitations and hindered integration into modern workflows. PyGuidos addresses this need by reimplementing core spatial engines into a high-performance Python library. Accelerated with Numba JIT compilation and parallelized across CPU cores, it provides the performance of compiled C-binaries while offering complete cross-platform portability and seamless integration into automated data pipelines and Jupyter notebooks.
 
-.. important::
-   **Bug reports and feature requests**
-   
-   To ensure an open, friction-free environment for the global scientific and GIS community, please do not use the code.europa.eu tracker for feedback. Instead, use our public **GitHub Mirror**:
-   
-   * To report code anomalies or file tickets, visit the public `GitHub Issue Tracker <https://github.com/nonpenso/pyguidos/issues>`_.
-   
-   * To submit patches or open-source optimizations, please open a Pull Request against our public `GitHub Repository Mirror <https://github.com/nonpenso/pyguidos>`_. Approved code updates will be vetted by the maintainers and integrated into the primary downstream build cycle.
+This technical evolution carries direct policy relevance, particularly in the context of the European Union Nature Restoration Regulation (NRR). The regulation legally requires EU Member States to report a forest connectivity index based on the Foreground Area Density (FAD) metric, driving an immediate demand for auditable and scalable software capable of computing FAD at national and continental scales. Because legacy Guidos architectures relied on proprietary runtimes and platform-restricted binaries, they were poorly suited for automated national reporting pipelines. PyGuidos fills this gap by implementing the exact FAD algorithm adopted for NRR compliance in pure, accessible Python code that can be deployed on any modern infrastructure.
+
+Consequently, the package is designed to support a broad audience of landscape ecologists, remote sensing analysts, and forest monitoring practitioners across national forest services, international organizations, and European Commission bodies who require building reproducible analysis chains applying GuidoToolbox metrics to regional or global datasets for environmental policy reporting and spatial assessment.
 
 
-Getting Started
+Getting started
 ---------------
 
 If you are new to pyGuidos, we recommend following these steps:
@@ -77,8 +75,8 @@ If you are new to pyGuidos, we recommend following these steps:
 3. **User Guide**: Browse the :doc:`usage/index` for detailed examples of Landscape Mosaic, Fragmentation, and other analysis tools.
 
 
-Examples
---------
+Usage example
+-------------
 
 This example demonstrates how to compute Forest Area Density (FAD) fragmentation statistics on a binary Forest/Non-Forest (FNF) raster and visualize the output using Matplotlib along with its embedded GTB colormap and calculated indices.
 
@@ -233,7 +231,22 @@ The final step extracts the fragmentation raster for each administrative region 
     :alt: Corsica admin vector
 
 
-Memory Usage and Large Rasters
+Advanced Workflows & Tutorials
+------------------------------
+
+For more in-depth use cases, a complete suite of step-by-step example notebooks is available in the :ref:`Examples <examples>` section. These workflows guide you from raw data acquisition to final results generation:
+
+* **01. Getting Started**: Basic raster handling, metadata extraction, and setup.
+* **02. Landscape Mosaic**: Computing core landscape mosaic metrics.
+* **03. Fragmentation Change**: Analyzing multi-temporal fragmentation changes.
+* **04. Regional Analysis**: Extracting metrics by administrative subdivisions.
+* **05. Grayscale Fragmentation**: Processing continuous raster inputs.
+* **06. Morphology MSPA & SPA**: Executing Morphological Spatial Pattern Analysis.
+
+You can browse these tutorials online or click the **"Open in Colab"** badge at the top of any notebook page to execute them interactively in your browser.
+
+
+Memory usage and large rasters
 ------------------------------
 
 pyGuidos loads each input raster fully into memory, so a tool's memory footprint
@@ -276,15 +289,11 @@ Citation
 If you use **pyGuidos** in your research, please cite both the software implementation 
 and the underlying scientific methodology:
 
-.. important::
-   **Software Implementation**
-     Caudullo G. and Vogt P. (2026). *pyGuidos: A cross-platform Python interface to 
-     GuidosToolbox for landscape pattern analysis*. In preparation.
+Software implementation: pyGuidos
+   * Caudullo G., Vogt P., Soille P. (2026). *pyGuidos: A cross-platform Python interface to GuidosToolbox for landscape pattern analysis*. JOSS in review.
 
-   **Methodology (GTB)**
-     Vogt P. and Riitters K. (2017). *GuidosToolbox: universal digital image object analysis*. 
-     European Journal of Remote Sensing, 50, 1, pp. 352-361. 
-     doi: `10.1080/22797254.2017.1330650 <https://doi.org/10.1080/22797254.2017.1330650>`_
+Methodology: GuidosToolbox
+   * Vogt P., Riitters K. (2017). *GuidosToolbox: universal digital image object analysis*. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: `10.1080/22797254.2017.1330650 <https://doi.org/10.1080/22797254.2017.1330650>`_
 
 
 Authors
@@ -292,6 +301,7 @@ Authors
 
 * **Giovanni Caudullo** - `giovanni.caudullo@ext.ec.europa.eu <mailto:giovanni.caudullo@ext.ec.europa.eu>`_
 * **Peter Vogt** - `peter.vogt@ec.europa.eu <mailto:peter.vogt@ec.europa.eu>`_
+* **Pierre Soille** - `pierre.soille@ec.europa.eu <mailto:pierre.soille@ec.europa.eu>`_
 
 
 License
@@ -320,5 +330,6 @@ for attribution details.
 
    installation
    usage/index
+   examples/index
    contributing
    changelog

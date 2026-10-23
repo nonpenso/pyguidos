@@ -1,15 +1,30 @@
 import os
 import sys
+import pypandoc
+import shutil
+
+# Force Sphinx/nbsphinx to find the bundled pypandoc binary
+os.environ['PATH'] += os.pathsep + os.path.dirname(pypandoc.get_pandoc_path())
 sys.path.insert(0, os.path.abspath('..'))
 
+# Automatically sync notebooks from project root into docs/notebooks before building
+root_notebooks = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'notebooks'))
+docs_notebooks = os.path.abspath(os.path.join(os.path.dirname(__file__), 'notebooks'))
+
+if os.path.exists(root_notebooks):
+    if os.path.exists(docs_notebooks):
+        shutil.rmtree(docs_notebooks)
+    shutil.copytree(root_notebooks, docs_notebooks)
+
 project = "pyGuidos"
-copyright = "European Union, 2026, Giovanni Caudullo, Peter Vogt"
-author = "Giovanni Caudullo, Peter Vogt"
-release = "2.6.3"
+copyright = "European Union, 2026, Giovanni Caudullo, Peter Vogt, Pierre Soille"
+author = "Giovanni Caudullo, Peter Vogt, Pierre Soille"
+release = "2.6.4"
 
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "nbsphinx",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
 ]
@@ -45,3 +60,7 @@ html_theme_options = {
     "footer_end": ["theme-version"],
     "secondary_sidebar_items": ["page-toc", "edit-this-page"], 
 }
+
+nbsphinx_allow_external_files = True
+nbsphinx_execute = 'never'
+highlight_language = 'python'

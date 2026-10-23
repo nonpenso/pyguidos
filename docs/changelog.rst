@@ -9,6 +9,22 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
+2.6.4 - 2026-10-23
+------------------
+
+**Added**
+
+- Interactive Example Workflows: Integrated a dedicated Examples section into the Sphinx documentation website, automatically harvesting and rendering the core analysis notebooks (``nbsphinx``) directly into the documentation tree.
+- Google Colab Integration: Added official "Open in Colab" badges to the top of all example notebooks and implemented automatic ``pyguidos`` installation blocks within the notebooks to ensure seamless cloud execution.
+- Statement of Need: Added a comprehensive **Statement of Need** section to both the repository ``README.md`` and the online documentation website. This details the architectural evolution from legacy GUI/bash binaries to high-performance native Python (with Numba JIT acceleration), highlights policy relevance to the EU Nature Restoration Regulation (NRR) and Foreground Area Density (FAD) metric, and defines the target audience.
+
+**Changed**
+
+- Optimized Raster Output Handling: Updated ``save_output_geotiff`` to explicitly enforce ``tiled=True`` and standard block sizes (``256x256``) on all output GeoTIFF files. This ensures optimal spatial performance and completely eliminates GDAL warning messages regarding block size and strip configurations.
+
+----
+
+
 2.6.3 - 2026-10-09
 ------------------
 

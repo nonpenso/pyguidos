@@ -370,10 +370,6 @@ def test_log_msg_silent_when_false(capsys):
     assert captured.out == ""
 
 
-# =============================================================================
-# v2.5.2 — get_tif_colormap
-# =============================================================================
-
 def test_get_tif_colormap_returns_cmap_and_norm(tmp_path):
     """Verify get_tif_colormap reads an embedded colormap and returns
     a ListedColormap and Normalize object."""
