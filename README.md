@@ -196,8 +196,15 @@ plt.show()
 
 ![Fragmentation Analysis Output](https://code.europa.eu/jrc-forest/guidos/pyguidos/-/raw/main/assets/frag_example_output.png)
 
+For more in-depth use cases, a complete suite of step-by-step example notebooks is available on `/notebooks` directory of the [git repository](https://code.europa.eu/jrc-forest/guidos/pyguidos/notebooks) and also on the [Examples](https://pyguidos-d46552.pages.code.europa.eu/examples/index.html#examples) section of the online documentation. These workflows guide you from raw data acquisition to final results generation.
+- [01. Getting Started](https://pyguidos-d46552.pages.code.europa.eu/notebooks/01_getting_started.html): Basic raster handling, metadata extraction, and setup.
+- [02. Landscape Mosaic](https://pyguidos-d46552.pages.code.europa.eu/notebooks/02_landscape_mosaic.html): Computing core landscape mosaic metrics.
+- [03. Fragmentation Change](https://pyguidos-d46552.pages.code.europa.eu/notebooks/03_fragmentation_change.html): Analyzing multi-temporal fragmentation changes.
+- [04. Regional Analysis](https://pyguidos-d46552.pages.code.europa.eu/notebooks/04_regional_analysis.html): Extracting metrics by administrative subdivisions.
+- [05. Grayscale Fragmentation](https://pyguidos-d46552.pages.code.europa.eu/notebooks/05_grayscale_fragmentation.html): Processing continuous raster inputs.
+- [06. Morphology MSPA & SPA](https://pyguidos-d46552.pages.code.europa.eu/notebooks/06_morphology_mspa_spa.html): Executing morphological pattern analysis.
 
-Jupyter notebooks with other examples are available on `/notebooks` directory of the [git repository](https://code.europa.eu/jrc-forest/guidos/pyguidos).
+You can browse these tutorials online or click the “Open in Colab” badge at the top of any notebook page to execute them interactively in your browser.
 
 ---
 
