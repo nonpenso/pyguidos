@@ -63,7 +63,7 @@ pages:
     # build-essential is required to compile the _mspa C extension on install.
     - apt-get update && apt-get install -y build-essential libexpat1
     - pip install --upgrade pip
-    - pip install sphinx pydata-sphinx-theme ".[notebooks,test]"
+    - pip install sphinx pydata-sphinx-theme pypandoc ".[notebooks,test]"
     # Compile the _mspa extension in place so that importing pyguidos from the
     # source tree during the docs build finds the extension (same source-tree
     # shadowing reason as the run_tests job).
