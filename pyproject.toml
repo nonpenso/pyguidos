@@ -15,16 +15,16 @@ license-files = ["LICENSE*"]
 requires-python = ">=3.10"
 keywords = [
     "GIS",
-    "GuidosToolbox,"
+    "GuidosToolbox",
     "MSPA",
     "connectivity",
     "forest monitoring",
     "fragmentation",
     "habitat",
     "landscape analysis",
-	"landscape ecology",
-	"landscape morphology",
-	"pattern analysis",
+    "landscape ecology",
+    "landscape morphology",
+    "pattern analysis",
     "remote sensing",
     "spatial pattern",
 ] 
