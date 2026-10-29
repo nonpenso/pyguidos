@@ -15,7 +15,7 @@ license-files = ["LICENSE*"]
 requires-python = ">=3.10"
 keywords = [
     "GIS",
-    "GuidosToolbox"
+    "GuidosToolbox,"
     "MSPA",
     "connectivity",
     "forest monitoring",
@@ -55,7 +55,7 @@ dependencies = [
     "python-ternary>=1.0.8",
     "numba>=0.62",
     "tbb>=2021.6.0; sys_platform == 'win32' and platform_machine == 'AMD64'",
-    "intel-openmp; sys_platform == 'linux' and platform_machine == 'x84_64'",
+    "intel-openmp; sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
 
 [project.urls]
