@@ -539,15 +539,15 @@ def get_tif_colormap(tiff_path):
 def citation():
     """Prints the recommended scientific citations for pyguidos."""
     cite_text = """
-==================================================================
+================================================================
 RECOMENDED CITATIONS FOR PYGUIDOS
-==================================================================
+================================================================
 
-Caudullo G., Vogt P., Soille P., 2026. PyGuidos, A cross-platform 
-Python interface to GuidosToolbox for landscape pattern analysis.
+Caudullo G., Vogt P., Soille P., 2026. PyGuidos, A pyGuidos: A 
+Python implementation of Guidos spatial pattern analysis.
 JOSS in review
 
-==================================================================
+================================================================
     """
     print(cite_text)
     return cite_text

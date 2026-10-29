@@ -8,22 +8,25 @@ authors = [
   { name="Peter Vogt", email="peter.vogt@ec.europa.eu" },
   { name="Perre Soille", email="pierre.soille@ec.europa.eu" },
 ]
-description = "Python interface to main GuidosToolbox (GTB) modules for spatial pattern analysis"
+description = "pyGuidos: A Python implementation of Guidos spatial pattern analysis"
 readme = "README.md" 
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE*"]
 requires-python = ">=3.10"
 keywords = [
-    "landscape analysis",
-    "spatial pattern",
     "GIS",
-    "remote sensing",
-    "forest",
-    "habitat",
-    "connectivity",
-    "fragmentation",
-    "MSPA",
     "GuidosToolbox"
+    "MSPA",
+    "connectivity",
+    "forest monitoring",
+    "fragmentation",
+    "habitat",
+    "landscape analysis",
+	"landscape ecology",
+	"landscape morphology",
+	"pattern analysis",
+    "remote sensing",
+    "spatial pattern",
 ] 
 classifiers = [
     "Development Status :: 3 - Alpha", 
