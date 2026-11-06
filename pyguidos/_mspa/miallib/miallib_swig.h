@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -30,11 +30,6 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 #include <Python.h>
 #define printf PySys_WriteStdout
 #endif
-
-
-#ifndef  INT_LIIAR
-#define  INT_LIIAR
-
 
 #include "mialtypes.h"
 
@@ -316,15 +311,9 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
            macro\n"); \
 			       }
 
-
-
 /*
   external function declarations
 */
-
-
-#endif /* #ifndef INT_LIIAR */
-
 
 
 #endif

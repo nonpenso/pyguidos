@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -26,13 +26,14 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 extern void xlabort(char *);    /* serious XLISP error handler */
 #endif
 
-
 void nrerror(char *error_text)
 {
-  sprintf(buf,"Image library run-time error...\n"); errputstr(buf);
-  sprintf(buf,"%s\n",error_text); errputstr(buf);
-  sprintf(buf,"...now exiting to top-level...\n"); errputstr(buf);
+  sprintf(buf,"miallib run-time error!\n");
+  errputstr(buf);
+  sprintf(buf,"%s\n",error_text);
+  errputstr(buf);
 #ifdef XLISP
+  sprintf(buf,"...now exiting to top-level...\n"); errputstr(buf);
   xlabort("Emergency Emergency");
 #else
   exit(1);
@@ -42,7 +43,6 @@ void nrerror(char *error_text)
 /** \addtogroup group_format
  *  @{
  */
-
 
 
 #include "uc_def.h"

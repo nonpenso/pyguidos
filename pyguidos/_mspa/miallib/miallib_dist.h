@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -31,7 +31,7 @@ extern ERROR_TYPE chamfer2d(IMAGE *im, int type);
 extern IMAGE *edistfifo2d(IMAGE *im, int graph);
 
 /* efedt.c */
-extern IMAGE *sqedt(IMAGE *im);
+extern IMAGE *sqedt(IMAGE *im, int out_type);
 extern IMAGE *iz(IMAGE *im);
 
 /* oiiz.c */

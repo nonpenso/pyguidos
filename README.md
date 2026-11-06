@@ -12,7 +12,7 @@
 [![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![JOSS status](https://joss.theoj.org/papers/8a3fdc720f5b0c3f8392d33405787d79/status.svg)](https://joss.theoj.org/papers/8a3fdc720f5b0c3f8392d33405787d79)
 
-**PyGuidos is a Python implementation of the main Guidos tools for spatial pattern analysis**
+**PyGuidos is a Python implementation of the main Guidos tools for spatial pattern analysis.**
 
 
 Overview
@@ -22,7 +22,7 @@ Overview
 
 
 ### Repository Architecture & Contents
-The official upstream home of `pyguidos` is hosted on [code.europa.eu](https://code.europa.eu/jrc-forest/guidos/pyguidos), the European Commission's institutional open-source repository platform (powered by a GitLab instance). To foster a completely open community, a synchronized mirror is maintained on [GitHub](https://github.com/nonpenso/pyguidos). 
+The official upstream home of `pyGuidos` is hosted on [code.europa.eu](https://code.europa.eu/jrc-forest/guidos/pyguidos), the European Commission's institutional open-source repository platform (powered by a GitLab instance). To foster a completely open community, a synchronized mirror is maintained on [GitHub](https://github.com/nonpenso/pyguidos). 
 
 If you browse the source files directly via either platform, the repository includes:
 * **`/pyguidos`**: The core package directory containing the source code, geospatial monitoring algorithms, and Numba-optimized modules (This is what is installed via `pip`).
@@ -36,7 +36,7 @@ If you browse the source files directly via either platform, the repository incl
 Available tools
 ===============
 
-The python module `pyguidos` provides the following funtions.
+The python module `pyGuidos` provides the following funtions.
 
 | Function | Description |
 |---|---|
@@ -65,7 +65,7 @@ Statement of Need
 
 Landscape analysis benefits from a wide array of existing software packages, desktop applications, and libraries, ranging from classic tools like FRAGSTATS and Circuitscape to various R packages and Python modules. However, a persistent challenge has been the programmatic automation of the established [GuidosToolbox](https://forest.jrc.ec.europa.eu/en/activities/lpa/gtb/) desktop application developed at the European Commission Joint Research Centre (JRC). Historically, Guidos capabilities were confined first to the desktop application and later to the [GuidosToolbox Workbench](https://forest.jrc.ec.europa.eu/en/activities/lpa/gwb/), which provides command-line access to the core Guidos tools but is strictly constrained to Linux systems, presenting architectural limitations that hindered integration into modern workflows. `pyGuidos` addresses this gap by reimplementing the core Guidos tools for spatial pattern analysis into a high-performance Python library. Accelerated with Numba JIT compilation and parallelized across CPU cores, it matches the performance of compiled C-binaries while offering complete cross-platform portability and seamless integration into automated data pipelines and Jupyter notebooks.
 
-This technical evolution carries direct policy relevance, particularly in the context of the European Union Nature Restoration Regulation (NRR). The regulation legally requires EU Member States to report a forest connectivity index based on the Foreground Area Density (FAD) metric, driving an immediate demand for auditable and scalable software capable of computing FAD at national and continental scales. Because legacy Guidos architectures relied on proprietary runtimes and platform-restricted binaries, they were poorly suited for automated national reporting pipelines. `pyGuidos` fills this gap by implementing the exact FAD algorithm adopted for NRR compliance in pure, accessible Python code that can be deployed on any modern infrastructure.
+This technical evolution carries direct policy relevance, particularly in the context of the European Union [Nature Restoration Regulation](https://eur-lex.europa.eu/eli/reg/2024/1991/oj/eng) (NRR). The regulation legally requires EU Member States to report a forest connectivity index based on the Foreground Area Density (FAD) metric, driving an immediate demand for auditable and scalable software capable of computing FAD at national and continental scales. Because legacy Guidos architectures relied on proprietary runtimes and platform-restricted binaries, they were poorly suited for automated national reporting pipelines. `pyGuidos` fills this gap by implementing the exact FAD algorithm adopted for NRR compliance in pure, accessible Python code that can be deployed on any modern infrastructure.
 
 Consequently, the package is designed to support a broad audience of landscape ecologists, remote sensing analysts, and forest monitoring practitioners across national forest services, international organizations, and European Commission bodies who require building reproducible analysis chains applying GuidoToolbox metrics to regional or global datasets for environmental policy reporting and spatial assessment.
 
@@ -156,7 +156,7 @@ help(pg.landmos)
 Usage Example
 =============
 
-This code computes a Forest Area Density (FAD) fragmentation analysis with a window size of 27x27 pixels of Corsica map forest derived from Corine Land Cover 2018. Then it renders both the resulting fragmentation GeoTiff map (using its embedded colormap) and the automatically generated summary chart in Matplotlib.
+This code computes a Forest Area Density (FAD) fragmentation analysis with a window size of 27×27 pixels of Corsica map forest derived from Corine Land Cover 2018. Then it renders both the resulting fragmentation GeoTiff map (using its embedded colormap) and the automatically generated summary chart in Matplotlib.
 
 
 ```python
@@ -228,14 +228,13 @@ Physical RAM is not a hard limit: the effective ceiling is RAM plus swap or page
 Citation
 ========
 
-If you use pyGuidos in your research, please cite both the GuidosToolbox
-software and this package:
+If you use pyGuidos in your research, please cite both the GuidosToolbox software and this package:
 
 Software implementation: **pyGuidos**
-  - Caudullo G., Vogt P., Soille P. (2026). pyGuidos: A Python implementation of Guidos spatial pattern analysis. JOSS in review.
+> Caudullo G., Vogt P., Soille P. (2026). *pyGuidos: A Python implementation of Guidos spatial pattern analysis*. JOSS in review.
 
 Methodology: **GuidosToolbox**
-  - Vogt P., Riitters K. (2017). GuidosToolbox: universal digital image object analysis. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: [10.1080/22797254.2017.1330650](https://doi.org/10.1080/22797254.2017.1330650)
+> Vogt P., Riitters K. (2017). *GuidosToolbox: universal digital image object analysis*. European Journal of Remote Sensing, 50, 1, pp. 352-361. doi: [10.1080/22797254.2017.1330650](https://doi.org/10.1080/22797254.2017.1330650)
 
 
 ### Interactive Citation
@@ -251,7 +250,7 @@ pg.citation()
 Contributing & Issue Tracking
 =============================
 
-The primary development workspace for `pyguidos` is officially hosted on [code.europa.eu](https://code.europa.eu/jrc-forest/guidos/pyguidos). Because this institutional ecosystem requires an EU Login to post issues or submit code, we manage all public interaction transparently via our public [GitHub mirror](https://github.com/nonpenso/pyguidos) to guarantee open participation.
+The primary development workspace for `pyGuidos` is officially hosted on [code.europa.eu](https://code.europa.eu/jrc-forest/guidos/pyguidos). Because this institutional ecosystem requires an EU Login to post issues or submit code, we manage all public interaction transparently via our public [GitHub mirror](https://github.com/nonpenso/pyguidos) to guarantee open participation.
 
 ### Bug Reports & Feature Requests
 If you encounter a bug, have an installation issue, or wish to request an analytical feature, please do not use code.europa.eu. Instead, submit a ticket via the public [GitHub Issue Tracker](https://github.com/nonpenso/pyguidos/issues). This includes the peer-review audits associated with journal submissions.
@@ -282,18 +281,10 @@ European Commission, Joint Research Centre (JRC)
 License
 =======
 
-pyGuidos is distributed under the
-[GNU General Public License v3 (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.html).
-This is because the package bundles the GPLv3-licensed
-[`miallib`](https://github.com/ec-jrc/jeolib-miallib) MSPA engine of Soille and
-Vogt, which is compiled into pyGuidos.
+pyGuidos is distributed under the [GNU General Public License v3 (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.html). This is because the package bundles the GPLv3-licensed [`miallib`](https://github.com/ec-jrc/jeolib-miallib) MSPA engine of Soille and Vogt, which is compiled into pyGuidos.
 
-The original pyGuidos code (everything except the vendored `miallib` sources
-under `pyguidos/_mspa/miallib/`) remains available under the
-[European Union Public Licence v1.2 (EUPL-1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12),
-which is compatible with the GPLv3.
+The original pyGuidos code (everything except the vendored `miallib` sources under `pyguidos/_mspa/miallib/`) remains available under the [European Union Public Licence v1.2 (EUPL-1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12), which is compatible with the GPLv3.
 
-See the [LICENSE](LICENSE) file for the full license text and the
-[NOTICE](NOTICE) file for attribution details.
+See the [LICENSE](LICENSE) file for the full license text and the [NOTICE](NOTICE) file for attribution details.
 
 

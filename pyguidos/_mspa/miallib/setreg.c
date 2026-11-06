@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -169,7 +169,7 @@ extern IMBLOB *create_blob(LBL_TYPE n);
 ERROR_TYPE tessel_sum(IMAGE *ilbl, IMAGE *ival)
 {
   IMAGE *imhst;
-  int i, maxlbl;
+  mia_size_t i, maxlbl;
   HST1D_TYPE *psum;
 
   imhst = histo1d(ilbl);
@@ -273,7 +273,7 @@ ERROR_TYPE tessel_sum(IMAGE *ilbl, IMAGE *ival)
 ERROR_TYPE tessel_range(IMAGE *ilbl, IMAGE *ival)
 {
   IMAGE *imhst;
-  mia_size_t  i, maxlbl;
+  mia_size_t i, maxlbl;
   DOUBLE *pmin, *pmax;
 
   imhst = histo1d(ilbl);
@@ -373,7 +373,7 @@ ERROR_TYPE tessel_range(IMAGE *ilbl, IMAGE *ival)
 ERROR_TYPE tessel_mean(IMAGE *ilbl, IMAGE *ival)
 {
   IMAGE *imhst;
-  int i, maxlbl;
+  mia_size_t i, maxlbl;
   HST1D_TYPE *pnbr, *psum;
 
   imhst = histo1d(ilbl);
@@ -491,7 +491,7 @@ ERROR_TYPE tessel_mean(IMAGE *ilbl, IMAGE *ival)
 ERROR_TYPE tessel_min(IMAGE *ilbl, IMAGE *ival)
 {
   IMAGE *imhst;
-  int i, maxlbl;
+  mia_size_t i, maxlbl;
   HST1D_TYPE *psum;
 
   imhst = histo1d(ilbl);
@@ -607,7 +607,7 @@ ERROR_TYPE tessel_min(IMAGE *ilbl, IMAGE *ival)
 ERROR_TYPE tessel_max(IMAGE *ilbl, IMAGE *ival)
 {
   IMAGE *imhst;
-  int i, maxlbl;
+  mia_size_t i, maxlbl;
   HST1D_TYPE *psum;
 
   imhst = histo1d(ilbl);
@@ -725,7 +725,7 @@ ERROR_TYPE tessel_max(IMAGE *ilbl, IMAGE *ival)
 ERROR_TYPE tessel_sigma(IMAGE *ilbl, IMAGE *ival)
 {
   IMAGE *imhst;
-  int i, maxlbl;
+  mia_size_t i, maxlbl;
   HST1D_TYPE *pnbr, *psum;
   double *psigma;
 
@@ -957,7 +957,6 @@ ERROR_TYPE uc_tessel_dir(IMAGE *ilbl, IMAGE *ival, int type)
 
     free((char *)px);
     free((char *)py);
-
   }
 #endif /* ifndef MSPA */
 #if defined(CURE_CLUSTER)

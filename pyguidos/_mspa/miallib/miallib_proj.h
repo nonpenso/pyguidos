@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -27,7 +27,7 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 extern IMAGE *grid(IMAGE *im, IMAGE *roi, IMAGE *imx, IMAGE *imy, float alpha);
 
 /* projection.c */
-extern IMAGE **cs2cs(double ulc_e, double ulc_n, int nx, int ny, double res, char *parmsi[], int ni, char *parmso[], int no);
+extern IMAGE **cs2cs(double ulc_e, double ulc_n, int nx, int ny, double res, char *s_crs, char *t_crs);
 
 
 

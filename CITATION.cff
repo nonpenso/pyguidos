@@ -12,7 +12,7 @@ authors:
     affiliation: "European Commission, Joint Research Centre"
 title: "pyGuidos: A Python implementation of Guidos spatial pattern analysis"
 version: 2.6.4
-date-released: 2026-10-22
+date-released: 2026-11-06
 license: GPL-3.0-or-later
 url: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
 repository-code: "https://code.europa.eu/jrc-forest/guidos/pyguidos"

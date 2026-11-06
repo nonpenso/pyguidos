@@ -26,12 +26,13 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdint.h>
 
 /* pyGuidos portability fix: the FIFO4 queue stores pixel POINTERS in several
-   miallib functions (e.g. label.c does `fifo4_add(q, (long int)p)`). On LP64
-   platforms (Linux, macOS) `long int` is 64-bit and pointer-sized, so this
-   worked. On Windows LLP64 `long int` is only 32-bit, which TRUNCATES the
-   stored pointer and causes an access violation when it is later retrieved
-   and dereferenced. Using a pointer-sized integer (intptr_t) fixes this on
-   Windows while remaining identical to the original on LP64 platforms. */
+   miallib functions (e.g. label.c does `fifo4_add(q, (fifo4_word_t)p)`). On
+   LP64 platforms (Linux, macOS) `long int` is 64-bit and pointer-sized, so the
+   original `long int` storage worked. On Windows LLP64 `long int` is only
+   32-bit, which TRUNCATES the stored pointer and causes an access violation
+   when it is later retrieved and dereferenced. Using a pointer-sized integer
+   (intptr_t) fixes this on Windows while remaining identical to the original
+   on LP64 platforms. */
 typedef intptr_t fifo4_word_t;
 
 typedef struct {

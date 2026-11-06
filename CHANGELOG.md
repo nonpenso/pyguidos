@@ -7,7 +7,7 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.6.4] - 2026-10-22
+## [2.6.4] - 2026-11-06
 
 ### Added
 - Interactive Example Workflows: Integrated a dedicated Examples section into the Sphinx documentation website, automatically harvesting and rendering the core analysis notebooks (`nbsphinx`) directly into the documentation tree.
@@ -16,6 +16,7 @@ pyGuidos uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 - Optimized Raster Output Handling: Updated `save_output_geotiff` to explicitly enforce `tiled=True` and standard block sizes (`256x256`) on all output GeoTIFF files. This ensures optimal spatial performance and completely eliminates GDAL warning messages regarding block size and strip configurations.
+- Updated the vendored `miallib` MSPA sources to the latest upstream v2.0.0, which fixes the border/corner handling (symmetric border propagation and corner filling) and uses a 64-bit squared Euclidean distance transform to avoid stray class values on very large images. The Windows portability patches (guarded `unistd.h`, pointer-sized FIFO queue for 64-bit Windows) were re-applied, and the MSPA bridge now selects the 32- or 64-bit distance transform automatically from the image size.
 
 ---
 

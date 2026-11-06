@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -24,7 +24,7 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 
 /* type definitions */
 /* consider using or referring to stdint.h in the future*/
-typedef unsigned long int mia_size_t;
+typedef unsigned long long int mia_size_t;
 typedef unsigned char      DST_TYPE;
 typedef unsigned char      GENERICPIX;
 typedef unsigned char      RGB_TYPE;

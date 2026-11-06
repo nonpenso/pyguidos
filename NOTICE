@@ -43,9 +43,15 @@ Because pyGuidos incorporates and compiles these GPLv3 sources, the pyGuidos
 package as a whole is distributed under the GPLv3 (see LICENSE).
 
 The vendored miallib sources retain their original GPL headers and are kept
-as close to upstream as possible. The only substantive change is a
-portability fix for 64-bit Windows (LLP64): the FIFO4 queue element type was
-widened from `long int` to a pointer-sized integer (`intptr_t`) in
-`fifo.h`/`fifo.c`, with matching cast updates in `label.c` and `wshed.c`.
-This change is a no-op on LP64 platforms (Linux, macOS) and produces
-identical results. It has been reported to the upstream authors.
+as close to upstream as possible. The only changes are two cross-platform
+portability fixes, both no-ops on Linux/macOS (LP64) that produce identical
+results and have been reported to the upstream authors:
+  1. 64-bit Windows (LLP64) pointer safety: the FIFO4 queue element type was
+     widened from `long int` to a pointer-sized integer (`intptr_t`) in
+     `fifo.h`/`fifo.c`, with matching cast updates in `label.c` and `wshed.c`.
+  2. MSVC/Windows build: the POSIX-only `<unistd.h>` include in `miallib.h`
+     is guarded so it is skipped under MSVC.
+
+The vendored sources track the upstream miallib and were last synchronised
+with the version that fixes the MSPA border/corner handling and uses a
+64-bit squared Euclidean distance transform for very large images.

@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -20,7 +20,7 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 
 /*
 ** Header file for image analysis routines
-** by Pierre Soille@ec.europa.eu  1988--2018
+** by Pierre Soille@ec.europa.eu  1988--2026
 */
 
 #ifndef _MIALLIB_H
@@ -33,7 +33,7 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #include <limits.h>
-/* pyGuidos: <unistd.h> is POSIX-only and absent on MSVC/Windows.
+/* pyGuidos portability fix: <unistd.h> is POSIX-only and absent on MSVC/Windows.
    Guard it so the vendored MSPA subset compiles cross-platform. */
 #if !defined(_MSC_VER)
 #include <unistd.h>
@@ -41,7 +41,6 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "mialtypes.h"
 #include "config_miallib.h"
-
 
 /* adjust to local system */
 #define BITPERCHAR   8
@@ -53,7 +52,6 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 #define BITPERWORD   (sizeof(long int)*8)
 #define BYTEPERWORD  sizeof(long int)
 #define BITPERBAND   8
-
 #if _WIN32 || _WIN64
 #if _WIN64
 #define __WORDSIZE 64
@@ -61,7 +59,6 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 #define __WORDSIZE 32
 #endif
 #endif
-
 #if (__WORDSIZE==32)
 #define W_MSB        0x80000000
 #elif (__WORDSIZE==64)
@@ -148,7 +145,7 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 #define t_INT64               8
 #define t_UINT64              9
 #define t_FLOAT              10
-#define t_MIALFLOAT           10
+#define t_MIALFLOAT          10
 #define t_DOUBLE             11
 #define t_RGB                13 /* fake type, requires pixel data type=t_UCHAR */
 #define t_PTR                14
@@ -196,7 +193,6 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 /* other image macro definitions */
 #define IsImInteger(x)  (GetImDataType(x)!=10 || GetImDataType(x)!=11)
 
-
 #define GetImMin(x, val) \
         switch(GetImDataType(x)){ \
 	 case t_UCHAR: \
@@ -231,6 +227,7 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
            invalid data type in GetImMin \
            macro\n"); \
 	  }
+
 #define GetImMax(x, val) \
         switch(GetImDataType(x)){ \
 	 case t_UCHAR: \
@@ -392,7 +389,6 @@ extern ERROR_TYPE create_lut(IMAGE *im);
 extern IMAGE **create_imarray(int);
 extern ERROR_TYPE dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy);
 
-
 /* imio_gdal.c */
 extern int GDAL2MIALDataType(int aGDALDataType);
 extern IMAGE *GDALInfoJIP(char *imfn);
@@ -417,8 +413,6 @@ extern IMAGE *tiffinfoJIP(char *fn);
 extern ERROR_TYPE read_image_data2(FILE *fp, IMAGE *im, int x, int y, int inx, int scale);
 extern ERROR_TYPE writeGeoTiffOneStripPerLine(IMAGE *im, char *fn, int PCSCode, double xoff, double yoff, double scale, unsigned short RasterType, int nodata_flag, int nodata_val, int metadata_flag, char *metadata_str);
 extern ERROR_TYPE writeMBGeoTiffOneStripPerLine(IMAGE **imap, int nc, char *fn, int PCSCode, double xoff, double yoff, double scale, unsigned short RasterType, int nodata_flag, int nodata_val, int metadata_flag, char *metadata_str);
-extern void print_mia_banner();
-
 
 /* imstat.c */
 extern IMAGE *histo1d(IMAGE *im);
@@ -436,7 +430,8 @@ extern G_TYPE *min_max(IMAGE *im);
 extern ERROR_TYPE getfirstmaxpos(IMAGE *, unsigned long int *);
 extern ERROR_TYPE getmax(IMAGE *im, double *maxval);
 extern ERROR_TYPE getminmax(IMAGE *im, double *minval, double *maxval);
-
+extern ERROR_TYPE dirmax(IMAGE *im, int dir);
+extern ERROR_TYPE histcompress(IMAGE *im);
 
 extern ERROR_TYPE generic_min_max(IMAGE *im, G_TYPE *pg);
 extern ERROR_TYPE s_min_max(IMAGE *im, G_TYPE *pg);
@@ -447,8 +442,6 @@ extern ERROR_TYPE f_min_max(IMAGE *im, G_TYPE *pg);
 extern ERROR_TYPE d_min_max(IMAGE *im, G_TYPE *pg);
 extern ERROR_TYPE us_min_max(IMAGE *im, G_TYPE *pg);
 extern ERROR_TYPE i32_min_max(IMAGE *im, G_TYPE *pg);
-
-
 
 /* pointop.c */
 extern ERROR_TYPE bitwise_op(IMAGE *im1, IMAGE *im2, int op);
@@ -480,14 +473,19 @@ extern ERROR_TYPE i32_blank(IMAGE *, INT32);
 extern ERROR_TYPE generic_setlevel(IMAGE *im, GENERICPIX t1, GENERICPIX t2, GENERICPIX val);
 extern ERROR_TYPE us_setlevel(IMAGE *im, USHORT t1, USHORT t2, USHORT val);
 extern ERROR_TYPE s_setlevel(IMAGE *im, SHORT t1, SHORT t2, SHORT val);
+extern ERROR_TYPE i32_setlevel(IMAGE *im, INT32 t1, INT32 t2, INT32 val);
 extern ERROR_TYPE us_setrange(IMAGE *im, USHORT t1, USHORT t2);
 extern ERROR_TYPE generic_thresh(IMAGE *, UCHAR, UCHAR, UCHAR, UCHAR);
 extern ERROR_TYPE f_thresh(IMAGE *, MIALFLOAT, MIALFLOAT, MIALFLOAT, MIALFLOAT);
+extern ERROR_TYPE d_thresh(IMAGE *, double, double, double, double);
+extern ERROR_TYPE i32_thresh(IMAGE *, INT32, INT32, INT32, INT32);
 
 /* efedt.c */
-extern IMAGE *sqedt(IMAGE *);
+extern IMAGE *sqedt(IMAGE *, int);
 extern IMAGE *iz(IMAGE *);
 
+/* ced.c */
+extern IMAGE *ced(IMAGE *ref, IMAGE *mask);
 
 /* format.c */
 extern ERROR_TYPE to_uchar(IMAGE *);
@@ -496,7 +494,7 @@ extern ERROR_TYPE dbltofloat(IMAGE *), uint32_to_float(IMAGE *);
 
 extern IMAGE *to_tiff1bitpp(IMAGE *im);
 extern IMAGE *to_tiff4bitpp(IMAGE *im);
-
+extern ERROR_TYPE uint64_to_double(IMAGE *im);
 
 /* geom.c */
 extern ERROR_TYPE framebox(IMAGE *im, int *box, G_TYPE gval);
@@ -555,15 +553,31 @@ extern IMAGE *rank(IMAGE *im, IMAGE *imse, int rank, int ox, int oy, int oz, int
 extern ERROR_TYPE linero(IMAGE *im, int dx, int dy, int n, int line_type);
 extern ERROR_TYPE lindil(IMAGE *im, int dx, int dy, int n,int line_type);
 
+/* recons.c */
+extern ERROR_TYPE rdil(IMAGE *mark, IMAGE *mask, int graph, int flag);
+extern ERROR_TYPE rero(IMAGE *mark, IMAGE *mask, int graph, int flag);
+
 /* bresenham.c */
 extern ERROR_TYPE plotline(IMAGE *im, int x1, int y1, int x2, int y2, int val);
+extern ERROR_TYPE us_plotline(IMAGE *im, int x1, int y1, int x2, int y2, int val);
+extern void tracelinecorrect(int, int, int, int, long int *, int *, int, int);
 
 /* rminmax.c */
 extern IMAGE *minima(IMAGE *imin, int graph);
 
+/* label.c */
+extern ERROR_TYPE label(IMAGE *im1, IMAGE *im2, int ox, int oy, int oz);
+
+/* setreg.c */
+extern ERROR_TYPE set_regions(IMAGE *ilbl, IMAGE *ival, int indic);
+
 /* wshed.c */
 extern IMAGE *sort_offset(IMAGE *im, IMAGE *imrsum);
 
+/* wsfah.c */
+extern ERROR_TYPE wsfah(IMAGE *iml, IMAGE *imr, int graph, int maxfl);
 
+/* oiht.c */
+extern ERROR_TYPE binOIthin_FIFO(IMAGE *imin, int stype, int atype, IMAGE *imanchor);
 
 #endif /* miallib.h */

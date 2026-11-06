@@ -18,15 +18,22 @@ You should have received a copy of the GNU General Public License
 along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 ***********************************************************************/
 
-/* processor specific definitions (see endian.h under linux */
 
-#ifndef LITTLE_ENDIAN /* intel processors */
-#define	LITTLE_ENDIAN	1234
-#endif
-#ifndef BIG_ENDIAN
-#define	BIG_ENDIAN	4321
+
+/* define MIALLIB software */
+#include "config_miallib.h"   /* provides MIALLIB_GIT_TAG */
+
+#if defined(PYTHON)
+  #define MIALLIB_VARIANT "[pyjeo]"
+#elif defined(XLISP)
+  #define MIALLIB_VARIANT "[mialisp]"
+#elif defined(MSPA)
+  #define MIALLIB_VARIANT "[MSPA]"
+#else
+  #define MIALLIB_VARIANT ""
 #endif
 
+#define MIALLIB_SOFTWARE "miallib" MIALLIB_VARIANT " " MIALLIB_GIT_TAG
 
 /*
  **	TIFF structures.

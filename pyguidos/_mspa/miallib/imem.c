@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -33,31 +33,19 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
  *  @{
  */
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef UNIX
-#include <strings.h>  /* DOES NOT WORK ON WINDOWS */
-#endif
-#ifdef RLIMIT
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
-#endif
 
 #include "miallib.h"
-
 
 #ifdef DMALLOC /* INCOMPATIBLE WITH EFENCE */
 #include <dmalloc.h>
 #endif
 
-
 #if (defined(XLISP))
 extern void gc();
-/*PSRM char buf[256]; PSRM*/
+extern void xmem();
 #endif
 
 
@@ -71,14 +59,6 @@ void errputstr(char *buf)
 {
   printf("%s", buf);
 }
-// see https://docs.python.org/2/c-api/memory.html
-// void* PyMem_Malloc(size_t n)
-// void PyMem_Free(void *p)
-// TYPE* PyMem_New(TYPE, size_t n)
-#define my_malloc(x) PyMem_Malloc(x)
-#define my_free_malloc(x) PyMem_Free(x)
-#define my_calloc(x,y) PyMem_New(x,y)   /* x for TYPE and y for number of elements */
-#define my_free_calloc(x) PyMem_Del(x)
 #elif !defined(XLISP)
 void stdputstr(char *buf)
 {
@@ -88,10 +68,6 @@ void errputstr(char *buf)
 {
   fprintf(stderr,"%s\n", buf);
 }
-#define my_malloc(x) malloc(x)
-#define my_free_malloc(x) free(x)
-#define my_calloc(x,y) (x *)calloc(y,sizeof(x))
-#define my_free_calloc(x) free(x)
 #endif
 
 
@@ -156,33 +132,7 @@ IMAGE *create_image(int data_type, long int nx, int ny, int nz)
     return(NULL);
   }
 
-#ifdef RLIMIT
-  struct rusage usage[1];
-  struct rlimit rlim[1];
-#endif
-
-#ifdef RLIMIT
-    getrusage(RUSAGE_SELF, usage);
-    getrlimit(RLIMIT_FSIZE, rlim);
-    fprintf(stderr, "RLIMIT_FSIZE cur=%d\n", rlim->rlim_cur);
-    fprintf(stderr, "RLIMIT_FSIZE max=%d\n", rlim->rlim_max);
-    getrlimit(RLIMIT_DATA, rlim);
-    fprintf(stderr, "RLIMIT_DATA cur=%d\n", rlim->rlim_cur);
-    fprintf(stderr, "RLIMIT_DATA max=%d\n", rlim->rlim_max);
-    getrlimit(RLIMIT_CORE, rlim);
-    fprintf(stderr, "RLIMIT_CORE cur=%d\n", rlim->rlim_cur);
-    fprintf(stderr, "RLIMIT_CORE max=%d\n", rlim->rlim_max);
-    rlim->rlim_cur=RLIM_INFINITY;
-    setrlimit(RLIMIT_CORE, rlim);
-    getrlimit(RLIMIT_MEMLOCK, rlim);
-    fprintf(stderr, "RLIMIT_MEMLOCK cur=%d\n", rlim->rlim_cur);
-    fprintf(stderr, "RLIMIT_MEMLOCK max=%d\n", rlim->rlim_max);
-    getrlimit(RLIMIT_AS, rlim);
-    fprintf(stderr, "RLIMIT_AS cur=%d\n", rlim->rlim_cur);
-    fprintf(stderr, "RLIMIT_AS max=%d\n", rlim->rlim_max);
-#endif
-
-    im = (IMAGE *)calloc((size_t)1, sizeof(IMAGE));
+  im = (IMAGE *)calloc((size_t)1, sizeof(IMAGE));
   if (im == NULL){
 #if (defined(XLISP))
     gc();
@@ -202,18 +152,18 @@ IMAGE *create_image(int data_type, long int nx, int ny, int nz)
 
   switch(data_type){
   case t_ONEBITPERPIXEL:
-    nbyte = sizeof(UCHAR)*(nx/BITPERCHAR+(nx%BITPERWORD ? 4 : 0))*ny*nz;   /* GLOUP 2006 CH */
+    nbyte = sizeof(UCHAR)*(nx/BITPERCHAR+(nx%BITPERWORD ? 4 : 0))*ny*nz;
     break;
   case t_RGB:
-    /* `bug': we do not handle this type, except for I */
+    /* warning: we do not handle this type, except for I */
     /*  nz is set to 3 (one color per plane) */
     nz=3;
   case t_FOURBITPERPIXEL:
-    /* `bug': we do not handle this type, except for I/O */
+    /* warning: we do not handle this type, except for I/O */
     /* nbyte = ny*(nx/2+(nx%2))*sizeof(UCHAR); */
     /* -> dummy type */
   case t_TIFFONEBITPERPIXEL:
-    /* `bug': we do not handle this type, except for I/O */
+    /* warning: we do not handle this type, except for I/O */
     /* -> dummy type */
   case t_UCHAR:
     nbyte = sizeof(UCHAR)*(mia_size_t)nx*ny*nz;
@@ -265,7 +215,8 @@ IMAGE *create_image(int data_type, long int nx, int ny, int nz)
     xmem();
     gc();
     xmem();
-    printf("nbyte=%lu\n", nbyte);
+    (void)sprintf(buf, "create_image: nbyte=%llu\n", nbyte);
+    stdputstr(buf);
     p = (char *)calloc(nbyte, sizeof(char));
     if (p == NULL){
       (void)sprintf(buf,"ERROR in create_image(data_type=%d, nx=%ld, ny=%d, nz=%d) \
@@ -695,7 +646,6 @@ ERROR_TYPE uc_FindPixWithVal(IMAGE *im, PIX_TYPE val, unsigned long int *ofs)
 }
 #include "uc_undef.h"
 
-
 #include "us_def.h"
 ERROR_TYPE us_FindPixWithVal(IMAGE *im, PIX_TYPE val, unsigned long int *ofs)
 {
@@ -738,7 +688,6 @@ ERROR_TYPE i32_FindPixWithVal(IMAGE *im, PIX_TYPE val, unsigned long int *ofs)
 }
 #include "i32_undef.h"
 
-
 #include "f_def.h"
 ERROR_TYPE f_FindPixWithVal(IMAGE *im, PIX_TYPE val, unsigned long int *ofs)
 {
@@ -759,7 +708,6 @@ ERROR_TYPE f_FindPixWithVal(IMAGE *im, PIX_TYPE val, unsigned long int *ofs)
 
 }
 #include "f_undef.h"
-
 
 ERROR_TYPE FindPixWithVal(IMAGE *im, G_TYPE gval, unsigned long int *ofs)
 {
@@ -802,8 +750,6 @@ IMAGE **create_imarray(int n)
 }
 
 
-
-
 #include "uc_def.h"
 IMAGE *uc_imtoarray(IMAGE *im, IMAGE *imroi)
 {
@@ -834,8 +780,6 @@ IMAGE *uc_imtoarray(IMAGE *im, IMAGE *imroi)
   return imout;
 }
 #include "uc_undef.h"
-
-
 
 #include "us_def.h"
 IMAGE *us_imtoarray(IMAGE *im, IMAGE *imroi)
@@ -899,7 +843,6 @@ IMAGE *g32_imtoarray(IMAGE *im, IMAGE *imroi)
 }
 #include "g32_undef.h"
 
-
 IMAGE *imtoarray(IMAGE *im, IMAGE *imroi)
 {
   /* first 20130620 MODIS - SPOT regression for cloud detection */
@@ -926,8 +869,6 @@ IMAGE *imtoarray(IMAGE *im, IMAGE *imroi)
     return(NULL);
   }
 }
-
-
 
 
 #include "uc_def.h"
@@ -957,7 +898,6 @@ IMAGE *uc_arraytoim(IMAGE *im, IMAGE *imroi)
   return imout;
 }
 #include "uc_undef.h"
-
 
 #include "us_def.h"
 IMAGE *us_arraytoim(IMAGE *im, IMAGE *imroi)
@@ -1051,7 +991,7 @@ ERROR_TYPE generic_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {
   int y1, y2, x1, x2;
   int i, j;
-  int nx, ny, nz;
+  mia_size_t nx, ny, nz;
   PIX_TYPE *p;
 
   p=(PIX_TYPE *)GetImPtr(im);
@@ -1102,13 +1042,12 @@ ERROR_TYPE generic_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 #include "g_undef.h"
 #endif /* #ifndef NO_generic_IMAGE */
 
-
 #include "s_def.h"
 ERROR_TYPE s_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {
   int y1, y2, x1, x2;
   int i, j;
-  int nx, ny, nz;
+  mia_size_t nx, ny, nz;
   PIX_TYPE *p;
 
   p=(PIX_TYPE *)GetImPtr(im);
@@ -1120,7 +1059,6 @@ ERROR_TYPE s_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
   x = MIN(abs(x),nx-1);
   y = MIN(abs(y),ny-1);
   z = MIN(abs(z),nz-1);
-
 
   x1 = x-dx/2;
   if (x1<0)
@@ -1158,14 +1096,12 @@ ERROR_TYPE s_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 }
 #include "s_undef.h"
 
-
-
 #include "us_def.h"
 ERROR_TYPE us_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {
   int y1, y2, x1, x2;
   int i, j;
-  int nx, ny, nz;
+  mia_size_t nx, ny, nz;
   PIX_TYPE *p;
 
   p=(PIX_TYPE *)GetImPtr(im);
@@ -1177,7 +1113,6 @@ ERROR_TYPE us_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
   x = MIN(abs(x),nx-1);
   y = MIN(abs(y),ny-1);
   z = MIN(abs(z),nz-1);
-
 
   x1 = x-dx/2;
   if (x1<0)
@@ -1215,15 +1150,12 @@ ERROR_TYPE us_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 }
 #include "us_undef.h"
 
-
-
-
 #include "i32_def.h"
 ERROR_TYPE i32_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {
   int y1, y2, x1, x2;
   int i, j;
-  int nx, ny, nz;
+  mia_size_t nx, ny, nz;
   PIX_TYPE *p;
 
   p=(PIX_TYPE *)GetImPtr(im);
@@ -1273,13 +1205,12 @@ ERROR_TYPE i32_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 }
 #include "i32_undef.h"
 
-
 #include "u32_def.h"
 ERROR_TYPE u32_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {
   int y1, y2, x1, x2;
   int i, j;
-  int nx, ny, nz;
+  mia_size_t nx, ny, nz;
   PIX_TYPE *p;
 
   p=(PIX_TYPE *)GetImPtr(im);
@@ -1329,13 +1260,12 @@ ERROR_TYPE u32_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 }
 #include "u32_undef.h"
 
-
 #include "i64_def.h"
 ERROR_TYPE i64_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {
   int y1, y2, x1, x2;
   int i, j;
-  int nx, ny, nz;
+  mia_size_t nx, ny, nz;
   PIX_TYPE *p;
 
   p=(PIX_TYPE *)GetImPtr(im);
@@ -1390,7 +1320,7 @@ ERROR_TYPE u64_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {
   int y1, y2, x1, x2;
   int i, j;
-  int nx, ny, nz;
+  mia_size_t nx, ny, nz;
   PIX_TYPE *p;
 
   p=(PIX_TYPE *)GetImPtr(im);
@@ -1445,7 +1375,7 @@ ERROR_TYPE f_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {
   int y1, y2, x1, x2;
   int i, j;
-  int nx, ny, nz;
+  mia_size_t nx, ny, nz;
   PIX_TYPE *p;
 
   p=(PIX_TYPE *)GetImPtr(im);
@@ -1495,13 +1425,12 @@ ERROR_TYPE f_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 }
 #include "f_undef.h"
 
-
 #include "d_def.h"
 ERROR_TYPE d_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {
   int y1, y2, x1, x2;
   int i, j;
-  int nx, ny, nz;
+  mia_size_t nx, ny, nz;
   PIX_TYPE *p;
 
   p=(PIX_TYPE *)GetImPtr(im);
@@ -1549,8 +1478,6 @@ ERROR_TYPE d_dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
   return(NO_ERROR);
 }
 #include "d_undef.h"
-
-
 
 ERROR_TYPE dumpxyz(IMAGE *im, int x, int y, int z, int dx, int dy)
 {

@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -132,7 +132,7 @@ ERROR_TYPE b_to_uchar(IMAGE *im, IMAGE *imout)
      /* not used (beware that there are two input arguments
       contrary to all other to_uchar functions */
 {
-  unsigned long int i, npix, der, reste;
+  mia_size_t i, npix, der, reste;
   long int nx, ny, nz;
   int k, j;
   UCHAR *p2;
@@ -595,6 +595,41 @@ ERROR_TYPE i32_to_ushort(IMAGE *im, IMAGE *imout)
 }
 #include "i32_undef.h"
 
+#include "u32_def.h"
+ERROR_TYPE u32_to_ushort(IMAGE *im, IMAGE *imout)
+{
+  mia_size_t i, npix;
+  USHORT *p2;
+  PIX_TYPE *p1, mini, maxi;
+  double range;
+  G_TYPE *pg;
+
+  p1    = (PIX_TYPE *)GetImPtr(im);
+  p2    = (USHORT *)GetImPtr(imout);
+  npix  = GetImNPix(im);
+  pg    = min_max(im);
+  if (pg == NULL)
+    return(ERROR);
+  mini  = pg[0].u32_val;
+  maxi  = pg[1].u32_val;
+  range = (double)maxi - mini;
+
+  if ( (maxi <= USHORT_MAX) && (mini >= USHORT_MIN) )
+    for (i=0; i<npix; i++, p1++, p2++)
+      *p2 = (USHORT)(*p1);
+  else if (((double)maxi-mini) < (double)USHORT_MAX + 1){
+    for (i=0; i<npix; i++, p1++, p2++)
+      *p2 = (USHORT)(*p1 - mini);
+  }
+  else{
+    for (i=0; i<npix; i++, p1++, p2++)
+      *p2 = (USHORT)(((double)*p1 - mini)/range * USHORT_MAX);
+  }
+  free((char *)pg);
+  return(NO_ERROR);
+}
+#include "u32_undef.h"
+
 #include "f_def.h"
 ERROR_TYPE f_to_ushort(IMAGE *im, IMAGE *imout)
 {
@@ -707,6 +742,10 @@ IMAGE *to_ushort(IMAGE *im)
 
   case t_INT32:
     rval = i32_to_ushort(im, imout);
+    break;
+
+  case t_UINT32:
+    rval = u32_to_ushort(im, imout);
     break;
 
   case t_FLOAT:
@@ -1069,7 +1108,7 @@ ERROR_TYPE dbltofloat(IMAGE *im)
 {
   double *pim =(double *)GetImPtr(im);
   float  *pout=(float *)GetImPtr(im);
-  unsigned long int i, npix=GetImNPix(im), nbyte;
+  mia_size_t i, npix=GetImNPix(im), nbyte;
 
   if (GetImDataType(im)!=t_DOUBLE){
     (void)sprintf(buf,"dbltofloat(im): im must be of type double\n"); errputstr(buf);
@@ -1227,7 +1266,7 @@ ERROR_TYPE uint32_to_float(IMAGE *im)
 {
   UINT32 *puint32;
   float *pfloat;
-  long int i, npix=GetImNPix(im);
+  mia_size_t i, npix=GetImNPix(im);
 
   if (GetImDataType(im)!= t_UINT32)
     return ERROR;
@@ -1235,11 +1274,36 @@ ERROR_TYPE uint32_to_float(IMAGE *im)
   puint32=(UINT32 *)GetImPtr(im);
   pfloat=(float *)GetImPtr(im);
 
+#ifdef OPENMP
 #pragma omp parallel for
+#endif
   for (i=0; i<npix; i++)
     pfloat[i]=(float)puint32[i];
 
   im->DataType=t_FLOAT;
+
+  return NO_ERROR;
+}
+
+ERROR_TYPE uint64_to_double(IMAGE *im)
+{
+  UINT64 *puint64;
+  double *pdouble;
+  mia_size_t i, npix=GetImNPix(im);
+
+  if (GetImDataType(im)!= t_UINT64)
+    return ERROR;
+
+  puint64=(UINT64 *)GetImPtr(im);
+  pdouble=(double *)GetImPtr(im);
+
+#ifdef OPENMP
+#pragma omp parallel for
+#endif
+  for (i=0; i<npix; i++)
+    pdouble[i]=(double)puint64[i];
+
+  im->DataType=t_DOUBLE;
 
   return NO_ERROR;
 }
@@ -1303,7 +1367,7 @@ void swap_short(SHORT *pl)
 
 ERROR_TYPE swap(IMAGE *im)
 {
-  unsigned long int i, nbyte;
+  mia_size_t i, nbyte;
 
   nbyte = GetImNPix(im);
 

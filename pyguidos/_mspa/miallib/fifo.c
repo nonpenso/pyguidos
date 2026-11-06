@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -21,29 +21,10 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 				/* fifo data structure */
 #include <stdio.h>
 #include <stdlib.h>
+#include "miallib.h"
 #include "fifo.h"
 
-
-
-#if (defined(XLISP))
-extern char buf[];       /* used by sprintf() and stdputstr() */
-extern void stdputstr(); /* print a message to the standard output */
-extern void errputstr(); /* print a message to the standard error  */
-#else
-extern char buf[];       /* used by sprintf() and stdputstr() */
-extern void stdputstr(); /* print a message to the standard output */
-extern void errputstr(); /* print a message to the standard error  */
-#endif
-
 extern void nrerror(char *);
-
-
-/*
-GLOUP: the look functions seems a bit dodgy
-*/
-
-
-
 
 
 /*
@@ -63,7 +44,11 @@ FIFO4 *create_fifo4(long int mod)
       q->qpl    = q->qp;
       q->mod 	= mod+2;
     }
-    else return NULL;
+    else{
+      (void) sprintf(buf, "create_fifo4(): not enough memory\n");
+      errputstr(buf);
+      return NULL;
+    }
   }
 
   return q; /* return the pointer to the queue (NULL if not created) */
@@ -162,8 +147,9 @@ void fifo4_increase(FIFO4 *q)
   qoffset_last = (long int)(q->qplast - q->qp);
   nelem        = (long int)(q->qplast - q->qp) + q->mod + 1;
 
-  if ((q->qp = (fifo4_word_t *)realloc(q->qp, nelem*sizeof(fifo4_word_t))) == NULL)
+  if ((q->qp = (fifo4_word_t *)realloc(q->qp, nelem*sizeof(fifo4_word_t))) == NULL){
     nrerror("fifo4_increase(): not enough memory");
+  }
 
   q->qplast = q->qp + nelem - 1;
   q->qps = q->qp + qoffset_s;

@@ -1,6 +1,6 @@
 /***********************************************************************
 Author(s): Pierre Soille
-Copyright (C) 2000-2020 European Union (Joint Research Centre)
+Copyright (C) 2000-2026 European Union (Joint Research Centre)
 
 This file is part of miallib.
 
@@ -41,7 +41,6 @@ along with miallib.  If not, see <https://www.gnu.org/licenses/>.
 #define EQUAL_op         18
 #define OVW_op           19 /* overwrite used for imput */
 #define POW_op           20
-#define NDI_op           21 /* normalised difference index */
 #define SUBSWAPCST_op    22 /* change sign */
 #define FirstBitOn_op    23 /* only retains first bit on */
 #define NAND_op          24 /* logical */

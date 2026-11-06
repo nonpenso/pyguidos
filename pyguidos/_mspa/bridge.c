@@ -40,9 +40,15 @@ ERROR_TYPE writeTiffOneStripPerLine(IMAGE *im, char *fn, char *desc) {
     return 0;
 }
 
-/* Forward declaration of the MSPA entry point (defined in miallib/mspa.c). */
+/* Forward declaration of the MSPA entry point (defined in miallib/mspa.c).
+ * As of the 2026 miallib update, segmentBinaryPatterns() takes a final
+ * `sqedt_type` argument selecting the integer width of the squared Euclidean
+ * distance transform: t_UINT32 (7) or t_UINT64 (9). On large images the
+ * squared distance can exceed the 32-bit range, which previously produced
+ * stray class-2 pixels; UINT64 avoids that at the cost of more memory. */
 extern IMAGE *segmentBinaryPatterns(IMAGE *imin, float size, int graphfg,
-                                    int transition, int internal);
+                                    int transition, int internal,
+                                    int sqedt_type);
 
 /*
  * mspa(input, size, graphfg, transition, internal)
@@ -110,8 +116,23 @@ static PyObject *py_mspa(PyObject *self, PyObject *args)
     /* Release the GIL for the (potentially long) C computation. The C code
        operates only on its own miallib allocations, so this is safe. */
     IMAGE *out = NULL;
+    /* Choose the squared-EDT integer width. sqedt() returns the SQUARED
+       Euclidean distance, whose largest possible value is bounded by the
+       squared image diagonal (nrows-1)^2 + (ncols-1)^2. If that can exceed
+       the 32-bit unsigned range we must use t_UINT64, otherwise t_UINT32 is
+       sufficient (and cheaper). The comparison is done in 64-bit to avoid
+       overflowing the test itself. */
+    int sqedt_type;
+    {
+        unsigned long long r = (unsigned long long)nrows;
+        unsigned long long c = (unsigned long long)ncols;
+        unsigned long long max_sqd = r * r + c * c;   /* >= true max diagonal^2 */
+        sqedt_type = (max_sqd > 4294967295ULL) ? t_UINT64 : t_UINT32;
+    }
+
     Py_BEGIN_ALLOW_THREADS
-    out = segmentBinaryPatterns(imin, size, graphfg, transition, internal);
+    out = segmentBinaryPatterns(imin, size, graphfg, transition, internal,
+                                sqedt_type);
     Py_END_ALLOW_THREADS
 
     free_image(imin);
