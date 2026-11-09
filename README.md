@@ -8,6 +8,7 @@
 [![coverage report](https://code.europa.eu/jrc-forest/guidos/pyguidos/badges/main/coverage.svg?job=run_tests)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/coverage/index.html)
 [![docs status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/)
 [![PyPI version](https://img.shields.io/pypi/v/pyguidos.svg)](https://pypi.org/project/pyguidos/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24079473.svg)](https://doi.org/10.5281/zenodo.24079473)
 [![Downloads](https://static.pepy.tech/badge/pyguidos)](https://pepy.tech/project/pyguidos)
 [![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![JOSS status](https://joss.theoj.org/papers/8a3fdc720f5b0c3f8392d33405787d79/status.svg)](https://joss.theoj.org/papers/8a3fdc720f5b0c3f8392d33405787d79)

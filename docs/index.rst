@@ -19,6 +19,10 @@
    :target: https://pypi.org/project/pyguidos/
    :alt: PyPI Version
 
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.24079473.svg
+   :target: https://doi.org/10.5281/zenodo.24079473
+   :alt: DOI
+
 .. |downloads| image:: https://static.pepy.tech/badge/pyguidos
    :target: https://pepy.tech/project/pyguidos
    :alt: Downloads Counter
@@ -31,7 +35,7 @@
    :target: https://joss.theoj.org/papers/8a3fdc720f5b0c3f8392d33405787d79
    :alt: JOSS status
 
-|pipeline| |coverage| |docs| |pypi| |downloads| |license| |JOSS|
+|pipeline| |coverage| |docs| |pypi| |DOI| |downloads| |license| |JOSS|
 
 
 Introduction
