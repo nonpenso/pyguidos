@@ -64,15 +64,25 @@ The `pyGuidos` package is primarily intended for ecologists and landscape planne
 Guidos applications provide tools for image analysis, which have been used in forest monitoring, biodiversity assessment, habitat connectivity, and land cover change detection [@vogt2017; @vogt2022]. Some algorithms have been adopted in official reporting frameworks including the FAO State of the World's Forests [@vogt2019, @FAO2020], the EU MAES ecosystem assessment [@maes2020], as well as in national and international forest monitoring programs [@Vogt2025, @ForestEurope2026, @EUROSTAT2022].
 `pyGuidos` is the first and currently only Python interface enabling these analyses on all major platforms without external dependencies beyond standard Python packages.
 The nine functions currently implemented and their methodological references are:
+
 1. `frag()`: Forest fragmentation via Foreground Area Density (FAD), Foreground Area Clustering (FAC) and Foreground Edge Density (FED) metrics for binary input maps [@vogt2025frag; @riitters2002];
+
 2. `frag_gray()`: Forest fragmentation via FAD, FAC and FED metrics with continuous-value input maps [@riitters2023; @vogt2024];
+
 3. `frag_change()`: Pixel-level fragmentation change analysis between two points in time;
+
 4. `landmos()`: Land cover classification within a tri-polar framework [@riitters2009; @vogt2024lm; @vogt2022lm];
+
 5. `mspa()`: Morphological Spatial Pattern Analysis, segmenting foreground pixels into up to 23 mutually exclusive morphological classes [@soille2009; @soille2022; @vogt2022mspa];
+
 6. `spa()`: Simplified Pattern Analysis, a streamlined variant of MSPA classifying foreground pixels into up to 6 of the most used morphological categories (Core, CoreOpening, Edge, Perforation, Islet, Margin) [@vogt2022mspa];
+
 7. `acc()`: Patch accounting, labeling and classifying foreground patches into user-defined area size classes [@vogt2022acc];
+
 8. `rss()`: Restoration Status Summary, computing network indicators including Equivalent Connected Area (ECA) and coherence (COH) [@vogt2022rss; @saura2011];
+
 9. `extract_by_polygon()`: Zonal raster statistics extraction.
+
 The `spa()` function is a native Python approximation of MSPA producing the most common classes, whereas `mspa()` delivers the complete set of classes including those related to pattern connectivity.
 
 # Software Design
@@ -85,7 +95,7 @@ Each analysis function validates inputs, delegates computation to engine.py, sav
 
 ## Native Spatial Engines
 
-Reimplementing most Guidos modules as native Python functions yields significant architectural benefits: cross-platform portability without external binaries, full algorithmic transparency for scientific audit, and multi-core parallelism via `Numba`'s thread-level prange that matches optimized C performance. Currently, MSPA is the single exception to the pure-Python design. Its full replication relies on specific segmentation steps (e.g., anchored-skeletonization [@ranwez-soille2002] and Euclidean geodesic distance function [@soille2004]) whose faithful re-implementation in Python proved impractical and prone to diverging from reference outputs produced by the open-source Morphological Image Analysis C Library [miallib]{https://github.com/ec-jrc/jeolib-miallib} [@soille2022]. To bridge this gap, `pyGuidos` embeds a dependency-free subset of `miallib` 2.0.0 (November 2026), which introduces MSPA v2.4. Cross-platform portability is ensured through pre-compiled binary wheels across major platforms (Linux, macOS, and Windows for x86_64 and arm64) with source fallbacks, while a future pure Python MSPA reimplementation is planned to eliminate binary dependencies entirely.
+Reimplementing most Guidos modules as native Python functions yields significant architectural benefits: cross-platform portability without external binaries, full algorithmic transparency for scientific audit, and multi-core parallelism via `Numba`'s thread-level prange that matches optimized C performance. Currently, MSPA is the single exception to the pure-Python design. Its full replication relies on specific segmentation steps (e.g., anchored-skeletonization [@ranwez-soille2002] and Euclidean geodesic distance function [@soille2004sv]) whose faithful re-implementation in Python proved impractical and prone to diverging from reference outputs produced by the open-source Morphological Image Analysis C Library [miallib]{https://github.com/ec-jrc/jeolib-miallib} [@soille2022]. To bridge this gap, `pyGuidos` embeds a dependency-free subset of `miallib` 2.0.0 (November 2026), which introduces MSPA v2.4. Cross-platform portability is ensured through pre-compiled binary wheels across major platforms (Linux, macOS, and Windows for x86_64 and arm64) with source fallbacks, while a future pure Python MSPA reimplementation is planned to eliminate binary dependencies entirely.
 
 ## Regional Analysis Workflow
 
