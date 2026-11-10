@@ -10,7 +10,7 @@ authors:
   - name: Giovanni Caudullo
     orcid: 0000-0003-4061-1204
     corresponding: true
-	equal-contrib: true
+    equal-contrib: true
     affiliation: 1	
   - name: Peter Vogt
     orcid: 0000-0002-1030-4492
