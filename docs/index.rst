@@ -263,17 +263,46 @@ multiple of the raw input size *R* (one byte per ``uint8`` pixel):
    * - ``spa``
      - ~10–15 × *R*
      - Several full-size morphological masks and distance transforms  depending on edge width
-   * - ``frag``, ``frag_gray``, ``landmos``
-     - ~3 × *R*
-     - Input up-cast to int16 plus an output buffer
    * - ``acc``, ``rss``
-     - ~4-5 × *R*
+     - ~6 × *R*
      - Adds a mask and a connected-component label array
+   * - ``frag``, ``frag_gray``, ``landmos``
+     - ~4 × *R*
+     - Input up-cast to int16 plus an output buffer
    * - ``frag_change``
      - ~2 × *R*
      - Processed block by block via windowed reading
 
 Physical RAM is not a hard limit: the effective ceiling is RAM plus swap or page-file space. Depending on the OS in use, rasters exceeding physical RAM may be transparently paged to disk and still complete processing, though at the expense of a significant performance penalty due to disk I/O. macOS comes preconfigured with compressed RAM, which transparently expands usable memory. A similar compressed-memory approach is supported natively in Linux via the standard `zram` kernel module. Moreover, configuring disk partitions or external drives as swap space provides additional virtual memory. Raster size is therefore primarily a trade-off with processing time and I/O bandwidth rather than a strict capacity ceiling.
+
+
+CPU cores and threads
+---------------------
+
+By default pyGuidos uses all CPU cores. The number of threads can be limited,
+e.g. on shared servers, clusters, or when several maps are processed in
+parallel (e.g. 4 processes x 5 threads on 20 cores). Set the variables
+**before** importing pyGuidos:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Variable
+     - Controls
+   * - ``NUMBA_NUM_THREADS``
+     - all tools except MSPA (Numba-compiled engine)
+   * - ``OMP_NUM_THREADS``
+     - ``mspa()`` (OpenMP C engine; on Linux and Windows, macOS builds are single-threaded)
+
+.. code-block:: python
+
+    import os
+    os.environ["NUMBA_NUM_THREADS"] = "8"
+    os.environ["OMP_NUM_THREADS"] = "8"
+    import pyguidos as pg
+
+or from the shell: ``set OMP_NUM_THREADS=8`` (Windows) / ``export OMP_NUM_THREADS=8``
+(Linux, macOS). Results are identical for any number of threads.
 
 
 Citation

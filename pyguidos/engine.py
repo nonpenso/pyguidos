@@ -1,10 +1,9 @@
 import numpy as np
-from scipy.ndimage import distance_transform_edt, binary_fill_holes, label, generate_binary_structure
+from scipy.ndimage import binary_fill_holes, label, generate_binary_structure
 from skimage.segmentation import flood_fill
-from skimage.morphology import reconstruction
 import math
 import gc
-from numba import njit, prange
+from numba import njit, prange, get_num_threads
 
 from . import utils
 
@@ -21,7 +20,380 @@ BACKGR_SP4 = 4
 # ---- SPATCON FUNCTIONS ----
 #############################
 
-@njit("uint8[:,:](uint8[:,:], int32, int32)", parallel=True, cache=True, fastmath=True)
+# ---------------------------------------------------------------------------
+# Shared moving-window engine (running sums, exact integer arithmetic)
+# ---------------------------------------------------------------------------
+# Every moving-window index (FAD, FAC, FED, their grayscale versions and the
+# Landscape Mosaic) only needs a few SUMS over the window: pixel counts or
+# values, or scores of adjacent pixel pairs. Instead of re-reading the whole
+# window for every pixel (cost ~ window_size^2), each CPU processes a block of
+# complete image rows and keeps running column sums: moving down one row adds
+# the row entering the window and subtracts the row leaving it. Within a row,
+# prefix sums give any window total with one subtraction. The cost per pixel
+# no longer depends on the window size. Windows are clipped at the image
+# border exactly as before and all arithmetic is integer, so results are
+# identical to the original per-pixel loops.
+
+_K_FAD = 1
+_K_FAD_GRAY = 2
+_K_FAC = 3
+_K_FED = 4
+_K_FAC_GRAY = 5
+_K_FED_GRAY = 6
+_K_LM = 7
+
+
+@njit(cache=True)
+def _pix_contrib(kind, v):
+    """Window quantities of one pixel: (a, b, c)."""
+    if kind == _K_FAD:
+        a = 1 if v == FOREGROUND else 0
+        b = 1 if (v != MISSING_IN and v != BACKGR_SP4) else 0   # SP4 acts as missing
+        return np.int64(a), np.int64(b), np.int64(0)
+    elif kind == _K_FAD_GRAY:
+        if v > 100:                                              # NoData
+            return np.int64(0), np.int64(0), np.int64(0)
+        return np.int64(v), np.int64(1), np.int64(0)
+    else:                                                        # _K_LM
+        return (np.int64(1 if v == 1 else 0), np.int64(1 if v == 2 else 0),
+                np.int64(1 if v == 3 else 0))
+
+
+@njit(cache=True)
+def _pair_contrib(kind, v1, v2):
+    """Window quantities of one adjacent pixel pair: (numerator, valid pair)."""
+    if kind == _K_FAC or kind == _K_FED:
+        if v1 == MISSING_IN or v2 == MISSING_IN or v1 == BACKGR_SP4 or v2 == BACKGR_SP4:
+            return np.int64(0), np.int64(0)
+        f1 = v1 == FOREGROUND
+        f2 = v2 == FOREGROUND
+        if kind == _K_FAC:
+            return np.int64(1 if (f1 and f2) else 0), np.int64(1)
+        if f1 and f2:                                            # FED: FG-FG = 2
+            return np.int64(2), np.int64(1)
+        if f1 != f2:                                             # FED: FG-BG = 1
+            return np.int64(1), np.int64(1)
+        return np.int64(0), np.int64(1)
+    else:                                                        # grayscale FAC / FED
+        if v1 > 100 or v2 > 100:
+            return np.int64(0), np.int64(0)
+        if kind == _K_FAC_GRAY and not (v1 > 0 and v2 > 0):
+            return np.int64(0), np.int64(1)
+        return np.int64(v1) + np.int64(v2), np.int64(1)
+
+
+@njit(cache=True)
+def _needs_window(kind, v, thr):
+    """True if the output of a pixel with value v depends on its window."""
+    if kind == _K_FAD or kind == _K_FAC or kind == _K_FED:
+        return v == FOREGROUND
+    if kind == _K_LM:
+        return v != 0
+    return v <= 100 and v >= thr                                 # grayscale
+
+
+@njit(cache=True)
+def _classify(kind, v, a, b, c, num, den, handle_missing, w2, tpe, thr):
+    """Output value of one pixel from its window sums (rules unchanged)."""
+    if kind == _K_LM:
+        if v == 0 or a + b + c == 0:
+            return np.uint8(0)
+        return _lm_code(a, b, c)
+
+    if kind == _K_FAD or kind == _K_FAC or kind == _K_FED:
+        if v == BACKGROUND:
+            return np.uint8(101)
+        if v == BACKGR_SP3:
+            return np.uint8(105)
+        if v == BACKGR_SP4:
+            return np.uint8(106)
+        if v != FOREGROUND:
+            return np.uint8(102)
+        if kind == _K_FAD:
+            denom = b if handle_missing == 1 else w2
+            numer = a * 200
+        elif kind == _K_FAC:
+            denom = den if handle_missing == 1 else tpe
+            numer = num * 200
+        else:
+            denom = den if handle_missing == 1 else tpe
+            numer = num * 100
+    else:                                                        # grayscale
+        if v > 100:
+            return np.uint8(102)
+        if v < thr:
+            return np.uint8(101)
+        if kind == _K_FAD_GRAY:
+            denom = (b if handle_missing == 1 else w2) * 100
+            numer = a * 200
+        else:
+            denom = (den if handle_missing == 1 else tpe) * 200
+            numer = num * 200
+    if denom > 0:
+        pf = (numer + denom) // (2 * denom)
+        return np.uint8(min(pf, 100))
+    return np.uint8(102)
+
+
+@njit(cache=True)
+def _add_pixel_row(data, r, sign, kind, use_pix, use_pairs, cp, ch):
+    """Add (sign=+1) or remove (sign=-1) image row r: pixel and horizontal-pair sums."""
+    ncols = data.shape[1]
+    for c in range(ncols):
+        v = data[r, c]
+        if use_pix:
+            a, b, cc = _pix_contrib(kind, v)
+            cp[0, c] += sign * a
+            cp[1, c] += sign * b
+            cp[2, c] += sign * cc
+        if use_pairs and c < ncols - 1:                          # pair (r,c)-(r,c+1)
+            n, d = _pair_contrib(kind, v, data[r, c + 1])
+            ch[0, c] += sign * n
+            ch[1, c] += sign * d
+
+
+@njit(cache=True)
+def _add_pair_row(data, r, sign, kind, use_diag, cv, cd1, cd2):
+    """Add or remove the vertical/diagonal pairs between image rows r and r+1."""
+    ncols = data.shape[1]
+    for c in range(ncols):
+        v1 = data[r, c]
+        n, d = _pair_contrib(kind, v1, data[r + 1, c])           # (r,c)-(r+1,c)
+        cv[0, c] += sign * n
+        cv[1, c] += sign * d
+        if use_diag:
+            if c < ncols - 1:                                    # (r,c)-(r+1,c+1)
+                n, d = _pair_contrib(kind, v1, data[r + 1, c + 1])
+                cd1[0, c] += sign * n
+                cd1[1, c] += sign * d
+            if c >= 1:                                           # (r,c)-(r+1,c-1)
+                n, d = _pair_contrib(kind, v1, data[r + 1, c - 1])
+                cd2[0, c] += sign * n
+                cd2[1, c] += sign * d
+
+
+@njit(cache=True)
+def _prefix(col, pre, nq):
+    """pre[q, k] = sum of col[q, :k]."""
+    ncols = col.shape[1]
+    for q in range(nq):
+        s = np.int64(0)
+        pre[q, 0] = 0
+        for k in range(ncols):
+            s += col[q, k]
+            pre[q, k + 1] = s
+
+
+def _n_blocks(data):
+    """
+    Number of row blocks for _window_kernel: one per Numba thread. Computed
+    in Python, so the compiled kernel does not call get_num_threads() and
+    stays cacheable on disk.
+    """
+    return max(1, min(data.shape[0], get_num_threads()))
+
+
+@njit(parallel=True, cache=True)
+def _window_kernel(data, window_size, kind, handle_missing, connectivity, thr, nblocks):
+    """
+    Shared moving-window engine (see the section comment above).
+    Windows: rows [i-R, i+R] and columns [j-R, j+R] clipped to the image,
+    with R = window_size // 2. Pixel quantities use all window pixels; pair
+    quantities use the pairs whose two pixels are both inside the window
+    (horizontal, vertical and, with connectivity 8, both diagonals).
+    The image is split into `nblocks` blocks of complete rows, processed in
+    parallel; each block starts its running sums from scratch, so the
+    result does not depend on the number of blocks.
+    """
+    nrows, ncols = data.shape
+    R = window_size // 2
+    W = np.int64(window_size)
+    w2 = W * W
+    if connectivity == 8:
+        tpe = 2 * (W - 1) * (2 * W - 1)
+    else:
+        tpe = 2 * W * (W - 1)
+    use_pix = kind == _K_FAD or kind == _K_FAD_GRAY or kind == _K_LM
+    use_pairs = not use_pix
+    use_diag = use_pairs and connectivity == 8
+
+    result = np.empty((nrows, ncols), dtype=np.uint8)
+    nblocks = max(1, min(nrows, nblocks))
+
+    for blk in prange(nblocks):
+        i0 = (blk * nrows) // nblocks
+        i1 = ((blk + 1) * nrows) // nblocks
+        # Column sums of the rows currently inside the window
+        cp = np.zeros((3, ncols), dtype=np.int64)    # pixels: a, b, c
+        ch = np.zeros((2, ncols), dtype=np.int64)    # horizontal pairs
+        cv = np.zeros((2, ncols), dtype=np.int64)    # vertical pairs
+        cd1 = np.zeros((2, ncols), dtype=np.int64)   # diagonal (r,c)-(r+1,c+1)
+        cd2 = np.zeros((2, ncols), dtype=np.int64)   # diagonal (r,c)-(r+1,c-1)
+        pp = np.zeros((3, ncols + 1), dtype=np.int64)
+        ph = np.zeros((2, ncols + 1), dtype=np.int64)
+        pv = np.zeros((2, ncols + 1), dtype=np.int64)
+        pd1 = np.zeros((2, ncols + 1), dtype=np.int64)
+        pd2 = np.zeros((2, ncols + 1), dtype=np.int64)
+
+        # Window rows of the first row of the block: pixels [r0, r1), pairs [r0, r1-1)
+        r0 = max(0, i0 - R)
+        r1 = min(nrows, i0 + R + 1)
+        for r in range(r0, r1):
+            _add_pixel_row(data, r, 1, kind, use_pix, use_pairs, cp, ch)
+        if use_pairs:
+            for r in range(r0, r1 - 1):
+                _add_pair_row(data, r, 1, kind, use_diag, cv, cd1, cd2)
+
+        for i in range(i0, i1):
+            if i > i0:
+                # Window moves down one row
+                if i + R + 1 <= nrows:                   # row r1 enters
+                    _add_pixel_row(data, r1, 1, kind, use_pix, use_pairs, cp, ch)
+                    if use_pairs and r1 - 1 >= r0:       # pair rows r1-1 / r1 enter
+                        _add_pair_row(data, r1 - 1, 1, kind, use_diag, cv, cd1, cd2)
+                    r1 += 1
+                if i - R - 1 >= 0:                       # row r0 leaves
+                    _add_pixel_row(data, r0, -1, kind, use_pix, use_pairs, cp, ch)
+                    if use_pairs and r0 < r1 - 1:        # pair rows r0 / r0+1 leave
+                        _add_pair_row(data, r0, -1, kind, use_diag, cv, cd1, cd2)
+                    r0 += 1
+
+            # Prefix sums along the row for O(1) window totals
+            if use_pix:
+                _prefix(cp, pp, 3)
+            else:
+                _prefix(ch, ph, 2)
+                _prefix(cv, pv, 2)
+                if use_diag:
+                    _prefix(cd1, pd1, 2)
+                    _prefix(cd2, pd2, 2)
+
+            for j in range(ncols):
+                v = data[i, j]
+                a = b = c = num = den = np.int64(0)
+                if _needs_window(kind, v, thr):
+                    c0 = max(0, j - R)
+                    c1 = min(ncols, j + R + 1)
+                    if use_pix:
+                        a = pp[0, c1] - pp[0, c0]
+                        b = pp[1, c1] - pp[1, c0]
+                        c = pp[2, c1] - pp[2, c0]
+                    else:
+                        hi = max(c1 - 1, c0)                 # pairs starting in [c0, c1-1)
+                        num = (ph[0, hi] - ph[0, c0]) + (pv[0, c1] - pv[0, c0])
+                        den = (ph[1, hi] - ph[1, c0]) + (pv[1, c1] - pv[1, c0])
+                        if use_diag:
+                            lo2 = min(c0 + 1, c1)            # pairs starting in [c0+1, c1)
+                            num += (pd1[0, hi] - pd1[0, c0]) + (pd2[0, c1] - pd2[0, lo2])
+                            den += (pd1[1, hi] - pd1[1, c0]) + (pd2[1, c1] - pd2[1, lo2])
+                result[i, j] = _classify(kind, v, a, b, c, num, den,
+                                         handle_missing, w2, tpe, thr)
+    return result
+
+
+
+@njit(cache=True)
+def _lm_code(n_agr, n_for, n_dev):
+    """103-class Landscape Mosaic code from the three class counts
+    (Agriculture, Natural, Developed) in the window. The integer decision
+    tree is unchanged from the original compute_LM loop."""
+    n_valid = n_agr + n_for + n_dev
+
+    # Integer Decision Tree Setup
+    f10 = n_for * 10
+    a10 = n_agr * 10
+    d10 = n_dev * 10
+
+    # Multipliers for p_x threshold checks
+    v1 = n_valid;     v2 = n_valid * 2; v3 = n_valid * 3
+    v4 = n_valid * 4; v5 = n_valid * 5; v6 = n_valid * 6
+    v7 = n_valid * 7; v8 = n_valid * 8; v9 = n_valid * 9
+
+    code = 0
+
+    # --- Pure Corners ---
+    if n_for == n_valid:   code = 170
+    elif n_dev == n_valid: code = 190
+    elif n_agr == n_valid: code = 180
+
+    # --- Decision Tree Logic ---
+    elif f10 < v1:
+        if a10 < v1:    code = 191 if d10 >= v9 else 192
+        elif a10 < v2:  code = 71  if d10 >= v8 else 72
+        elif a10 < v3:  code = 73  if d10 >= v7 else 74
+        elif a10 < v4:  code = 75  if d10 >= v6 else 131
+        elif a10 < v5:  code = 132 if d10 >= v5 else 133
+        elif a10 < v6:  code = 134 if d10 >= v4 else 135
+        elif a10 < v7:  code = 45  if d10 >= v3 else 44
+        elif a10 < v8:  code = 43  if d10 >= v2 else 42
+        elif a10 < v9:  code = 41  if d10 >= v1 else 182
+        else:           code = 181
+
+    elif f10 < v2:
+        if a10 < v1:    code = 61  if d10 >= v8 else 62
+        elif a10 < v2:  code = 111 if d10 >= v7 else 112
+        elif a10 < v3:  code = 114 if d10 >= v6 else 200
+        elif a10 < v4:  code = 201 if d10 >= v5 else 202
+        elif a10 < v5:  code = 203 if d10 >= v4 else 204
+        elif a10 < v6:  code = 205 if d10 >= v3 else 206
+        elif a10 < v7:  code = 103 if d10 >= v2 else 102
+        elif a10 < v8:  code = 101 if d10 >= v1 else 52
+        else:           code = 51
+
+    elif f10 < v3:
+        if a10 < v1:    code = 63  if d10 >= v7 else 64
+        elif a10 < v2:  code = 113 if d10 >= v6 else 222
+        elif a10 < v3:  code = 223 if d10 >= v5 else 224
+        elif a10 < v4:  code = 225 if d10 >= v4 else 226
+        elif a10 < v5:  code = 227 if d10 >= v3 else 228
+        elif a10 < v6:  code = 207 if d10 >= v2 else 208
+        elif a10 < v7:  code = 104 if d10 >= v1 else 54
+        else:           code = 53
+
+    elif f10 < v4:
+        if a10 < v1:    code = 65  if d10 >= v6 else 155
+        elif a10 < v2:  code = 221 if d10 >= v5 else 220
+        elif a10 < v3:  code = 235 if d10 >= v4 else 234
+        elif a10 < v4:  code = 236 if d10 >= v3 else 230
+        elif a10 < v5:  code = 229 if d10 >= v2 else 210
+        elif a10 < v6:  code = 209 if d10 >= v1 else 141
+        else:           code = 55
+
+    elif f10 < v5:
+        if a10 < v1:    code = 154 if d10 >= v5 else 153
+        elif a10 < v2:  code = 219 if d10 >= v4 else 218
+        elif a10 < v3:  code = 233 if d10 >= v3 else 232
+        elif a10 < v4:  code = 231 if d10 >= v2 else 212
+        elif a10 < v5:  code = 211 if d10 >= v1 else 143
+        else:           code = 142
+
+    elif f10 < v6:
+        if a10 < v1:    code = 152 if d10 >= v4 else 151
+        elif a10 < v2:  code = 217 if d10 >= v3 else 216
+        elif a10 < v3:  code = 215 if d10 >= v2 else 214
+        elif a10 < v4:  code = 213 if d10 >= v1 else 145
+        else:           code = 144
+
+    elif f10 < v7:
+        if a10 < v1:    code = 95  if d10 >= v3 else 94
+        elif a10 < v2:  code = 124 if d10 >= v2 else 122
+        elif a10 < v3:  code = 123 if d10 >= v1 else 84
+        else:           code = 85
+
+    elif f10 < v8:
+        if a10 < v1:    code = 93  if d10 >= v2 else 92
+        elif a10 < v2:  code = 121 if d10 >= v1 else 82
+        else:           code = 83
+
+    elif f10 < v9:
+        if a10 < v1:    code = 91  if d10 >= v1 else 172
+        else:           code = 81
+    else:
+        code = 171
+
+    return np.uint8(code)
+
+
 def compute_FAD(data, window_size, handle_missing):
     """
     Numba-optimized sliding window to calculate Foreground Area Density (FAD)
@@ -46,64 +418,10 @@ def compute_FAD(data, window_size, handle_missing):
                      - 101: Original background pixels.
                      - 102: Missing data or invalid calculations.
     """
-    
-    # FOS constants
-    OUT_BACKGROUND = 101
-    OUT_MISSING = 102
-    OUT_BACKGR_SP3 = 105
-    OUT_BACKGR_SP4 = 106
-    
-    nrows, ncols = data.shape
-    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
-    radius = window_size // 2
-
-    for i in prange(nrows):
-        r0 = max(0, i - radius)
-        r1 = min(nrows, i + radius + 1)
-
-        for j in range(ncols):
-            pixel_val = data[i, j]
-
-            if pixel_val == BACKGROUND:
-                result[i, j] = OUT_BACKGROUND
-                continue
-            if pixel_val == BACKGR_SP3:
-                result[i, j] = OUT_BACKGR_SP3
-                continue
-            if pixel_val == BACKGR_SP4:
-                result[i, j] = OUT_BACKGR_SP4
-                continue
-
-            if pixel_val == FOREGROUND:
-                c0 = max(0, j - radius)
-                c1 = min(ncols, j + radius + 1)
-
-                fg_count = 0
-                non_missing_count = 0
-
-                for wi in range(r0, r1):
-                    for wj in range(c0, c1):
-                        # No boundary check needed — already clamped
-                        val = data[wi, wj]
-                        if val == FOREGROUND:
-                            fg_count += 1
-                        # SP4 treated as missing (does not fragment foreground)
-                        if val != MISSING_IN and val != BACKGR_SP4:
-                            non_missing_count += 1
-
-                denom = non_missing_count if handle_missing == 1 else (window_size * window_size)
-
-                if denom > 0:
-                    pf = (fg_count * 200 + denom) // (2 * denom)
-                    result[i, j] = np.uint8(min(pf, 100))
-                else:
-                    result[i, j] = OUT_MISSING
-
-    return result
+    return _window_kernel(data, window_size, _K_FAD, handle_missing, 4, 0,
+                          _n_blocks(data))
 
 
-
-@njit("uint8[:,:](uint8[:,:], int32, int32, int32)", parallel=True, cache=True, fastmath=True)
 def compute_FAD_gray(data, window_size, handle_missing, for_threshold):
     """
     Numba-optimized sliding window to calculate Foreground Area Density (FAD)
@@ -136,65 +454,10 @@ def compute_FAD_gray(data, window_size, handle_missing, for_threshold):
                      - 101: Non-foreground pixels (input value 0 or below threshold).
                      - 102: Missing data (input value 255) or invalid.
     """
-
-    OUT_NONFOREGROUND = 101
-    OUT_MISSING = 102
-
-    nrows, ncols = data.shape
-    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
-    radius = window_size // 2
-
-    for i in prange(nrows):
-        r0 = max(0, i - radius)
-        r1 = min(nrows, i + radius + 1)
-
-        for j in range(ncols):
-            pixel_val = data[i, j]
-
-            # 1. Preserve NoData (any value > 100)
-            if pixel_val > 100:
-                result[i, j] = OUT_MISSING
-                continue
-
-            # 2. Preserve Non-foreground (value 0 or below threshold)
-            if pixel_val < for_threshold:
-                result[i, j] = OUT_NONFOREGROUND
-                continue
-
-            # 3. Process foreground pixels (values >= for_threshold)
-            c0 = max(0, j - radius)
-            c1 = min(ncols, j + radius + 1)
-
-            value_sum = np.int64(0)
-            non_missing_count = np.int64(0)
-
-            for wi in range(r0, r1):
-                for wj in range(c0, c1):
-                    val = data[wi, wj]
-                    if val > 100:
-                        continue
-                    value_sum += val
-                    non_missing_count += 1
-
-            # Denominator: non_missing_count * 100 (normalized)
-            # or window_size^2 * 100 (fixed)
-            if handle_missing == 1:
-                denom = non_missing_count * 100
-            else:
-                denom = window_size * window_size * 100
-
-            if denom > 0:
-                # Round-half-up: (value_sum * 200 + denom) // (2 * denom)
-                pf = (value_sum * 200 + denom) // (2 * denom)
-                result[i, j] = np.uint8(min(pf, 100))
-            else:
-                result[i, j] = OUT_MISSING
-
-    return result
+    return _window_kernel(data, window_size, _K_FAD_GRAY, handle_missing, 4,
+                          for_threshold, _n_blocks(data))
 
 
-
-@njit("uint8[:,:](uint8[:,:], int32, int32, int32, int32)", parallel=True, cache=True, fastmath=True)
 def compute_FAC_gray(data, window_size, handle_missing, for_threshold, connectivity):
     """
     Numba-optimized sliding window to calculate Foreground Area Clustering (FAC)
@@ -219,103 +482,10 @@ def compute_FAC_gray(data, window_size, handle_missing, for_threshold, connectiv
     --------
     result         : 2D numpy array (uint8), values 0-100, 101, or 102.
     """
-
-    OUT_NONFOREGROUND = 101
-    OUT_MISSING = 102
-
-    nrows, ncols = data.shape
-    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
-    radius = window_size // 2
-    W = window_size
-
-    if connectivity == 8:
-        total_potential_edges = 2 * (W - 1) * (2 * W - 1)
-    else:
-        total_potential_edges = 2 * W * (W - 1)
-
-    for i in prange(nrows):
-        r0 = max(0, i - radius)
-        r1 = min(nrows, i + radius + 1)
-
-        for j in range(ncols):
-            pixel_val = data[i, j]
-
-            if pixel_val > 100:
-                result[i, j] = OUT_MISSING
-                continue
-            if pixel_val < for_threshold:
-                result[i, j] = OUT_NONFOREGROUND
-                continue
-
-            c0 = max(0, j - radius)
-            c1 = min(ncols, j + radius + 1)
-
-            # Accumulate sum of averages × 2 (to stay integer)
-            # For a pair (a, b) both >= threshold: contribute a + b
-            edge_sum = np.int64(0)
-            total_edges = np.int64(0)
-
-            # --- Horizontal Scan ---
-            for wi in range(r0, r1):
-                for wj in range(c0, c1 - 1):
-                    v1, v2 = data[wi, wj], data[wi, wj + 1]
-                    if v1 > 100 or v2 > 100:
-                        continue
-                    if handle_missing == 1:
-                        total_edges += 1
-                    if v1 > 0 and v2 > 0:
-                        edge_sum += v1 + v2
-
-            # --- Vertical Scan ---
-            for wi in range(r0, r1 - 1):
-                for wj in range(c0, c1):
-                    v1, v2 = data[wi, wj], data[wi + 1, wj]
-                    if v1 > 100 or v2 > 100:
-                        continue
-                    if handle_missing == 1:
-                        total_edges += 1
-                    if v1 > 0 and v2 > 0:
-                        edge_sum += v1 + v2
-
-            # --- Diagonal Scans (8-connected only) ---
-            if connectivity == 8:
-                for wi in range(r0, r1 - 1):
-                    for wj in range(c0, c1 - 1):
-                        v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
-                        if v1 > 100 or v2 > 100:
-                            continue
-                        if handle_missing == 1:
-                            total_edges += 1
-                        if v1 > 0 and v2 > 0:
-                            edge_sum += v1 + v2
-
-                for wi in range(r0, r1 - 1):
-                    for wj in range(c0 + 1, c1):
-                        v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
-                        if v1 > 100 or v2 > 100:
-                            continue
-                        if handle_missing == 1:
-                            total_edges += 1
-                        if v1 > 0 and v2 > 0:
-                            edge_sum += v1 + v2
-
-            # denom = total_edges * 2 * 100 (since edge_sum accumulates a+b, not avg)
-            if handle_missing == 1:
-                denom = total_edges * 200
-            else:
-                denom = total_potential_edges * 200
-
-            if denom > 0:
-                pf = (edge_sum * 200 + denom) // (2 * denom)
-                result[i, j] = np.uint8(min(pf, 100))
-            else:
-                result[i, j] = OUT_MISSING
-
-    return result
+    return _window_kernel(data, window_size, _K_FAC_GRAY, handle_missing,
+                          connectivity, for_threshold, _n_blocks(data))
 
 
-
-@njit("uint8[:,:](uint8[:,:], int32, int32, int32, int32)", parallel=True, cache=True, fastmath=True)
 def compute_FED_gray(data, window_size, handle_missing, for_threshold, connectivity):
     """
     Numba-optimized sliding window to calculate Foreground Edge Density (FED)
@@ -345,100 +515,10 @@ def compute_FED_gray(data, window_size, handle_missing, for_threshold, connectiv
     --------
     result         : 2D numpy array (uint8), values 0-100, 101, or 102.
     """
-
-    OUT_NONFOREGROUND = 101
-    OUT_MISSING = 102
-
-    nrows, ncols = data.shape
-    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
-    radius = window_size // 2
-    W = window_size
-
-    if connectivity == 8:
-        total_potential_edges = 2 * (W - 1) * (2 * W - 1)
-    else:
-        total_potential_edges = 2 * W * (W - 1)
-
-    for i in prange(nrows):
-        r0 = max(0, i - radius)
-        r1 = min(nrows, i + radius + 1)
-
-        for j in range(ncols):
-            pixel_val = data[i, j]
-
-            if pixel_val > 100:
-                result[i, j] = OUT_MISSING
-                continue
-            if pixel_val < for_threshold:
-                result[i, j] = OUT_NONFOREGROUND
-                continue
-
-            c0 = max(0, j - radius)
-            c1 = min(ncols, j + radius + 1)
-
-            # Accumulate (a + b) for all non-NoData pairs where at least one is FG
-            # This avoids division: sum of (a+b) / (total_edges * 2 * 100) = avg/100
-            edge_sum = np.int64(0)
-            total_edges = np.int64(0)
-
-            # --- Horizontal Scan ---
-            for wi in range(r0, r1):
-                for wj in range(c0, c1 - 1):
-                    v1, v2 = data[wi, wj], data[wi, wj + 1]
-                    if v1 > 100 or v2 > 100:
-                        continue
-                    if handle_missing == 1:
-                        total_edges += 1
-                    # FED: any pair contributes its actual values
-                    edge_sum += v1 + v2
-
-            # --- Vertical Scan ---
-            for wi in range(r0, r1 - 1):
-                for wj in range(c0, c1):
-                    v1, v2 = data[wi, wj], data[wi + 1, wj]
-                    if v1 > 100 or v2 > 100:
-                        continue
-                    if handle_missing == 1:
-                        total_edges += 1
-                    edge_sum += v1 + v2
-
-            # --- Diagonal Scans (8-connected only) ---
-            if connectivity == 8:
-                for wi in range(r0, r1 - 1):
-                    for wj in range(c0, c1 - 1):
-                        v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
-                        if v1 > 100 or v2 > 100:
-                            continue
-                        if handle_missing == 1:
-                            total_edges += 1
-                        edge_sum += v1 + v2
-
-                for wi in range(r0, r1 - 1):
-                    for wj in range(c0 + 1, c1):
-                        v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
-                        if v1 > 100 or v2 > 100:
-                            continue
-                        if handle_missing == 1:
-                            total_edges += 1
-                        edge_sum += v1 + v2
-
-            # denom = total_edges * 2 * 100 (since edge_sum is sum of a+b, not avg)
-            if handle_missing == 1:
-                denom = total_edges * 200
-            else:
-                denom = total_potential_edges * 200
-
-            if denom > 0:
-                pf = (edge_sum * 200 + denom) // (2 * denom)
-                result[i, j] = np.uint8(min(pf, 100))
-            else:
-                result[i, j] = OUT_MISSING
-
-    return result
+    return _window_kernel(data, window_size, _K_FED_GRAY, handle_missing,
+                          connectivity, for_threshold, _n_blocks(data))
 
 
-
-@njit("uint8[:,:](uint8[:,:], int32, int32, int32)", parallel=True, cache=True, fastmath=True)
 def compute_FAC(data, window_size, handle_missing, connectivity):
     """
     Numba-optimized sliding window to calculate Foreground Area Clustering (FAC)
@@ -468,115 +548,10 @@ def compute_FAC(data, window_size, handle_missing, connectivity):
                      - 101: Original background pixels.
                      - 102: Missing data or invalid calculations.
     """
-
-    OUT_BACKGROUND = 101
-    OUT_MISSING    = 102
-    OUT_BACKGR_SP3 = 105
-    OUT_BACKGR_SP4 = 106
-
-    nrows, ncols = data.shape
-    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
-    radius = window_size // 2
-    W = window_size
-
-    # Total potential edges per connectivity mode
-    if connectivity == 8:
-        total_potential_edges = 2 * (W - 1) * (2 * W - 1)
-    else:
-        total_potential_edges = 2 * W * (W - 1)
-
-    for i in prange(nrows):
-        r0 = max(0, i - radius)
-        r1 = min(nrows, i + radius + 1)
-
-        for j in range(ncols):
-            pixel_val = data[i, j]
-
-            if pixel_val == BACKGROUND:
-                result[i, j] = OUT_BACKGROUND
-                continue
-            if pixel_val == BACKGR_SP3:
-                result[i, j] = OUT_BACKGR_SP3
-                continue
-            if pixel_val == BACKGR_SP4:
-                result[i, j] = OUT_BACKGR_SP4
-                continue
-
-            if pixel_val != FOREGROUND:
-                continue
-
-            c0 = max(0, j - radius)
-            c1 = min(ncols, j + radius + 1)
-
-            fg_fg_edges = 0
-            total_edges = 0
-
-            # --- Horizontal Scan ---
-            for wi in range(r0, r1):
-                for wj in range(c0, c1 - 1):
-                    v1, v2 = data[wi, wj], data[wi, wj + 1]
-                    if handle_missing == 1:
-                        if v1 != MISSING_IN and v2 != MISSING_IN and v1 != BACKGR_SP4 and v2 != BACKGR_SP4:
-                            total_edges += 1
-                            if v1 == FOREGROUND and v2 == FOREGROUND:
-                                fg_fg_edges += 1
-                    else:
-                        if v1 == FOREGROUND and v2 == FOREGROUND:
-                            fg_fg_edges += 1
-
-            # --- Vertical Scan ---
-            for wi in range(r0, r1 - 1):
-                for wj in range(c0, c1):
-                    v1, v2 = data[wi, wj], data[wi + 1, wj]
-                    if handle_missing == 1:
-                        if v1 != MISSING_IN and v2 != MISSING_IN and v1 != BACKGR_SP4 and v2 != BACKGR_SP4:
-                            total_edges += 1
-                            if v1 == FOREGROUND and v2 == FOREGROUND:
-                                fg_fg_edges += 1
-                    else:
-                        if v1 == FOREGROUND and v2 == FOREGROUND:
-                            fg_fg_edges += 1
-
-            # --- Diagonal Scans (8-connected only) ---
-            if connectivity == 8:
-
-                # NW-SE diagonal (down-right neighbour)
-                for wi in range(r0, r1 - 1):
-                    for wj in range(c0, c1 - 1):
-                        v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
-                        if handle_missing == 1:
-                            if v1 != MISSING_IN and v2 != MISSING_IN and v1 != BACKGR_SP4 and v2 != BACKGR_SP4:
-                                total_edges += 1
-                                if v1 == FOREGROUND and v2 == FOREGROUND:
-                                    fg_fg_edges += 1
-                        else:
-                            if v1 == FOREGROUND and v2 == FOREGROUND:
-                                fg_fg_edges += 1
-
-                # NE-SW diagonal (down-left neighbour)
-                for wi in range(r0, r1 - 1):
-                    for wj in range(c0 + 1, c1):
-                        v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
-                        if handle_missing == 1:
-                            if v1 != MISSING_IN and v2 != MISSING_IN and v1 != BACKGR_SP4 and v2 != BACKGR_SP4:
-                                total_edges += 1
-                                if v1 == FOREGROUND and v2 == FOREGROUND:
-                                    fg_fg_edges += 1
-                        else:
-                            if v1 == FOREGROUND and v2 == FOREGROUND:
-                                fg_fg_edges += 1
-
-            denom = total_edges if handle_missing == 1 else total_potential_edges
-            if denom > 0:
-                pff = (fg_fg_edges * 200 + denom) // (2 * denom)
-                result[i, j] = np.uint8(min(pff, 100))
-            else:
-                result[i, j] = OUT_MISSING
-
-    return result
+    return _window_kernel(data, window_size, _K_FAC, handle_missing,
+                          connectivity, 0, _n_blocks(data))
 
 
-@njit("uint8[:,:](uint8[:,:], int32, int32, int32)", parallel=True, cache=True, fastmath=True)
 def compute_FED(data, window_size, handle_missing, connectivity):
     """
     Numba-optimized sliding window to calculate Foreground Edge Density (FED)
@@ -614,114 +589,10 @@ def compute_FED(data, window_size, handle_missing, connectivity):
                      - 105: BackgrSP3 pixels.
                      - 106: BackgrSP4 pixels.
     """
-
-    OUT_BACKGROUND = 101
-    OUT_MISSING    = 102
-    OUT_BACKGR_SP3 = 105
-    OUT_BACKGR_SP4 = 106
-
-    nrows, ncols = data.shape
-    result = np.full((nrows, ncols), OUT_MISSING, dtype=np.uint8)
-    radius = window_size // 2
-    W = window_size
-
-    if connectivity == 8:
-        total_potential_edges = 2 * (W - 1) * (2 * W - 1)
-    else:
-        total_potential_edges = 2 * W * (W - 1)
-
-    for i in prange(nrows):
-        r0 = max(0, i - radius)
-        r1 = min(nrows, i + radius + 1)
-
-        for j in range(ncols):
-            pixel_val = data[i, j]
-
-            if pixel_val == BACKGROUND:
-                result[i, j] = OUT_BACKGROUND
-                continue
-            if pixel_val == BACKGR_SP3:
-                result[i, j] = OUT_BACKGR_SP3
-                continue
-            if pixel_val == BACKGR_SP4:
-                result[i, j] = OUT_BACKGR_SP4
-                continue
-
-            if pixel_val != FOREGROUND:
-                continue
-
-            c0 = max(0, j - radius)
-            c1 = min(ncols, j + radius + 1)
-
-            weighted_num = 0
-            total_edges  = 0
-
-            # --- Horizontal Scan ---
-            for wi in range(r0, r1):
-                for wj in range(c0, c1 - 1):
-                    v1, v2 = data[wi, wj], data[wi, wj + 1]
-                    if v1 == MISSING_IN or v2 == MISSING_IN or v1 == BACKGR_SP4 or v2 == BACKGR_SP4:
-                        continue
-                    if handle_missing == 1:
-                        total_edges += 1
-                    if v1 == FOREGROUND and v2 == FOREGROUND:
-                        weighted_num += 2
-                    elif (v1 == FOREGROUND) != (v2 == FOREGROUND):
-                        weighted_num += 1
-
-            # --- Vertical Scan ---
-            for wi in range(r0, r1 - 1):
-                for wj in range(c0, c1):
-                    v1, v2 = data[wi, wj], data[wi + 1, wj]
-                    if v1 == MISSING_IN or v2 == MISSING_IN or v1 == BACKGR_SP4 or v2 == BACKGR_SP4:
-                        continue
-                    if handle_missing == 1:
-                        total_edges += 1
-                    if v1 == FOREGROUND and v2 == FOREGROUND:
-                        weighted_num += 2
-                    elif (v1 == FOREGROUND) != (v2 == FOREGROUND):
-                        weighted_num += 1
-
-            # --- Diagonal Scans (8-connected only) ---
-            if connectivity == 8:
-
-                # NW-SE diagonal
-                for wi in range(r0, r1 - 1):
-                    for wj in range(c0, c1 - 1):
-                        v1, v2 = data[wi, wj], data[wi + 1, wj + 1]
-                        if v1 == MISSING_IN or v2 == MISSING_IN or v1 == BACKGR_SP4 or v2 == BACKGR_SP4:
-                            continue
-                        if handle_missing == 1:
-                            total_edges += 1
-                        if v1 == FOREGROUND and v2 == FOREGROUND:
-                            weighted_num += 2
-                        elif (v1 == FOREGROUND) != (v2 == FOREGROUND):
-                            weighted_num += 1
-
-                # NE-SW diagonal
-                for wi in range(r0, r1 - 1):
-                    for wj in range(c0 + 1, c1):
-                        v1, v2 = data[wi, wj], data[wi + 1, wj - 1]
-                        if v1 == MISSING_IN or v2 == MISSING_IN or v1 == BACKGR_SP4 or v2 == BACKGR_SP4:
-                            continue
-                        if handle_missing == 1:
-                            total_edges += 1
-                        if v1 == FOREGROUND and v2 == FOREGROUND:
-                            weighted_num += 2
-                        elif (v1 == FOREGROUND) != (v2 == FOREGROUND):
-                            weighted_num += 1
-
-            denom = total_edges if handle_missing == 1 else total_potential_edges
-            if denom > 0:
-                pff = (weighted_num * 100 + denom) // (2 * denom)
-                result[i, j] = np.uint8(min(pff, 100))
-            else:
-                result[i, j] = OUT_MISSING
-
-    return result
+    return _window_kernel(data, window_size, _K_FED, handle_missing,
+                          connectivity, 0, _n_blocks(data))
 
 
-@njit("uint8[:,:](uint8[:,:], int32)", parallel=True, cache=True, fastmath=True)
 def compute_LM(data, window_size):
     """
     Classify Landscape Mosaics (LM) using tri-polar composition.
@@ -747,141 +618,7 @@ def compute_LM(data, window_size):
         Mosaic classification map. Each integer code corresponds to a specific 
         position on the tri-polar transition model.
     """
-    # Landscape Mosaic constants
-    AGR_VAL = 1
-    NAT_VAL = 2
-    DEV_VAL = 3
-    
-    nrows, ncols = data.shape
-    result = np.zeros((nrows, ncols), dtype=np.uint8)
-    radius = window_size // 2
-
-    for i in prange(nrows):
-        for j in range(ncols):
-            # Skip if center pixel is missing
-            if data[i, j] == 0:
-                continue
-
-            # 1. Count pixels in window
-            n_agr = 0
-            n_for = 0
-            n_dev = 0
-
-            r0, r1 = i - radius, i + radius + 1
-            c0, c1 = j - radius, j + radius + 1
-
-            for wi in range(r0, r1):
-                for wj in range(c0, c1):
-                    # Boundary check
-                    if 0 <= wi < nrows and 0 <= wj < ncols:
-                        v = data[wi, wj]
-                        if v == AGR_VAL:
-                            n_agr += 1
-                        elif v == NAT_VAL:
-                            n_for += 1
-                        elif v == DEV_VAL:
-                            n_dev += 1
-            
-            n_valid = n_agr + n_for + n_dev
-            if n_valid == 0:
-                continue
-
-            # 2. Integer Decision Tree Setup
-            f10 = n_for * 10
-            a10 = n_agr * 10
-            d10 = n_dev * 10
-            
-            # Multipliers for p_x threshold checks
-            v1 = n_valid;     v2 = n_valid * 2; v3 = n_valid * 3
-            v4 = n_valid * 4; v5 = n_valid * 5; v6 = n_valid * 6
-            v7 = n_valid * 7; v8 = n_valid * 8; v9 = n_valid * 9
-
-            code = 0
-
-            # --- Pure Corners ---
-            if n_for == n_valid:   code = 170
-            elif n_dev == n_valid: code = 190
-            elif n_agr == n_valid: code = 180
-
-            # --- Decision Tree Logic ---
-            elif f10 < v1:
-                if a10 < v1:    code = 191 if d10 >= v9 else 192
-                elif a10 < v2:  code = 71  if d10 >= v8 else 72
-                elif a10 < v3:  code = 73  if d10 >= v7 else 74
-                elif a10 < v4:  code = 75  if d10 >= v6 else 131
-                elif a10 < v5:  code = 132 if d10 >= v5 else 133
-                elif a10 < v6:  code = 134 if d10 >= v4 else 135
-                elif a10 < v7:  code = 45  if d10 >= v3 else 44
-                elif a10 < v8:  code = 43  if d10 >= v2 else 42
-                elif a10 < v9:  code = 41  if d10 >= v1 else 182
-                else:           code = 181
-
-            elif f10 < v2:
-                if a10 < v1:    code = 61  if d10 >= v8 else 62
-                elif a10 < v2:  code = 111 if d10 >= v7 else 112
-                elif a10 < v3:  code = 114 if d10 >= v6 else 200
-                elif a10 < v4:  code = 201 if d10 >= v5 else 202
-                elif a10 < v5:  code = 203 if d10 >= v4 else 204
-                elif a10 < v6:  code = 205 if d10 >= v3 else 206
-                elif a10 < v7:  code = 103 if d10 >= v2 else 102
-                elif a10 < v8:  code = 101 if d10 >= v1 else 52
-                else:           code = 51
-
-            elif f10 < v3:
-                if a10 < v1:    code = 63  if d10 >= v7 else 64
-                elif a10 < v2:  code = 113 if d10 >= v6 else 222
-                elif a10 < v3:  code = 223 if d10 >= v5 else 224
-                elif a10 < v4:  code = 225 if d10 >= v4 else 226
-                elif a10 < v5:  code = 227 if d10 >= v3 else 228
-                elif a10 < v6:  code = 207 if d10 >= v2 else 208
-                elif a10 < v7:  code = 104 if d10 >= v1 else 54
-                else:           code = 53
-
-            elif f10 < v4:
-                if a10 < v1:    code = 65  if d10 >= v6 else 155
-                elif a10 < v2:  code = 221 if d10 >= v5 else 220
-                elif a10 < v3:  code = 235 if d10 >= v4 else 234
-                elif a10 < v4:  code = 236 if d10 >= v3 else 230
-                elif a10 < v5:  code = 229 if d10 >= v2 else 210
-                elif a10 < v6:  code = 209 if d10 >= v1 else 141
-                else:           code = 55
-
-            elif f10 < v5:
-                if a10 < v1:    code = 154 if d10 >= v5 else 153
-                elif a10 < v2:  code = 219 if d10 >= v4 else 218
-                elif a10 < v3:  code = 233 if d10 >= v3 else 232
-                elif a10 < v4:  code = 231 if d10 >= v2 else 212
-                elif a10 < v5:  code = 211 if d10 >= v1 else 143
-                else:           code = 142
-
-            elif f10 < v6:
-                if a10 < v1:    code = 152 if d10 >= v4 else 151
-                elif a10 < v2:  code = 217 if d10 >= v3 else 216
-                elif a10 < v3:  code = 215 if d10 >= v2 else 214
-                elif a10 < v4:  code = 213 if d10 >= v1 else 145
-                else:           code = 144
-
-            elif f10 < v7:
-                if a10 < v1:    code = 95  if d10 >= v3 else 94
-                elif a10 < v2:  code = 124 if d10 >= v2 else 122
-                elif a10 < v3:  code = 123 if d10 >= v1 else 84
-                else:           code = 85
-
-            elif f10 < v8:
-                if a10 < v1:    code = 93  if d10 >= v2 else 92
-                elif a10 < v2:  code = 121 if d10 >= v1 else 82
-                else:           code = 83
-
-            elif f10 < v9:
-                if a10 < v1:    code = 91  if d10 >= v1 else 172
-                else:           code = 81
-            else:
-                code = 171
-
-            result[i, j] = np.uint8(code)
-
-    return result
-
+    return _window_kernel(data, window_size, _K_LM, 1, 4, 0, _n_blocks(data))
 
 
 ##########################
@@ -915,24 +652,26 @@ def compute_spa(input_arr, s, n_classes):
     FG_mask = (padded == FOREGROUND)
     NoData_mask = (padded == MISSING_IN)
 
+    # Distance tests below use the exact squared Euclidean distance:
+    # dist <= threshold  <=>  dist^2 <= threshold^2 (computed in parallel on
+    # whole image lines, see _within_sq_dist; no tiling).
+    t2 = float(threshold) * float(threshold)
+
     # EXPAND DATA to MISSING
-    dist_to_fg = distance_transform_edt(~FG_mask)
-    padded[NoData_mask & (dist_to_fg <= threshold)] = FOREGROUND
-    padded[NoData_mask & (dist_to_fg > threshold)] = BACKGROUND
-    
-    del dist_to_fg, NoData_mask, FG_mask
+    near_fg = _within_sq_dist(FG_mask, t2)          # dist to FG <= threshold
+    padded[NoData_mask & near_fg] = FOREGROUND
+    padded[NoData_mask & ~near_fg] = BACKGROUND
+
+    del near_fg, NoData_mask, FG_mask
     gc.collect()
 
     # CORE & BASIC MASKS
     FG = (padded == FOREGROUND)
-    dist_fg = distance_transform_edt(FG)
-    CORE = dist_fg > threshold
-    del dist_fg
+    CORE = ~_within_sq_dist(~FG, t2)                # dist to non-FG > threshold
 
-    # ISLET
-    CORE_PATCHES = reconstruction(CORE.astype(np.uint8), FG.astype(np.uint8))
-    ISLET = FG & ~(CORE_PATCHES.astype(bool))
-    del CORE_PATCHES
+    # ISLET: Foreground patches (8-connected) that contain no Core pixel.
+    # Equivalent to the binary morphological reconstruction of CORE under FG.
+    ISLET = FG & ~_regions_with_seed(FG, CORE)
 
     # INTERNAL TERRITORY
     BG = (padded == BACKGROUND)
@@ -944,18 +683,16 @@ def compute_spa(input_arr, s, n_classes):
     BG_INCORE = BG_INT & CORE_FILL
     del BG_INT
 
-    dist_bg_incore = distance_transform_edt(~BG_INCORE)
-    BG_INCORE_DIL = dist_bg_incore <= threshold
+    BG_INCORE_DIL = _within_sq_dist(BG_INCORE, t2)
     INTERNAL = binary_fill_holes(BG_INCORE_DIL, structure=np.ones((3,3)))
-    del dist_bg_incore
 
     # INTERNAL CORE
     CORE_INT = CORE & INTERNAL
-    CORE_INT_DIL = distance_transform_edt(~CORE_INT) <= threshold
+    CORE_INT_DIL = _within_sq_dist(CORE_INT, t2)
     del CORE_INT, INTERNAL
 
     # HALO
-    HALO_MASK = distance_transform_edt(~CORE) <= threshold
+    HALO_MASK = _within_sq_dist(CORE, t2)
 
     # FINAL ASSEMBLY
     out_padded = _assemble_spa(
@@ -967,6 +704,117 @@ def compute_spa(input_arr, s, n_classes):
     r0, r1 = frame, frame + input_arr.shape[0]
     c0, c1 = frame, frame + input_arr.shape[1]
     return out_padded[r0:r1, c0:c1]
+
+
+@njit(parallel=True, cache=True)
+def _within_sq_dist(target, t2):
+    """
+    Exact Euclidean distance test, computed in parallel.
+
+    Returns a boolean array: True where the Euclidean distance from the
+    pixel to the nearest True pixel of `target` is <= sqrt(t2) (target
+    pixels themselves are at distance 0). Without any target pixel the
+    result is all False.
+
+    Separable exact squared EDT (Felzenszwalb & Huttenlocher 2012):
+      pass 1: 1D distance along each full column (columns in parallel);
+      pass 2: lower envelope of parabolas along each full row (rows in
+              parallel), using the pass-1 values of all columns.
+    Every line spans the whole image, so the nearest target pixel can be
+    anywhere: there is no tiling and the result is identical to a serial
+    computation. Squared distances are integers (int64), so the test
+    d^2 <= t2 involves no floating-point rounding of the distance.
+    """
+    rows, cols = target.shape
+    INF = np.int32(-1)                          # "no target in this column"
+    g = np.empty((rows, cols), dtype=np.int32)
+
+    # Pass 1: vertical distances, one full column per task
+    for j in prange(cols):
+        last = -1
+        for i in range(rows):                   # top -> bottom
+            if target[i, j]:
+                last = i
+            g[i, j] = (i - last) if last >= 0 else INF
+        last = -1
+        for i in range(rows - 1, -1, -1):       # bottom -> top
+            if target[i, j]:
+                last = i
+            if last >= 0:
+                d = last - i
+                if g[i, j] == INF or d < g[i, j]:
+                    g[i, j] = d
+
+    out = np.zeros((rows, cols), dtype=np.bool_)
+
+    # Pass 2: lower envelope of parabolas f(q) = g[i, q]^2, one full row per task
+    for i in prange(rows):
+        v = np.empty(cols, dtype=np.int64)      # parabola apex positions
+        z = np.empty(cols + 1, dtype=np.float64)  # envelope boundaries
+        k = -1
+        for q in range(cols):
+            gq = g[i, q]
+            if gq == INF:
+                continue
+            fq = np.int64(gq) * gq + np.int64(q) * q
+            if k < 0:
+                k = 0
+                v[0] = q
+                z[0] = -np.inf
+                z[1] = np.inf
+                continue
+            # Drop parabolas hidden by the new one (z[0] = -inf stops at k = 0)
+            while True:
+                p = v[k]
+                gp = np.int64(g[i, p])
+                fp = gp * gp + p * p
+                s = (fq - fp) / (2.0 * (q - p))   # intersection with parabola p
+                if s <= z[k]:
+                    k -= 1
+                else:
+                    break
+            k += 1
+            v[k] = q
+            z[k] = s
+            z[k + 1] = np.inf
+        if k < 0:
+            continue                            # no target pixel in the whole image
+        m = 0
+        for j in range(cols):
+            while z[m + 1] < j:
+                m += 1
+            p = v[m]
+            gp = np.int64(g[i, p])
+            dj = np.int64(j) - p
+            out[i, j] = (dj * dj + gp * gp) <= t2
+    return out
+
+
+def _regions_with_seed(mask, seed):
+    """
+    Boolean array of the 8-connected regions of `mask` that contain at
+    least one `seed` pixel (seed must lie within mask). Equivalent to the
+    binary morphological reconstruction by dilation of `seed` under
+    `mask` with a 3x3 neighbourhood, without its global sort.
+    """
+    labels, n = label(mask, structure=np.ones((3, 3), dtype=bool))
+    return _keep_seeded_labels(labels, seed, n)
+
+
+@njit(parallel=True, cache=True)
+def _keep_seeded_labels(labels, seed, n):
+    rows, cols = labels.shape
+    keep = np.zeros(n + 1, dtype=np.bool_)
+    for i in range(rows):                       # serial: race-free marking
+        for j in range(cols):
+            if seed[i, j]:
+                keep[labels[i, j]] = True
+    keep[0] = False
+    out = np.empty((rows, cols), dtype=np.bool_)
+    for i in prange(rows):
+        for j in range(cols):
+            out[i, j] = keep[labels[i, j]]
+    return out
 
 
 @njit(parallel=True, cache=True)
@@ -1107,7 +955,7 @@ def _create_mask(input_array, targets):
 ###############################
 
 
-@njit("uint8[:,:](uint8[:,:], uint8[:,:], int64[:,:], boolean)", cache=True)
+@njit("uint8[:,:](uint8[:,:], uint8[:,:], int64[:,:], boolean)", parallel=True, cache=True)
 def compute_fos_change(chunk_a, chunk_b, local_matrix, compute_stats):
     """
     Processes a matching spatial window chunk from two tracking rasters to 
@@ -1137,32 +985,48 @@ def compute_fos_change(chunk_a, chunk_b, local_matrix, compute_stats):
     nrows, ncols = chunk_a.shape
     out = np.zeros((nrows, ncols), dtype=np.uint8)
 
-    # Standard range is optimal for block-window streaming
-    for i in range(nrows):
-        for j in range(ncols):
-            a_val = chunk_a[i, j]
-            b_val = chunk_b[i, j]
+    # Rows are split into chunks processed in parallel; each chunk counts its
+    # transitions in its own matrix, summed into local_matrix at the end
+    # (exact integer counts, independent of the number of chunks).
+    nchunks = max(1, min(nrows, 64))
+    part = np.zeros((nchunks, 107, 107), dtype=np.int64)
 
-            # Track global statistics concurrently
-            if compute_stats:
-                if a_val <= 106 and b_val <= 106:
-                    local_matrix[a_val, b_val] += 1
+    for k in prange(nchunks):
+        i_lo = (k * nrows) // nchunks
+        i_hi = ((k + 1) * nrows) // nchunks
+        for i in range(i_lo, i_hi):
+            for j in range(ncols):
+                a_val = chunk_a[i, j]
+                b_val = chunk_b[i, j]
 
-            # Your exact 7-tier matrix overlay logic
-            if a_val == 101 and b_val == 101:
-                out[i, j] = 252
-            elif a_val == 101 and b_val <= 100:
-                out[i, j] = 250
-            elif a_val <= 101 and b_val == 101:
-                out[i, j] = 251
-            elif a_val <= 100 and b_val <= 100:
-                out[i, j] = 100 + a_val - b_val
-            elif a_val == 102 or b_val == 102:
-                out[i, j] = 254
-            elif a_val in (105, 106) or b_val in (105, 106):
-                out[i, j] = 253
-            else:
-                out[i, j] = 102
+                # Track global statistics concurrently
+                if compute_stats:
+                    if a_val <= 106 and b_val <= 106:
+                        part[k, a_val, b_val] += 1
+
+                # Your exact 7-tier matrix overlay logic
+                if a_val == 101 and b_val == 101:
+                    out[i, j] = 252
+                elif a_val == 101 and b_val <= 100:
+                    out[i, j] = 250
+                elif a_val <= 101 and b_val == 101:
+                    out[i, j] = 251
+                elif a_val <= 100 and b_val <= 100:
+                    out[i, j] = 100 + a_val - b_val
+                elif a_val == 102 or b_val == 102:
+                    out[i, j] = 254
+                elif a_val in (105, 106) or b_val in (105, 106):
+                    out[i, j] = 253
+                else:
+                    out[i, j] = 102
+
+    if compute_stats:
+        for a in prange(107):
+            for b in range(107):
+                s = np.int64(0)
+                for k in range(nchunks):
+                    s += part[k, a, b]
+                local_matrix[a, b] += s
 
     return out
 

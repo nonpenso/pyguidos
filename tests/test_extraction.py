@@ -22,7 +22,10 @@ def spatial_data(tmp_path):
         dst.write(np.ones((100, 100), dtype=np.uint8), 1)
         dst.update_tags(TIFFTAG_IMAGEDESCRIPTION="GTB_MSPA;1;1;1;1;1;1")
     
-    return raster_path, tmp_path / "output"
+    # output_dir must already exist (extract_by_polygon does not create it)
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
+    return raster_path, out_dir
 
 # 1. TEST: Same CRS Matching
 def test_extract_same_crs(spatial_data, tmp_path):
@@ -118,7 +121,7 @@ def test_extract_missing_raster_crs(tmp_path, monkeypatch):
     pyogrio.write_dataframe(gdf, str(vec_path))
 
     with pytest.raises(SystemExit) as e:
-        extract_by_polygon(str(vec_path), str(raster_path), str(tmp_path / "out"), "id")
+        extract_by_polygon(str(vec_path), str(raster_path), str(tmp_path), "id")
     assert "defined Projection" in str(e.value)
 
 # 8. TEST: Missing Vector CRS
@@ -138,3 +141,44 @@ def test_extract_missing_vector_crs(spatial_data, tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as e:
         extract_by_polygon(str(vec_path), str(raster_path), str(out_dir), "id")
     assert "defined Projection" in str(e.value)
+
+
+# TEST: Non-existing output_dir must stop the run (it is never created)
+def test_extract_missing_output_dir_raises(spatial_data, tmp_path):
+    raster_path, _ = spatial_data
+    missing = tmp_path / "does_not_exist"
+    with pytest.raises(FileNotFoundError):
+        extract_by_polygon(str(tmp_path / "any.gpkg"), str(raster_path),
+                           str(missing), "id")
+    assert not missing.exists()
+
+
+# TEST: Duplicate IDs must not overwrite each other
+def test_extract_duplicate_ids_get_suffix(spatial_data, tmp_path):
+    raster_path, out_dir = spatial_data
+    vec_path = tmp_path / "dup_ids.gpkg"
+    p1 = Polygon([(4000010, 2999990), (4000040, 2999990), (4000040, 2999960), (4000010, 2999960)])
+    p2 = Polygon([(4000050, 2999990), (4000080, 2999990), (4000080, 2999960), (4000050, 2999960)])
+    p3 = Polygon([(4000010, 2999950), (4000040, 2999950), (4000040, 2999920), (4000010, 2999920)])
+    # "A/B" and "A:B" both sanitize to "A_B"
+    gdf = gpd.GeoDataFrame({'id': ['dup', 'dup', 'A/B'], 'geometry': [p1, p2, p3]}, crs="EPSG:3035")
+    pyogrio.write_dataframe(gdf, str(vec_path))
+
+    extract_by_polygon(str(vec_path), str(raster_path), str(out_dir), id_field="id")
+    assert (out_dir / "dup.tif").exists()
+    assert (out_dir / "dup_2.tif").exists()
+    assert (out_dir / "A_B.tif").exists()
+
+
+# TEST: Features with NULL geometry are skipped, not crashing
+def test_extract_null_geometry_skipped(spatial_data, tmp_path, capsys):
+    raster_path, out_dir = spatial_data
+    vec_path = tmp_path / "null_geom.gpkg"
+    poly = Polygon([(4000010, 2999990), (4000040, 2999990), (4000040, 2999960), (4000010, 2999960)])
+    gdf = gpd.GeoDataFrame({'id': ['ok', 'empty'], 'geometry': [poly, None]}, crs="EPSG:3035")
+    pyogrio.write_dataframe(gdf, str(vec_path))
+
+    extract_by_polygon(str(vec_path), str(raster_path), str(out_dir), id_field="id")
+    assert (out_dir / "ok.tif").exists()
+    assert not (out_dir / "empty.tif").exists()
+    assert "missing (NULL)" in capsys.readouterr().out

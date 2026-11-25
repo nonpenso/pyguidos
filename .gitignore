@@ -55,3 +55,6 @@ docs/coverage/
 work/
 pyguidos_work/
 docs/_build/
+
+# Copied from notebooks/ by docs/conf.py at every docs build
+docs/notebooks/

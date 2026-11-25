@@ -11,14 +11,14 @@ authors:
     given-names: "Pierre"
     affiliation: "European Commission, Joint Research Centre"
 title: "pyGuidos: A Python implementation of Guidos spatial pattern analysis"
-version: 2.6.4
+version: 2.6.5
 date-released: 2026-11-06
 license: GPL-3.0-or-later
 url: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
 repository-code: "https://code.europa.eu/jrc-forest/guidos/pyguidos"
 abstract: >-
  Forests and other natural habitats are increasingly threatened by fragmentation, degradation, and land-use change. Quantifying these processes requires robust, spatially explicit indicators derived from land cover raster maps. The European Commission's Joint Research Centre (JRC) developed the Guidos ecosystem to address these challenges, starting with GuidosToolbox (GTB), a desktop application, followed by the GuidosToolbox Workbench (GWB), a command-line interface designed for automated processing on Linux x86_64 systems. While powerful, both legacy applications rely on the Interactive Data Language (IDL) and compiled binary wrappers, introducing proprietary licensing constraints, limited operating system compatibility, and restricted CPU architecture support.
- To overcome these barriers and provide open-source portability, we present pyGuidos, a cross-platform Python implementation of selected Guidos raster analysis modules. pyGuidos translates core analytical routines into native Python for seamless integration into modern geospatial workflows. The current version of pyGuidos (2.6.4) implements seven pattern analysis functions, six in native Python, while maintaining high-performance execution through an embedded C-module for Morphological Spatial Pattern Analysis. pyGuidos enables scalable raster analysis across diverse operating systems without proprietary runtime dependencies.
+ To overcome these barriers and provide open-source portability, we present pyGuidos, a cross-platform Python implementation of selected Guidos raster analysis modules. pyGuidos translates core analytical routines into native Python for seamless integration into modern geospatial workflows. The current version of pyGuidos (2.6.5) implements eight pattern analysis functions, seven in native Python, while maintaining high-performance execution through an embedded C-module for Morphological Spatial Pattern Analysis. pyGuidos enables scalable raster analysis across diverse operating systems without proprietary runtime dependencies.
 keywords:
   - GIS
   - GuidosToolbox
@@ -45,6 +45,6 @@ preferred-citation:
   title: "pyGuidos: A Python implementation of Guidos spatial pattern analysis"
   journal: "JOSS"
   year: 2026
-  volume: XX, XX
-  pages: X-X
-  doi: "10.1016/XXXX"
+  volume: 
+  pages: 
+  doi: ""

@@ -275,11 +275,11 @@ def test_compute_fed_all_background_around_fg():
     """
     3x3 window: center is FG, 8 neighbours are BG.
     4-connected: 12 total edges.
-    FG-BG edges: center shares 4 edges with BG neighbours â†’ 4 Ã— 0.5 = 2.0
-    BG-BG edges: remaining 8 edges â†’ 0
-    weighted_num (integer): 4 Ã— 1 = 4 (since weight 0.5 Ã— 2 = 1 in integer math)
+    FG-BG edges: center shares 4 edges with BG neighbours -> 4 x 0.5 = 2.0
+    BG-BG edges: remaining 8 edges -> 0
+    weighted_num (integer): 4 x 1 = 4 (since weight 0.5 x 2 = 1 in integer math)
     Plus BG-BG pairs that don't involve center also have BG-BG = 0
-    Result = 4 * 100 / (2 * 12) = 400 / 24 â‰ˆ 16-17%
+    Result = 4 * 100 / (2 * 12) = 400 / 24 ca. 16-17%
     """
     data = np.full((3, 3), BACKGROUND, dtype=np.uint8)
     data[1, 1] = FOREGROUND
@@ -303,7 +303,7 @@ def test_compute_fed_missing_preserved():
     data = np.full((3, 3), MISSING, dtype=np.uint8)
     data[1, 1] = FOREGROUND
     result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
-    # All pairs involve missing â†’ total_edges=0 â†’ OUT_MISSING
+    # All pairs involve missing -> total_edges=0 -> OUT_MISSING
     assert result[1, 1] == 102
 
 
@@ -636,7 +636,7 @@ class TestComputeFADGray:
     def test_threshold_applied(self):
         """With threshold=50, center pixel (80) is processed but all window
         values contribute as-is. 3x3 window: 8 pixels at 30 + 1 at 80 = 320.
-        FAD = 320 / (9*100) = 35.6% â†’ rounds to 36."""
+        FAD = 320 / (9*100) = 35.6% -> rounds to 36."""
         data = np.full((5, 5), 30, dtype=np.uint8)
         data[2, 2] = 80  # Only center is above threshold
         result = engine.compute_FAD_gray(data, window_size=3, handle_missing=1, for_threshold=50)
@@ -765,7 +765,7 @@ def test_fac_sp4_pairs_excluded():
     data[0, :] = 4  # Top row is SP4
 
     result = engine.compute_FAC(data, window_size=3, handle_missing=1, connectivity=4)
-    # All valid pairs (excluding SP4) are FG-FG â†’ 100%
+    # All valid pairs (excluding SP4) are FG-FG -> 100%
     assert result[1, 1] == 100
 
 
@@ -777,5 +777,143 @@ def test_fed_sp4_pairs_excluded():
     data[0, 0] = 4  # One SP4 pixel
 
     result = engine.compute_FED(data, window_size=3, handle_missing=1, connectivity=4)
-    # All valid pairs are FG-FG â†’ 100%
+    # All valid pairs are FG-FG -> 100%
     assert result[1, 1] == 100
+
+
+# =============================================================================
+# SPA helpers: parallel exact distance test and seeded region selection
+# =============================================================================
+
+def test_within_sq_dist_matches_scipy_edt():
+    """Parallel exact distance test == scipy EDT threshold (random masks)."""
+    from scipy.ndimage import distance_transform_edt
+    rng = np.random.default_rng(0)
+    for shape in [(1, 1), (1, 17), (23, 1), (37, 53), (200, 131)]:
+        for dens in (0.001, 0.05, 0.5, 1.0):
+            target = rng.random(shape) < dens
+            if not target.any():
+                continue
+            for s in (1, 3, 10):
+                t = s + 0.98
+                expected = distance_transform_edt(~target) <= t
+                assert np.array_equal(engine._within_sq_dist(target, t * t), expected)
+
+
+def test_within_sq_dist_without_target_is_false():
+    """No target pixel -> no pixel is within the distance."""
+    out = engine._within_sq_dist(np.zeros((5, 7), dtype=bool), 9.0)
+    assert not out.any()
+
+
+def test_regions_with_seed_matches_reconstruction():
+    """Seeded 8-connected regions == binary morphological reconstruction."""
+    from skimage.morphology import reconstruction
+    rng = np.random.default_rng(1)
+    for dens in (0.0, 0.3, 0.6, 1.0):
+        mask = rng.random((120, 90)) < dens
+        seed = mask & (rng.random(mask.shape) < 0.05)
+        expected = reconstruction(seed.astype(np.uint8), mask.astype(np.uint8)).astype(bool)
+        assert np.array_equal(engine._regions_with_seed(mask, seed), expected)
+
+
+# =============================================================================
+# Moving-window kernels vs a plain per-pixel reference (running-sum engine)
+# =============================================================================
+
+def _naive_window(data, w, kind, hm=1, conn=4, thr=0):
+    """Plain per-pixel implementation of the window rules (slow, test only)."""
+    nr, nc = data.shape
+    R = w // 2
+    out = np.zeros((nr, nc), dtype=np.uint8) if kind == "LM" else np.full((nr, nc), 102, np.uint8)
+    tpe = 2 * (w - 1) * (2 * w - 1) if conn == 8 else 2 * w * (w - 1)
+    offs = [(0, 1), (1, 0)] + ([(1, 1), (1, -1)] if conn == 8 else [])
+    for i in range(nr):
+        for j in range(nc):
+            v = int(data[i, j])
+            r0, r1, c0, c1 = max(0, i - R), min(nr, i + R + 1), max(0, j - R), min(nc, j + R + 1)
+            win = data[r0:r1, c0:c1].astype(np.int64)
+            if kind == "LM":
+                n = [int((win == k).sum()) for k in (1, 2, 3)]
+                if v != 0 and sum(n) > 0:
+                    out[i, j] = engine._lm_code(n[0], n[1], n[2])
+                continue
+            if kind in ("FAD", "FAC", "FED"):
+                codes = {1: 101, 3: 105, 4: 106}
+                if v in codes:
+                    out[i, j] = codes[v]; continue
+                if v != 2:
+                    continue
+            else:
+                if v > 100:
+                    continue
+                if v < thr:
+                    out[i, j] = 101; continue
+            if kind == "FAD":
+                num, den = int((win == 2).sum()) * 200, int(((win != 0) & (win != 4)).sum())
+                den = den if hm == 1 else w * w
+            elif kind == "FAD_gray":
+                valid = win <= 100
+                num, den = int(win[valid].sum()) * 200, int(valid.sum()) * 100
+                den = den if hm == 1 else w * w * 100
+            else:
+                num = cnt = 0
+                for a in range(r0, r1):
+                    for b in range(c0, c1):
+                        for da, db in offs:
+                            a2, b2 = a + da, b + db
+                            if not (r0 <= a2 < r1 and c0 <= b2 < c1):
+                                continue
+                            p, q = int(data[a, b]), int(data[a2, b2])
+                            if kind in ("FAC", "FED"):
+                                if p in (0, 4) or q in (0, 4):
+                                    continue
+                                cnt += 1
+                                if kind == "FAC":
+                                    num += (p == 2 and q == 2)
+                                else:
+                                    num += 2 if (p == 2 and q == 2) else (1 if (p == 2) != (q == 2) else 0)
+                            else:
+                                if p > 100 or q > 100:
+                                    continue
+                                cnt += 1
+                                if kind == "FED_gray" or (p > 0 and q > 0):
+                                    num += p + q
+                scale = {"FAC": (200, 1), "FED": (100, 1), "FAC_gray": (200, 200), "FED_gray": (200, 200)}[kind]
+                num, den = num * scale[0], (cnt if hm == 1 else tpe) * scale[1]
+            out[i, j] = min((num + den) // (2 * den), 100) if den > 0 else 102
+    return out
+
+
+@pytest.mark.parametrize("kind", ["FAD", "FAC", "FED", "FAD_gray", "FAC_gray", "FED_gray", "LM"])
+def test_window_kernels_match_naive_reference(kind):
+    """Running-sum kernels == plain per-pixel loops (random maps, borders, options)."""
+    rng = np.random.default_rng(3)
+    for shape in [(1, 1), (4, 9), (13, 11)]:
+        if kind == "LM":
+            data = rng.integers(0, 4, size=shape).astype(np.uint8)
+        elif kind.endswith("gray"):
+            data = rng.integers(0, 101, size=shape).astype(np.uint8)
+            data[rng.random(shape) < 0.1] = 255
+        else:
+            data = rng.integers(0, 5, size=shape).astype(np.uint8)
+        for w in (3, 5, 15):
+            for hm in ((1,) if kind == "LM" else (1, 2)):
+                for conn in ((4, 8) if kind in ("FAC", "FED", "FAC_gray", "FED_gray") else (4,)):
+                    thr = 30 if kind.endswith("gray") else 0
+                    expected = _naive_window(data, w, kind, hm, conn, thr)
+                    if kind == "FAD":
+                        got = engine.compute_FAD(data, w, hm)
+                    elif kind == "FAC":
+                        got = engine.compute_FAC(data, w, hm, conn)
+                    elif kind == "FED":
+                        got = engine.compute_FED(data, w, hm, conn)
+                    elif kind == "FAD_gray":
+                        got = engine.compute_FAD_gray(data, w, hm, thr)
+                    elif kind == "FAC_gray":
+                        got = engine.compute_FAC_gray(data, w, hm, thr, conn)
+                    elif kind == "FED_gray":
+                        got = engine.compute_FED_gray(data, w, hm, thr, conn)
+                    else:
+                        got = engine.compute_LM(data, w)
+                    assert np.array_equal(got, expected), (kind, shape, w, hm, conn)

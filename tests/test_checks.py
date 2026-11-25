@@ -72,6 +72,27 @@ class TestValidateWsize:
         with pytest.raises(SystemExit):
             checks.validate_wsize(None)
 
+    def test_numpy_integer_accepted(self):
+        """NumPy integers (e.g. from arrays) must be accepted."""
+        assert checks.validate_wsize(np.int64(7)) is None
+        assert checks.validate_wsize(np.int32(27)) is None
+
+    def test_bool_raises(self):
+        """Booleans are not valid window sizes."""
+        with pytest.raises(SystemExit):
+            checks.validate_wsize(True)
+
+
+class TestIsInteger:
+
+    def test_python_and_numpy_ints(self):
+        for v in [0, 7, np.int8(3), np.int64(7), np.uint8(5)]:
+            assert checks.is_integer(v)
+
+    def test_rejected_types(self):
+        for v in [True, np.bool_(True), 7.0, np.float64(7), "7", None]:
+            assert not checks.is_integer(v)
+
 
 # =============================================================================
 # validate_fmap_input
@@ -298,10 +319,15 @@ class TestValidateAccParams:
         result = checks.validate_acc_params([1000, 10, 100])
         assert result == [10, 100, 1000]
 
-    def test_duplicates_removed(self):
-        """Duplicate thresholds must be removed."""
-        result = checks.validate_acc_params([100, 100, 1000])
-        assert result == [100, 1000]
+    def test_duplicates_raise(self):
+        """Duplicate thresholds must be rejected."""
+        with pytest.raises(SystemExit):
+            checks.validate_acc_params([100, 100, 1000])
+
+    def test_unsorted_unique_returns_sorted(self):
+        """Unique but unsorted thresholds must be returned sorted."""
+        result = checks.validate_acc_params([1000, 10, 100])
+        assert result == [10, 100, 1000]
 
     def test_tuple_input(self):
         """Tuple input must be accepted."""
@@ -312,6 +338,17 @@ class TestValidateAccParams:
         """Numpy array input must be accepted."""
         result = checks.validate_acc_params(np.array([100, 1000, 10000]))
         assert result == [100, 1000, 10000]
+        assert all(type(t) is int for t in result)
+
+    def test_float_threshold_raises(self):
+        """Float thresholds (e.g. from a float array) must be rejected."""
+        with pytest.raises(SystemExit):
+            checks.validate_acc_params(np.array([100.0, 1000.0]))
+
+    def test_bool_threshold_raises(self):
+        """Booleans are not valid thresholds."""
+        with pytest.raises(SystemExit):
+            checks.validate_acc_params([True, 100])
 
     def test_empty_raises(self):
         """Empty thresholds must be rejected."""
@@ -348,10 +385,15 @@ class TestValidateAccParams:
         with pytest.raises(SystemExit):
             checks.validate_acc_params("100")
 
-    def test_six_values_with_dups_reducing_to_five_passes(self):
-        """6 values with duplicates reducing to 5 unique must pass."""
-        result = checks.validate_acc_params([10, 10, 100, 1000, 10000, 100000])
-        assert len(result) == 5
+    def test_five_unique_values_passes(self):
+        """Exactly 5 unique thresholds (the maximum) must pass."""
+        result = checks.validate_acc_params([10, 100, 1000, 10000, 100000])
+        assert result == [10, 100, 1000, 10000, 100000]
+
+    def test_six_values_with_dups_raises(self):
+        """Duplicates are rejected even if the unique count would be valid."""
+        with pytest.raises(SystemExit):
+            checks.validate_acc_params([10, 10, 100, 1000, 10000, 100000])
 
 
 

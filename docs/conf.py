@@ -19,7 +19,7 @@ if os.path.exists(root_notebooks):
 project = "pyGuidos"
 copyright = "European Union, 2026, Giovanni Caudullo, Peter Vogt, Pierre Soille"
 author = "Giovanni Caudullo, Peter Vogt, Pierre Soille"
-release = "2.6.4"
+release = "2.6.5"
 
 extensions = [
     "sphinx.ext.autodoc",

@@ -70,7 +70,7 @@ Functions
         >>> import pyguidos as pg
         >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
         >>> acc_result = pg.acc(in_tiff=forest_map,
-        ... thresholds=[10, 100, 1000, 10000], outdir="output/",
+        ... thresholds=[10, 100, 1000, 10000], outdir="path/to/existing_folder/",
         ... statists=True, stat_files=True, verb=False)
         >>> acc_result['output stats']['class pxl']
         {'1 [1-10]': 104,
@@ -79,7 +79,7 @@ Functions
          '4 [1001-10000]': 22617,
          '5 [>10000]': 228172}
         >>> acc_result['output paths']['path tif']
-        'output/CLC2018_corsica_FNF_acc.tif'
+        'path/to/existing_folder/CLC2018_corsica_FNF_acc.tif'
 
 
 .. py:function:: pyguidos.acc_stats(acc_tiff, stat_files=True, outdir=None, source_tiff=None)
@@ -120,9 +120,9 @@ Functions
 
    .. code-block:: python
 
-        >>> acc_tiff = 'output/my_map_acc.tif'
+        >>> acc_tiff = 'path/to/existing_folder/my_map_acc.tif'
         >>> acc_stats = pg.acc_stats(acc_tiff=acc_tiff, stat_files=True,
-        ... outdir='output/', source_tiff="my_map.tif")
+        ... outdir='path/to/existing_folder/', source_tiff="my_map.tif")
         >>> acc_stats['input stats']['foreground pxl']
         300737
 

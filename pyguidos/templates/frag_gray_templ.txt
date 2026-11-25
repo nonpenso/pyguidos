@@ -17,7 +17,7 @@ Background [pixel=0]: {in_backg_pxl}
 Missing/Nodata [pixel=255]: {miss_pxl}
 
 ================================================================================
-PARAMETRES
+PARAMETERS
 ================================================================================
 Method: {used_method}
 Pixel connectivity: {pixel_conn}
@@ -34,9 +34,11 @@ Output image: {output_file}
 Foreground (thresholded): {out_foreg_pxl}
 Background (thresholded): {out_backg_pxl}
 Reported unit (Background + Foreground): {rep_unit_pxl}
-Foreground proportion [% of Reported unit]: {foreg_area_rel:.4f}
+Foreground proportion [% of Reported unit]: {foreg_area_rel:.3f}
 
-Foreground classes: pixel number and percentage of Foreground area:
+Fragmentation classes of the thresholded Foreground pixels:
+FOS VALUES = connectivity [0-100] of each Foreground pixel in its moving window
+(by Method). PXL = pixels per class; FORGR.% = share of the Foreground.
 ---------------------------------------------------------------------------------
     CLASS         FOS VALUES        PXL     FORGR. %
     Rare          [0-9]     {rare_val}      {rare_pro} 
@@ -45,8 +47,8 @@ Foreground classes: pixel number and percentage of Foreground area:
     Dominant      [60-89]   {domin_val}     {domin_pro}
     Interior      [90-100]  {inter_val}     {inter_pro}
 
-FAD_AV [%]: {fad_av_idx:.4f}
-AVCON [%]: {avcon_idx:.4f}
+FAD_AV [%] (mean FOS value of Foreground pixels): {fad_av_idx:.3f}
+AVCON [%] (sum of FOS values / Reported unit): {avcon_idx:.3f}
 
 Computational time: 
 

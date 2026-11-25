@@ -15,13 +15,13 @@ which are installed automatically with pip:
      - Minimum Version
      - Purpose
    * - numpy
-     - >=2.2
+     - >=2.0
      - Array operations
    * - numba
-     - >0.63
+     - >=0.62
      - NumPy code into machine code
    * - rasterio
-     - >=1.5
+     - >=1.4
      - GeoTIFF reading and writing
    * - scipy
      - >=1.15

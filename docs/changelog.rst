@@ -9,6 +9,58 @@ and pyGuidos uses `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 ----
 
 
+2.6.5 - 2026-11-25
+------------------
+
+**Overview**
+
+Version 2.6.5 is a consistency and robustness release following a full code and documentation review: bug fixes in statistics and reports, stricter and more predictable input/output handling, clearer report templates and aligned documentation.
+
+**Changed**
+
+- Output directories are never created: ``outdir`` (all tools and ``*_stats()`` functions) and ``output_dir`` (``extract_by_polygon()``) must already exist; a missing folder stops the run with ``FileNotFoundError`` before any computation.
+- ``landmos()`` / ``landmos_stats()``: ``'output stats'['pxl numb 19cl']`` now lists all 20 classes with labelled keys (``'0-NoData'``, ``'1-A'``, ... ``'19-DD'``); ``'pxl numb 103cl'`` keeps integer keys.
+- Report templates: concise captions explaining each table and index; Landscape Mosaic 19-class table gains a PIXEL NUMBER column; all percentages and indices use 3 decimals.
+- Notebooks: default output folder moved from the package location to ``~/pyguidos_output``, configuration stored in ``~/.pyguidos_notebook_config`` (writable on Linux, Windows and macOS).
+- Much faster moving-window tools, identical results: FAD/FAC/FED (``frag()``), their grayscale versions (``frag_gray()``) and the Landscape Mosaic (``landmos()``) now share one engine that keeps running window sums over blocks of whole image rows (in parallel, no tiling) instead of re-reading the whole window for every pixel. The cost no longer grows with the window size. Kernels on Norway (360 Mpx): FAD w27 2.6 s -> 0.1 s, FED8 w27 12.6 s -> 0.3 s, FAD w101 30.5 s -> 0.1 s, FAC8 w101 118 s -> 0.3 s; full ``frag()`` FAD w101 34.6 s -> 3.5 s. Output verified pixel-identical to the previous kernels.
+- Multi-core MSPA (``mspa()``) on Linux and Windows, identical results: the OpenMP loops already present in the vendored miallib sources are now enabled at build time (miallib itself is unchanged). Linux: all loops (``-fopenmp``). Windows: classic ``/openmp`` (redistributable ``vcomp140.dll``, bundled in the wheels by ``delvewheel``) for the distance transform, erosions/dilations and ``ced``, through small wrappers in ``pyguidos/_mspa/omp/``. macOS stays single-threaded. Norway (360 Mpx) on Windows: 181 s -> 108 s; output verified identical on 68 parameter/map combinations. ``OMP_NUM_THREADS`` limits the threads; ``PYGUIDOS_NO_OPENMP=1`` forces a serial build. The cibuildwheel test now runs MSPA and a Numba kernel in the same process (``tests/ci_smoke.py``).
+- CPU threads documented: new "CPU cores and threads" section (README and docs) on ``NUMBA_NUM_THREADS`` and ``OMP_NUM_THREADS``.
+- Faster pixel counting and Fragmentation change, identical results: ``utils.get_pxl_freq()`` (used by all statistics) counts in parallel with exact per-thread histograms (Norway uint8 map: 0.78 s -> 0.03 s; patch labels: 0.52 s -> 0.11 s). ``frag_change()`` processes strips of 1024 full rows instead of single 256x256 tiles, with multi-threaded GDAL (de)compression (``NUM_THREADS=ALL_CPUS``) and a parallel change kernel whose transition counts are summed from per-thread matrices (Norway: full ``frag_change()`` 5.6 s -> 2.6 s).
+- Faster SPA (``spa()``), identical results: the five Euclidean distance transforms are replaced by an exact, parallel squared-distance test (whole image lines, no tiling) and the morphological reconstruction by a connected-component selection. About 7-8x faster (Norway, 360 Mpx: 259 s -> 34 s) with lower memory use; output verified pixel-identical to the previous version.
+- Faster ``import pyguidos`` (lazy loading): analysis modules and their heavy dependencies (numba, rasterio, scipy, scikit-image, matplotlib, geopandas) are imported only when a function is first used; ``import pyguidos`` drops from ~2.6 s to ~0.2 s. Usage is unchanged (``pg.frag(...)``, ``from pyguidos import frag``, ``from pyguidos import *``). Tools that draw no plots no longer load matplotlib.
+- Numba threading: the threading layer is now set before Numba is imported, via a priority list (``tbb``/``omp``/``workqueue`` per OS); a user-defined ``NUMBA_THREADING_LAYER`` is respected. The cache folder is passed via ``NUMBA_CACHE_DIR`` (a user-defined value is respected); the unused ``RELEASE_GIL`` setting and the ``pyguidos.config`` attribute were removed.
+- Validation: NumPy integers (e.g. ``np.int64``) are accepted for window size, edge width, thresholds and ``for_threshold``; booleans and floats are rejected. ``acc()`` thresholds must be unique.
+- Vendored ``miallib`` configuration header updated to v2.0.0, matching the vendored sources.
+
+**Fixed**
+
+- ``landmos()`` / ``landmos_stats()`` no longer crash with ``stat_files=False``.
+- ``get_gtb_nodata()`` now knows SPA (129) and Fragmentation change (254) outputs, so ``extract_by_polygon()`` fills masked areas correctly.
+- ``frag_gray()``: out-of-range integer values (< 0 or > 100) are set to NoData before the ``uint8`` cast, instead of wrapping into valid classes.
+- Standalone ``*_stats()`` functions report the real input GeoTIFF path in ``'path tif'``.
+- ``acc()`` threshold validation accepts NumPy arrays (previously always rejected).
+- ``extract_by_polygon()``: features with NULL geometry are skipped; duplicate names get a numeric suffix instead of overwriting; unsafe filename characters are replaced.
+- Reports: Fragmentation change "B" missing count; SPA percentages exclude Core-Opening; Fragmentation change REL DIFF is now in %; Landscape Mosaic lists both real output files (no doubled suffix in ``landmos_stats()``); RSS refers to its ``.txt`` report; typos (PARAMETERS, Critical, pixels).
+- ``citation()`` text and typos.
+- Notebook 05: method comparison uses the threshold=30 FAD result; FAC histogram label.
+
+**Documentation**
+
+- Examples use the placeholder ``path/to/existing_folder/``; wrong ``frag_stats()`` argument and Landscape Mosaic example corrected.
+- Docstrings aligned with the API (``stat_files``, required ``method``, SPA outputs, RSS return type, ``outdir`` must exist).
+- Input-format, dependency versions, author name, Bug Tracker URL, memory usage figures, function counts and version numbers aligned across README, docs, ``pyproject.toml``, paper and ``CITATION.cff``.
+- Docs build requirements completed (``pypandoc``, ``nbsphinx``).
+
+**Repository**
+
+- Removed stale ``progs/*`` package-data entry.
+- Removed executable flag from all tracked files.
+- ``docs/notebooks/`` is no longer tracked (copied from ``notebooks/`` at docs build time).
+- New tests for the fixes above.
+
+----
+
+
 2.6.4 - 2026-11-06
 ------------------
 

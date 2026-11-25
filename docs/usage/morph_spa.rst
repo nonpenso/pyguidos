@@ -64,7 +64,7 @@ Functions
         >>> import pyguidos as pg
         >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
         >>> spa_result = pg.spa(in_tiff=forest_map, edge_width=1, classes=6,
-        ... outdir="output/", statists=True, stat_files=True, verb=False)
+        ... outdir="path/to/existing_folder/", statists=True, stat_files=True, verb=False)
         >>> spa_result['output stats']['class freq']
         {'1 Core (17)': 200934,
          '2 Edge (3)': 61706,
@@ -75,7 +75,7 @@ Functions
          '7 Background (0)': 558199,
          '8 Missing (129)': 932069}
         >>> spa_result['output paths']['path tif']
-        'output/CLC2018_corsica_FNF_spa_1_6.tif'
+        'path/to/existing_folder/CLC2018_corsica_FNF_spa_1_6.tif'
 
 
 .. py:function:: pyguidos.spa_stats(spa_tiff, stat_files=True, outdir=None, source_tiff=None)
@@ -113,9 +113,9 @@ Functions
 
    .. code-block:: python
 
-        >>> spa_tiff = 'output/CLC2018_corsica_FNF_spa_1_6.tif'
+        >>> spa_tiff = 'path/to/existing_folder/CLC2018_corsica_FNF_spa_1_6.tif'
         >>> spa_stats = pg.spa_stats(spa_tiff=spa_tiff, stat_files=True,
-        ... outdir='output/', source_tiff=None)
+        ... outdir='path/to/existing_folder/', source_tiff=None)
         >>> spa_stats['input stats']['foreground pxl']
         314732
 

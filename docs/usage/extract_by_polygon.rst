@@ -30,9 +30,9 @@ Functions
    :type vector_path: str or Path
    :param geotiff_path: Path to the input GeoTIFF raster to extract from.
    :type geotiff_path: str or Path
-   :param output_dir: Directory where output GeoTIFFs are saved. Created if it does not exist.
+   :param output_dir: Directory where output GeoTIFFs are saved. Must already exist (it is not created).
    :type output_dir: str or Path
-   :param id_field: Attribute field name used to generate output filenames (e.g. ``"NAME"``, ``"ISO3"``). Falls back to ``feature_<index>`` if the field is not present in a feature.
+   :param id_field: Attribute field name used to generate output filenames (e.g. ``"NAME"``, ``"ISO3"``). Falls back to ``feature_<index>`` if the field is not present in a feature. Unsafe filename characters are replaced with ``_``; duplicate names get a numeric suffix (``_2``, ``_3``, ...) so no output is overwritten. Features with a missing (NULL) geometry are skipped.
    :type id_field: str
    :param name_prefix: Optional prefix prepended to each output filename. Default ``""`` (no prefix).
    :type name_prefix: str, optional
@@ -45,7 +45,7 @@ Functions
 
    :outputs: The function writes one GeoTIFF per polygon feature:
 
-       * ``<output_dir>/<name_prefix><id_field_value>.tif``: Clipped and masked GeoTIFF for each polygon feature. In each filename, spaces in the ``id_field`` value are replaced with underscores and forward slashes with hyphens.
+       * ``<output_dir>/<name_prefix><id_field_value>.tif``: Clipped and masked GeoTIFF for each polygon feature. In each filename, spaces and characters not allowed in filenames (``< > : " / \ | ? *``) in the ``id_field`` value are replaced with underscores.
 
    .. rubric:: Example
    Extract the forest map for each polygon in the vector file of administrative subdivisions,
@@ -59,7 +59,7 @@ Functions
         >>> admin_boundaries = pg.DATA_DIR / "GISCO_adm_corsica.gpkg"
         >>> pg.extract_by_polygon(
         ... vector_path=admin_boundaries, geotiff_path=forest_map,
-        ... output_dir="output/for_maps/", id_field="ADM_ID",
+        ... output_dir="path/to/existing_folder/", id_field="ADM_ID",
         ... name_prefix="for_maps_")
 
 

@@ -1,11 +1,11 @@
 from pathlib import Path
+import importlib
 import os
 import sys
-import inspect
 import platform
 import warnings
 import tempfile
-from numba import config
+from typing import TYPE_CHECKING
 
 # Internal paths
 MODULE_ROOT = Path(__file__).resolve().parent
@@ -15,7 +15,7 @@ DATA_DIR = MODULE_ROOT / "data"
 
 
 # Package metadata
-__version__ = "2.6.4"
+__version__ = "2.6.5"
 __author__ = "Caudullo G., Vogt P., Soille P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
@@ -40,45 +40,95 @@ def _setup_numba():
                     pass # Ignore errors if path is already added or inaccessible
 
     # --- 2. THREADING LAYER CONFIG ---
-    if curr_os == "Linux":
-        os.environ['NUMBA_THREADING_LAYER'] = 'omp'
-    elif curr_os == "Darwin":
-        os.environ['NUMBA_THREADING_LAYER'] = 'workqueue'
-    else:
-        # On Windows, we prefer TBB if available
-        os.environ['NUMBA_THREADING_LAYER'] = 'tbb'
+    # Must be set BEFORE numba is imported (numba reads env vars at import time).
+    # A priority list falls back gracefully if a layer is unavailable; user-set
+    # values are respected.
+    if "NUMBA_THREADING_LAYER" not in os.environ:
+        if curr_os == "Linux":
+            prio = "omp tbb workqueue"
+        elif curr_os == "Darwin":
+            prio = "workqueue"
+        else:
+            prio = "tbb omp workqueue"  # Windows: prefer TBB if available
+        os.environ.setdefault("NUMBA_THREADING_LAYER_PRIORITY", prio)
 
     # --- 3. GLOBAL CONFIGS ---
     warnings.filterwarnings("ignore", message=".*TBB threading layer.*")
 
-     # --- 4. CACHE TO TEMP CONFIGS ---
+    # --- 4. CACHE TO TEMP CONFIGS ---
+    # Passed as an environment variable so that numba itself is NOT imported
+    # here (it is imported lazily, with the first tool that needs it).
+    # A user-defined NUMBA_CACHE_DIR is respected.
     cache_path = os.path.join(tempfile.gettempdir(), "numba_spatcon_cache")
     if not os.path.exists(cache_path):
         try:
             os.makedirs(cache_path)
         except OSError:
             cache_path = os.path.join(os.getcwd(), ".numba_cache")
+    os.environ.setdefault("NUMBA_CACHE_DIR", cache_path)
 
-    config.CACHE_DIR = cache_path
-    config.RELEASE_GIL = 1
+    # If numba was already imported before pyguidos, the environment
+    # variables come too late: apply the cache directory directly.
+    if "numba" in sys.modules:
+        from numba import config
+        config.CACHE_DIR = os.environ["NUMBA_CACHE_DIR"]
 
-# Execute setup upon import
+# Execute setup upon import (cheap: environment variables only)
 _setup_numba()
 
 
 # ================================================================================
-# Import Tools and Results
-from .fragmentation import frag, frag_stats
-from .fragmentation_change import frag_change
-from .fragmentation_gray import frag_gray, frag_gray_stats
-from .land_mosaic import landmos, landmos_stats
-from .spa import spa, spa_stats
-from .mspa import mspa, mspa_stats
-from .accounting import acc, acc_stats
-from .rss import rss
-from .extract_by_polygon import extract_by_polygon
-from . import utils
-from .utils import citation
+# Lazy loading of tools (PEP 562)
+# The analysis modules and their heavy dependencies (numba, rasterio, scipy,
+# matplotlib, geopandas, ...) are imported only when a function is first
+# used, so `import pyguidos` stays fast. `pg.frag(...)`,
+# `from pyguidos import frag` and `from pyguidos import *` work as before.
+
+# public name -> submodule that defines it
+_LAZY_FUNCTIONS = {
+    "frag": "fragmentation", "frag_stats": "fragmentation",
+    "frag_change": "fragmentation_change",
+    "frag_gray": "fragmentation_gray", "frag_gray_stats": "fragmentation_gray",
+    "landmos": "land_mosaic", "landmos_stats": "land_mosaic",
+    "spa": "spa", "spa_stats": "spa",
+    "mspa": "mspa", "mspa_stats": "mspa",
+    "acc": "accounting", "acc_stats": "accounting",
+    "rss": "rss",
+    "extract_by_polygon": "extract_by_polygon",
+    "citation": "utils",
+}
+# submodules reachable as attributes (e.g. pg.utils.get_raster_info)
+_LAZY_SUBMODULES = {"utils", "checks", "engine"}
+
+
+def __getattr__(name):
+    if name in _LAZY_FUNCTIONS:
+        module = importlib.import_module(f".{_LAZY_FUNCTIONS[name]}", __name__)
+        value = getattr(module, name)
+    elif name in _LAZY_SUBMODULES:
+        value = importlib.import_module(f".{name}", __name__)
+    else:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    globals()[name] = value  # cache: later accesses skip __getattr__
+    return value
+
+
+def __dir__():
+    return sorted(set(globals()) | set(_LAZY_FUNCTIONS) | _LAZY_SUBMODULES)
+
+
+if TYPE_CHECKING:  # static analysis / IDE autocompletion only, no runtime cost
+    from .fragmentation import frag, frag_stats
+    from .fragmentation_change import frag_change
+    from .fragmentation_gray import frag_gray, frag_gray_stats
+    from .land_mosaic import landmos, landmos_stats
+    from .spa import spa, spa_stats
+    from .mspa import mspa, mspa_stats
+    from .accounting import acc, acc_stats
+    from .rss import rss
+    from .extract_by_polygon import extract_by_polygon
+    from . import utils, checks, engine
+    from .utils import citation
 
 
 def info(tool: str = None):
@@ -143,27 +193,28 @@ def info(tool: str = None):
     }
 
     if not tool:
-        print("\n" + "═"*60)
+        print("\n" + "="*60)
         print(" pyguidos: Available Analytical Tools")
-        print("═"*60)
+        print("="*60)
         for name, data in registry.items():
-            print(f" • {name:8} : {data['title']}")
+            print(f" * {name:8} : {data['title']}")
         print("\nType pg.info('tool_name') for detailed links.")
-        print("═"*60 + "\n")
+        print("="*60 + "\n")
         return
 
     tool = tool.lower()
     if tool in registry:
         t = registry[tool]
-        # Dynamically get the function object from the module
-        func = globals().get(tool)
+        # Get the function object (lazy-loads its module on first use)
+        func = getattr(sys.modules[__name__], tool, None)
 
-        print(f"\n{'─'*10} {t['title'].upper()} {'─'*10}")
+        print(f"\n{'-'*10} {t['title'].upper()} {'-'*10}")
         print(f"Description:  {t['desc']}")
         print(f"User Guide:   {t['guide']}")
         print(f"Method Sheet: {t['sheet']}")
 
         if func:
+            import inspect
             # This shows the exact arguments: e.g., mspa(in_tiff, foreground=2, ...)
             signature = inspect.signature(func)
             print(f"Usage:        pg.{tool}{signature}")

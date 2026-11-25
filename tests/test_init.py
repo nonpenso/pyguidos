@@ -35,17 +35,19 @@ def test_utils_module_accessible():
 def test_numba_config():
     """
     Verify Numba configuration logic.
-    We check RELEASE_GIL and the presence of the threading layer.
+    We check the cache directory and the presence of the threading layer.
     """
     from numba import config
     import os
     
-    # 1. Verify GIL release is enabled
-    assert config.RELEASE_GIL == 1
+    # 1. Cache directory is passed to numba via NUMBA_CACHE_DIR
+    assert config.CACHE_DIR == os.environ["NUMBA_CACHE_DIR"]
     
     # 2. Check threading layer (critical for your parallel=True functions)
     # This ensures _setup_numba() actually executed its logic branch
-    assert "NUMBA_THREADING_LAYER" in os.environ
+    # (either the user forced a layer, or pyguidos set the priority list)
+    assert ("NUMBA_THREADING_LAYER" in os.environ
+            or "NUMBA_THREADING_LAYER_PRIORITY" in os.environ)
     
     # 3. Soft check on CACHE_DIR
     # Instead of asserting it exists (since Numba might keep it as '' 
@@ -65,12 +67,17 @@ def test_numba_caching_mechanism():
         assert os.path.isdir(config.CACHE_DIR)
 
 def test_threading_layer_set():
-    """Verify NUMBA_THREADING_LAYER is present in environment."""
-    # Depending on OS, this should have been set by _setup_numba()
-    assert "NUMBA_THREADING_LAYER" in os.environ
-    # E.g., on Linux it should be 'omp', on Windows 'tbb'
-    # We just check it's not empty
-    assert len(os.environ["NUMBA_THREADING_LAYER"]) > 0
+    """Verify the threading-layer setting reached Numba's config."""
+    from numba import config
+    if "NUMBA_THREADING_LAYER" in os.environ:
+        # User-forced layer is respected and read by Numba
+        assert config.THREADING_LAYER == os.environ["NUMBA_THREADING_LAYER"]
+    else:
+        # pyguidos sets a priority list BEFORE importing numba, so it must
+        # be reflected in numba.config (not just in os.environ)
+        assert "NUMBA_THREADING_LAYER_PRIORITY" in os.environ
+        assert config.THREADING_LAYER_PRIORITY == \
+            os.environ["NUMBA_THREADING_LAYER_PRIORITY"].split()
 
 # =============================================================================
 # Info / Registry Tests

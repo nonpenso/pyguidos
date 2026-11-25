@@ -59,6 +59,10 @@ def mspa(in_tiff,
     morphological classes (core, islet, edge, perforation, bridge, loop,
     branch, and their variants). It is computed by the original miallib C
     implementation of Soille and Vogt, bundled unmodified inside pyGuidos.
+    On Linux and Windows the C engine runs its parallel steps (distance
+    transform, erosions/dilations) on all CPU cores; set the environment
+    variable OMP_NUM_THREADS before importing pyguidos to limit them.
+    Results are identical for any number of threads.
 
     Parameters
     ----------
@@ -75,7 +79,8 @@ def mspa(in_tiff,
         If True (default), separate internal from external features
         (internal/hole analysis).
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     statists : bool, optional
         If True (default), computes and returns statistics.
     stat_files : bool, optional
@@ -108,7 +113,7 @@ def mspa(in_tiff,
     # Validate parameters
     if connectivity not in (4, 8):
         sys.exit(f"ERROR: connectivity must be 4 or 8 (received {connectivity})")
-    if not isinstance(edge_width, int) or edge_width < 1:
+    if not checks.is_integer(edge_width) or edge_width < 1:
         sys.exit(f"ERROR: edge_width must be an integer >= 1 (received {edge_width})")
 
     # Initialize Paths and Metadata
@@ -216,7 +221,8 @@ def mspa_stats(mspa_tiff, stat_files=True, outdir=None, source_tiff=None):
     stat_files : bool, optional
         If True (default), writes statistics to a .txt report file.
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     source_tiff : str or Path, optional
         Path to the original input GeoTIFF used to generate the MSPA result.
         Used only to report the source filename in the statistics report.
@@ -256,7 +262,8 @@ def mspa_stats(mspa_tiff, stat_files=True, outdir=None, source_tiff=None):
 
     # Define input and output file names
     out_name = Path(mspa_tiff).stem
-    outdir = Path(outdir) if outdir else mspa_tiff.parent
+    # Stop early (before any computation) if outdir does not exist
+    outdir = Path(outdir).resolve(strict=True) if outdir else mspa_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
 
     # MSPA pixel counting
@@ -277,6 +284,8 @@ def mspa_stats(mspa_tiff, stat_files=True, outdir=None, source_tiff=None):
     if stat_files:
         txt_file = outdir / f'{out_name}.txt'
         utils.update_time_line(txt_file, time_str)
+        # Report the real GeoTIFF location (it may differ from outdir)
+        stats_dict["output paths"]["path tif"] = str(mspa_tiff)
 
     return stats_dict
 
@@ -418,16 +427,16 @@ def _get_mspa_stats(mspa_freq,
             "brg_Fnum": f'{agg["Bridge"]:>11}',
 
             # Aggregated foreground percentages
-            "cor_Frel": f'{rel(agg["Core"]):8.4f}',
-            "edg_Frel": f'{rel(agg["Edge"]):8.4f}',
-            "prf_Frel": f'{rel(agg["Perforation"]):8.4f}',
-            "isl_Frel": f'{rel(agg["Islet"]):8.4f}',
-            "bch_Frel": f'{rel(agg["Branch"]):8.4f}',
-            "loo_Frel": f'{rel(agg["Loop"]):8.4f}',
-            "brg_Frel": f'{rel(agg["Bridge"]):8.4f}',
+            "cor_Frel": f'{rel(agg["Core"]):8.3f}',
+            "edg_Frel": f'{rel(agg["Edge"]):8.3f}',
+            "prf_Frel": f'{rel(agg["Perforation"]):8.3f}',
+            "isl_Frel": f'{rel(agg["Islet"]):8.3f}',
+            "bch_Frel": f'{rel(agg["Branch"]):8.3f}',
+            "loo_Frel": f'{rel(agg["Loop"]):8.3f}',
+            "brg_Frel": f'{rel(agg["Bridge"]):8.3f}',
 
             "int_frgr": ifrgr,
-            "poros_val": f'{poros:.4f}',
+            "poros_val": f'{poros:.3f}',
 
             # Placeholder replaced later by update_time_line()
             "comp_time": "",

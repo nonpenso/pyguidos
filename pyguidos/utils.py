@@ -7,9 +7,7 @@ import numpy as np
 import rasterio
 from rasterio.enums import ColorInterp
 from rasterio.errors import NotGeoreferencedWarning
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from numba import njit, prange
+from numba import njit, prange, get_num_threads
 
 # Ignore if input raster has no georeference
 warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
@@ -214,21 +212,55 @@ def get_pxl_freq(array):
     # 1. Handle 3D arrays (take first band)
     data = array[0] if array.ndim == 3 else array
 
-    # 2. Determine the "Fast Path" vs "Dynamic Path"
-    # uint8 is guaranteed to be 0-255.
-    # int16/int32/int64 (labels) need a dynamic size.
+    # 2. Histogram size: uint8 is guaranteed to be 0-255; integer label
+    #    arrays (int32/int64) need the maximum value.
+    flat = data.ravel()
     if data.dtype == np.uint8:
-        counts_array = numba_pixel_counts(data, size=256)
+        size = 256
     else:
-        # For labeled data, we calculate size inside Numba to keep it fast
-        counts_array = numba_pixel_counts(data, size=-1)
+        size = int(flat.max()) + 1 if flat.size > 0 else 1
+        size = max(size, 1)
 
-    # 3. Convert results to Counter, skipping zero-count values
+    # 3. Count in parallel: one partial histogram per Numba thread, summed at
+    #    the end (exact). For label arrays with very many values the partial
+    #    histograms would need too much memory, so use the serial count.
+    nchunks = max(1, min(get_num_threads(), flat.size))
+    if size * nchunks * 8 <= 256 * 1024**2:
+        counts_array = _pixel_counts_chunked(flat, size, nchunks)
+    else:
+        counts_array = numba_pixel_counts(data, size=size)
+
+    # 4. Convert results to Counter, skipping zero-count values
     # Note: Using a dictionary comprehension here is efficient for
     # building the Counter from the resulting array.
     counts_dict = {i: count for i, count in enumerate(counts_array) if count > 0}
 
     return collections.Counter(counts_dict)
+
+
+@njit(parallel=True, cache=True)
+def _pixel_counts_chunked(flat, size, nchunks):
+    """
+    Parallel exact histogram of a 1D integer array: each of `nchunks`
+    contiguous chunks fills its own partial histogram, then the partial
+    histograms are summed. Negative values are ignored.
+    """
+    n = flat.size
+    local = np.zeros((nchunks, size), dtype=np.int64)
+    for k in prange(nchunks):
+        lo = (k * n) // nchunks
+        hi = ((k + 1) * n) // nchunks
+        for i in range(lo, hi):
+            val = flat[i]
+            if val >= 0:
+                local[k, val] += 1
+    counts = np.zeros(size, dtype=np.int64)
+    for v in prange(size):
+        s = np.int64(0)
+        for k in range(nchunks):
+            s += local[k, v]
+        counts[v] = s
+    return counts
 
 
 @njit(cache=True)
@@ -490,7 +522,9 @@ def get_gtb_nodata(tiff_path):
     """
     GTB_NODATA = {
         "GTB_MSPA": 129,
+        "GTB_SPA":  129,
         "GTB_FOS":  102,
+        "GTB_FOSCHANGE": 254,
         "GTB_ACC":  129,
         "GTB_LM":   0,
     }
@@ -522,6 +556,9 @@ def get_tif_colormap(tiff_path):
     Reads the embedded GTB colormap from a pyGuidos output GeoTIFF
     and returns a matplotlib ListedColormap and Normalize.
     """
+    # Imported here so that tools without plots do not load matplotlib
+    from matplotlib.colors import ListedColormap, Normalize
+
     with rasterio.open(tiff_path) as src:
         cmap_dict = src.colormap(1)
 
@@ -531,7 +568,7 @@ def get_tif_colormap(tiff_path):
             colors[val] = [c / 255.0 for c in rgba]
 
     cmap = ListedColormap(colors)
-    norm = plt.Normalize(vmin=0, vmax=255)
+    norm = Normalize(vmin=0, vmax=255)
 
     return cmap, norm
 
@@ -540,12 +577,18 @@ def citation():
     """Prints the recommended scientific citations for pyguidos."""
     cite_text = """
 ================================================================
-RECOMENDED CITATIONS FOR PYGUIDOS
+RECOMENDED CITATIONS
 ================================================================
 
-Caudullo G., Vogt P., Soille P., 2026. PyGuidos, A pyGuidos: A 
-Python implementation of Guidos spatial pattern analysis.
+FOR PYGUIDOS:
+Caudullo G., Vogt P., Soille P., 2026. PyGuidos, A Python
+implementation of Guidos spatial pattern analysis.
 JOSS in review
+
+FOR METHODOLOGY:
+Vogt P., Riitters K. (2017). GuidosToolbox: universal digital 
+image object analysis. European Journal of Remote Sensing, 50, 
+1, pp. 352-361. doi: 10.1080/22797254.2017.1330650
 
 ================================================================
     """

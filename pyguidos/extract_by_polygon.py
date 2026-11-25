@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 import sys
+import re
+import unicodedata
 
 import pyogrio
 import rasterio
@@ -8,6 +10,7 @@ from rasterio.mask import mask as rio_mask
 from rasterio.transform import Affine
 from rasterio.enums import ColorInterp
 from shapely.geometry import box, mapping, Polygon, MultiPolygon
+from shapely.geometry.base import BaseGeometry
 
 from . import utils
 
@@ -41,12 +44,15 @@ def extract_by_polygon(
     geotiff_path : str or Path
         Path to the input GeoTIFF raster to extract from.
     output_dir : str or Path
-        Directory where output GeoTIFFs will be saved. Created if it
-        does not exist.
+        Directory where output GeoTIFFs will be saved. Must already
+        exist (it is not created).
     id_field : str
         Attribute field name used to generate output filenames
         (e.g. "NAME", "ISO3"). Falls back to "feature_<index>" if the
-        field is not found in a feature's properties.
+        field is not found in a feature's properties. Unsafe filename
+        characters are replaced with "_"; duplicate names get a numeric
+        suffix (_2, _3, ...) so no output is overwritten. Features with
+        a missing (NULL) geometry are skipped.
     name_prefix : str, optional
         Optional prefix string prepended to each output filename.
         Default "" (no prefix).
@@ -72,7 +78,8 @@ def extract_by_polygon(
     ------------
     - <output_dir>/<name_prefix><id_field_value>.tif : one per polygon feature
     """
-    os.makedirs(output_dir, exist_ok=True)
+    # Stop early (before any processing) if output_dir does not exist
+    output_dir = Path(output_dir).resolve(strict=True)
 
     # Check the supported vector files
     vector_path = Path(vector_path)
@@ -124,18 +131,34 @@ def extract_by_polygon(
 
         # Read vector file
         vector_df = pyogrio.read_dataframe(str(vector_path), layer=layer)
+        used_names = set()  # lower-case, as Windows/macOS filenames are case-insensitive
         for idx, row in vector_df.iterrows():
             # --- Determine output filename ---
             if id_field in vector_df.columns:
                 val = row[id_field]
-                outname = str(val).replace(" ", "_").replace("/", "-")
+                outname = sanitize_filename(val)
             else:
                 outname = f"feature_{idx}"
+
+            # Avoid overwriting: duplicate IDs (or IDs equal after
+            # sanitizing) get a numeric suffix (_2, _3, ...)
+            base_name, n = outname, 1
+            while outname.lower() in used_names:
+                n += 1
+                outname = f"{base_name}_{n}"
+            if outname != base_name:
+                print(f"  [WARN] Duplicate name '{base_name}': saving feature {idx} as '{outname}'.")
+            used_names.add(outname.lower())
 
             output_path = os.path.join(output_dir, f"{name_prefix}{outname}.tif")
 
             # --- Get geometry ---
             geom = row["geometry"]
+
+            # Features with no geometry (NULL, read as None or NaN) cannot be clipped
+            if not isinstance(geom, BaseGeometry):
+                print(f"  [SKIP] Feature '{outname}': Geometry is missing (NULL). Skipping.")
+                continue
 
             if not geom.is_valid:
                 # Attempt the repair
@@ -232,3 +255,37 @@ def _bounds_intersect(bounds_a, bounds_b):
         or bounds_a[3] < bounds_b.bottom
         or bounds_a[1] > bounds_b.top
     )
+
+def sanitize_filename(
+    value: object,
+    replacement: str = "_",
+    fallback: str = "unnamed",
+    max_length: int = 50,
+) -> str:
+    """Sanitize a value from a vector attribute for safe use as a filename."""
+    text = "" if value is None else str(value)
+
+    # Normalize Unicode and strip control characters (e.g., \n, \t, \x00)
+    text = unicodedata.normalize("NFKC", text)
+    text = re.sub(r"[\x00-\x1f\x7f]", "", text)
+
+    # Replace filesystem-unsafe and path-separating characters with `replacement`
+    # Covers Windows reserved chars (<>:"/\|?*), whitespace runs, and non-word/dash/dot chars
+    text = re.sub(r'[<>:"/\\|?*\s]+', replacement, text)
+
+    # Collapse repeated replacement characters and trim leading/trailing dots, spaces, or replacements
+    esc = re.escape(replacement)
+    text = re.sub(rf"{esc}{{2,}}", replacement, text)
+    trim_chars = f" .{replacement}"
+    text = text.strip(trim_chars)
+
+    # Avoid Windows reserved device names (CON, PRN, AUX, NUL, COM1..9, LPT1..9)
+    stem = text.split(".", 1)[0].upper()
+    if stem in {"CON", "PRN", "AUX", "NUL"} or re.fullmatch(r"(COM|LPT)[1-9]", stem):
+        text = f"{replacement}{text}" if text else fallback
+
+    # Enforce length limit (leaving room for extensions like ".shp" or ".gpkg")
+    if max_length > 0 and len(text) > max_length:
+        text = text[:max_length].rstrip(trim_chars)
+
+    return text or fallback

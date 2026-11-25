@@ -71,3 +71,42 @@ def test_lm_stats_standalone(lm_result):
     # Check if the CSV heatmap was created (specific to Land Mosaic)
     csv_hm = Path(lm_result["output paths"]["path csv hm"])
     assert csv_hm.exists()
+
+
+def test_lm_report_names_real_outputs(lm_result):
+    """The report must name the GeoTIFFs that actually exist."""
+    from pathlib import Path
+    paths = lm_result["output paths"]
+    report = Path(paths["path txt"]).read_text(encoding="utf-8")
+    assert Path(paths["path tif 103cl"]).name in report
+    assert Path(paths["path tif 19cl"]).name in report
+
+
+def test_lm_stats_standalone_report_names_real_output(lm_result, tmp_path):
+    """landmos_stats() must not double the '_103class_<colors>' suffix."""
+    from pathlib import Path
+    tif_103 = Path(lm_result["output paths"]["path tif 103cl"])
+    stats = landmos_stats(tif_103, stat_files=True, outdir=tmp_path)
+    report = Path(stats["output paths"]["path txt"]).read_text(encoding="utf-8")
+    assert tif_103.name in report
+    # A doubled suffix would read "<stem>_103class_<colors>.tif"
+    assert f"{tif_103.stem}_103class" not in report
+
+
+def test_lm_no_stat_files_does_not_crash(lm_result):
+    """statists=True with stat_files=False must return stats without paths."""
+    tif_103 = lm_result["output paths"]["path tif 103cl"]
+    stats = landmos_stats(tif_103, stat_files=False)
+    assert stats["output paths"] is None
+    assert "pxl numb 19cl" in stats["output stats"]
+
+
+def test_lm_19cl_labelled_keys(lm_result):
+    """'pxl numb 19cl' lists all 20 classes as '<value>-<label>' in order."""
+    freq_19 = lm_result["output stats"]["pxl numb 19cl"]
+    keys = list(freq_19)
+    assert len(keys) == 20
+    assert keys[0] == "0-NoData" and keys[1] == "1-A" and keys[-1] == "19-DD"
+    assert all(isinstance(v, int) for v in freq_19.values())
+    # Labelled counts must add up to the 103-class total
+    assert sum(freq_19.values()) == sum(lm_result["output stats"]["pxl numb 103cl"].values())

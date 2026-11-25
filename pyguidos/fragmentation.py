@@ -50,7 +50,8 @@ def frag(
         Pixel connectivity for FAC and FED methods. Must be 4 or 8.
         Default 4. Ignored for FAD method.
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     statists : bool, optional
         If True (default), computes and returns statistics.
     stat_files : bool, optional
@@ -64,7 +65,7 @@ def frag(
         Nested dictionary with three keys:
         - 'output paths' (dict or None): paths to generated output files
           ('path tif', 'path txt', 'path csv', 'path png'),
-          or None if outfile=False.
+          or None if stat_files=False.
         - 'input stats' (dict): pixel counts for foreground, background,
           missing and special class pixels.
         - 'output stats' (dict): per-class pixel counts for fragmentation
@@ -84,7 +85,7 @@ def frag(
     # Log
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
-    # Validate parametres
+    # Validate parameters
     checks.validate_frag_params(window_size, method, connectivity)
 
     # Initialize Paths and Metadata
@@ -185,7 +186,8 @@ def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
     stat_files : bool, optional
         If True (default), writes statistics to .txt, .csv and .png files.
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     source_tiff : str or Path, optional
         Path to the original input GeoTIFF used to generate the fragmentation
         result. Used only to report the source filename in the statistics
@@ -197,15 +199,15 @@ def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
         Nested dictionary with three keys:
         - 'output paths' (dict or None): paths to generated output files
           ('path tif', 'path txt', 'path csv', 'path png'),
-          or None if outfile=False.
+          or None if stat_files=False.
         - 'input stats' (dict): pixel counts for foreground, background,
           missing and special class pixels.
         - 'output stats' (dict): per-class pixel counts for fragmentation
           classes (rare, patchy, transitional, dominant, interior) and
           fragmentation indices (FAD_av, AVcon).
 
-        Note: 'output paths' is None when outfile=False. All other keys
-        are always populated regardless of outfile.
+        Note: 'output paths' is None when stat_files=False. All other keys
+        are always populated regardless of stat_files.
 
     Output Files
     ------------
@@ -238,7 +240,8 @@ def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
 
     # Define input and output file names
     out_name = Path(frag_tiff).stem
-    outdir = Path(outdir) if outdir else frag_tiff.parent
+    # Stop early (before any computation) if outdir does not exist
+    outdir = Path(outdir).resolve(strict=True) if outdir else frag_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
 
     # Fragmentation pixel counting
@@ -259,6 +262,8 @@ def frag_stats(frag_tiff, stat_files = True, outdir = None, source_tiff=None):
     if stat_files:
         txt_file = outdir / f'{out_name}.txt'
         utils.update_time_line(txt_file, time_str)
+        # Report the real GeoTIFF location (it may differ from outdir)
+        stats_dict["output paths"]["path tif"] = str(frag_tiff)
 
     return stats_dict
 
@@ -374,8 +379,8 @@ def _get_frag_stats(frag_freq,
             "used_method": method,
             "pixel_conn": '-' if method == 'FAD' else f"{connect}-connected",
             "window_size": window_size,
-            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["unit"]=='metres' else '--',
-            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["unit"]=='metres' else '--',
+            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.3f}" if tiff_info["unit"]=='metres' else '--',
+            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.3f}" if tiff_info["unit"]=='metres' else '--',
 
             "output_file": f"{out_name}.tif",
             "rep_unit_pxl": ruarea,
@@ -385,11 +390,11 @@ def _get_frag_stats(frag_freq,
             "trans_val": f"{trans:>11}",
             "domin_val": f"{domin:>11}",
             "inter_val": f"{inter:>11}",
-            "rare_pro": f"{rare_r:7.4f}",
-            "patch_pro": f"{patch_r:8.4f}",
-            "trans_pro": f"{trans_r:8.4f}",
-            "domin_pro": f"{domin_r:8.4f}",
-            "inter_pro": f"{inter_r:8.4f}",
+            "rare_pro": f"{rare_r:7.3f}",
+            "patch_pro": f"{patch_r:8.3f}",
+            "trans_pro": f"{trans_r:8.3f}",
+            "domin_pro": f"{domin_r:8.3f}",
+            "inter_pro": f"{inter_r:8.3f}",
             "fad_av_idx": fad_av,
             "avcon_idx": avcon,
         }

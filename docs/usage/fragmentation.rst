@@ -89,11 +89,11 @@ Functions
         >>> import pyguidos as pg
         >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
         >>> frag_result = pg.frag(in_tiff=forest_map, method="FAD", window_size=27,
-        ... outdir="output/", statists=True, stat_files=True, verb=False)
+        ... outdir="path/to/existing_folder/", statists=True, stat_files=True, verb=False)
         >>> frag_result['output stats']['avcon']
         22.755996751175065
         >>> frag_result['output paths']['path tif']
-        'output/CLC2018_corsica_FNF_frag_fad_27.tif'
+        'path/to/existing_folder/CLC2018_corsica_FNF_frag_fad_27.tif'
 
 
 .. py:function:: pyguidos.frag_stats(frag_tiff, stat_files=True, outdir=None, source_tiff=None)
@@ -139,9 +139,9 @@ Functions
 
    .. code-block:: python
 
-        >>> frag_tiff = 'output/CLC2018_corsica_FNF_frag_fad_27.tif'
+        >>> frag_tiff = 'path/to/existing_folder/CLC2018_corsica_FNF_frag_fad_27.tif'
         >>> frag_stats = pg.frag_stats(frag_tiff=frag_tiff, stat_files=True,
-        ... outdir='output/', source_tiff=None)
+        ... outdir='path/to/existing_folder/', source_tiff=None)
         >>> frag_stats['input stats']['foreground pxl']
         300737
 

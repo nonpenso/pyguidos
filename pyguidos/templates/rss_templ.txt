@@ -19,17 +19,22 @@ Special background [pixel=4]: {spec4_pxl}
 ================================================================================
 RESULTS
 ================================================================================
-Output image: {output_file}
+Output report: {output_file}
 
 Total number of patches: {tot_pch}
 Average patch size [pixel]: {avg_pch}
 Median patch size [pixel]: {med_pch} 
 Largest patch [pixel]: {lar_pch}
 
-Network status indices:
+Network status indices, from the Foreground patch sizes:
+  ECA      = sqrt(sum of squared patch sizes): size of one equally connected patch
+  COH      = ECA / Foreground * 100: how coherent (connected) the network is
+  REST_POT = 100 - COH: potential gain by connecting the patches
+  RAC      = Foreground / (Foreground + Background) * 100
+  CNOA     = minimum size of a new patch that would increase COH
 ---------------------------------------------------------------------------------
 INDEX NAME                 CODE      UNIT    VALUE
-Criticial New Object Area  CNOA      pixel   {CNOA_val}
+Critical New Object Area   CNOA      pixel   {CNOA_val}
 Equivalent Connected Area  ECA       pixel   {ECA_val} 
 Reference Area Coverage    RAC       %       {RAC_val} 
 Coherence                  COH       %       {COH_val} 

@@ -4,6 +4,15 @@ import numpy as np
 from . import utils
 
 
+def is_integer(value):
+    """
+    Returns True for Python and NumPy integers (e.g. 7, np.int64(7)).
+    Booleans are rejected even though bool is a subclass of int.
+    """
+    return (isinstance(value, (int, np.integer))
+            and not isinstance(value, (bool, np.bool_)))
+
+
 def validate_wsize(wsize):
     """
     Validates a moving window size parameter.
@@ -20,7 +29,7 @@ def validate_wsize(wsize):
     SystemExit
         If wsize is less than 3 or is an even number.
     """
-    if not isinstance(wsize, int):
+    if not is_integer(wsize):
         sys.exit(f"The window size must be an integer number (received {type(wsize).__name__})")
 
     if wsize < 3:
@@ -240,7 +249,7 @@ def validate_spa_params(edge_width, classes):
         If edge_width is not a positive integer or connectivity
         If classes are not 2, 3, 5, or 6.
     """
-    if not isinstance(edge_width, int) or edge_width < 1:
+    if not is_integer(edge_width) or edge_width < 1:
         sys.exit(f"The edge width must be an integer number >= 1 (received {edge_width})")
 
     if classes not in [2, 3, 5, 6]:
@@ -281,23 +290,29 @@ def validate_acc_params(thresholds):
     if len(thresholds) == 0:
         sys.exit("ERROR: Thresholds sequence cannot be empty. Provide between 1 and 5 values.")
 
-    # Ensure uniqueness and convert to integers
-    try:
-        unique_thresholds = set(int(t) for t in thresholds)
-    except (ValueError, TypeError):
-        sys.exit("ERROR: All thresholds must be integers.")
+    # Ensure all numbers are integers
+    int_thresholds = []
+    for t in thresholds:
+        # Accept Python and NumPy integers (e.g. np.int64 from arrays); reject bool
+        if not is_integer(t):
+            sys.exit(f"ERROR: All thresholds must be integers. Found {t!r}")
+        int_thresholds.append(int(t))
+
+    # Ensure all numbers are unique
+    if len(set(int_thresholds)) != len(int_thresholds):
+        sys.exit("ERROR: All thresholds must be unique. Duplicate found.")
 
     # Check the number of classes (1 to 5 thresholds)
-    num_t = len(unique_thresholds)
+    num_t = len(int_thresholds)
     if not (1 <= num_t <= 5):
         sys.exit(f"ERROR: You provided {num_t} unique thresholds. Accounting allows a minimum of 1 and a maximum of 5.")
 
     # Check for positive values
-    if any(t <= 0 for t in unique_thresholds):
+    if any(t <= 0 for t in int_thresholds):
         sys.exit("ERROR: All thresholds must be positive integers (greater than 0).")
 
     # Return sorted list for the next step of the process
-    return sorted(list(unique_thresholds))
+    return sorted(int_thresholds)
 
 
 

@@ -145,10 +145,10 @@ rerunning the full analysis:
 
 .. code-block:: python
 
-    # Recompute statistics on an existing MSPA output
+    # Recompute statistics on an existing Fragmentation output
     stats = pg.frag_stats(
-        frag_tiff="output/my_map_frag_FAD_27.tif",
-        outfile=True
+        frag_tiff="path/to/existing_folder/my_map_frag_fad_27.tif",
+        stat_files=True
     )
 
 .. note::

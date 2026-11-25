@@ -41,14 +41,14 @@ def frag_gray(
         Path to the input GeoTIFF. Must be uint8 with values:
         0 = Non-foreground, 1-100 = Foreground intensity (%),
         255 = NoData.
-    method : str, optional
-        Fragmentation method. Default 'FAD'.
+    method : str
+        Fragmentation method (required):
         'FAD' Foreground Area Density (grayscale)
         'FAC' Foreground Area Clustering (grayscale)
         'FED' Foreground Edge Density (grayscale)
     window_size : int
         Size of the moving window in pixels. Must be an odd integer >= 3.
-    for_threshold : int, optional
+    for_threshold : int
         Foreground threshold value from 1 to 100. Pixels with values
         below this threshold are treated as non-foreground (0) during
         computation.
@@ -56,7 +56,8 @@ def frag_gray(
         Pixel connectivity for FED method. Must be 4 or 8.
         Default 4. Ignored for FAD method.
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     statists : bool, optional
         If True (default), computes and returns statistics.
     stat_files : bool, optional
@@ -96,7 +97,7 @@ def frag_gray(
         sys.exit(f"Grayscale fragmentation method must be ['FAD', 'FAC', 'FED'] (received '{method}')")
     if method in ['FAC', 'FED'] and connectivity not in [4, 8]:
         sys.exit(f"Connectivity must be 4 or 8 (received {connectivity})")
-    if not isinstance(for_threshold, int) or not (1 <= for_threshold <= 100):
+    if not checks.is_integer(for_threshold) or not (1 <= for_threshold <= 100):
         sys.exit(f"for_threshold must be an integer between 1 and 100 (received {for_threshold})")
 
     # Initialize Paths and Metadata
@@ -122,9 +123,11 @@ def frag_gray(
     # Validate input
     checks.validate_fmap_gray_input(list(input_pxl_freq.keys()), info["bands"], info['dtype'])
 
-    # Downcast to uint8 after validation
+    # Downcast to uint8 after validation; force out-of-range values to NoData (255)
+    # so astype() wrap-around cannot turn them into valid background/foreground.
     if input_data.dtype != np.uint8:
-        input_data = input_data.astype(np.uint8)
+        input_data = np.where((input_data >= 0) & (input_data <= 100),
+                              input_data, 255).astype(np.uint8)
 
     # Count input Foreground (1-100) and Background (0) before thresholding
     inFG = sum(count for val, count in input_pxl_freq.items() if 1 <= val <= 100)
@@ -203,7 +206,8 @@ def frag_gray_stats(frag_tiff, stat_files=True, outdir=None, source_tiff=None):
     stat_files : bool, optional
         If True (default), writes statistics to .txt, .csv and .png files.
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     source_tiff : str or Path, optional
         Path to the original input GeoTIFF used to generate the fragmentation
         result. Used only to report the source filename in the statistics
@@ -256,7 +260,8 @@ def frag_gray_stats(frag_tiff, stat_files=True, outdir=None, source_tiff=None):
 
     # Define input and output file names
     out_name = Path(frag_tiff).stem
-    outdir = Path(outdir) if outdir else frag_tiff.parent
+    # Stop early (before any computation) if outdir does not exist
+    outdir = Path(outdir).resolve(strict=True) if outdir else frag_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
 
     # Fragmentation pixel counting
@@ -278,6 +283,8 @@ def frag_gray_stats(frag_tiff, stat_files=True, outdir=None, source_tiff=None):
     if stat_files:
         txt_file = outdir / f'{out_name}.txt'
         utils.update_time_line(txt_file, time_str)
+        # Report the real GeoTIFF location (it may differ from outdir)
+        stats_dict["output paths"]["path tif"] = str(frag_tiff)
 
     return stats_dict
 
@@ -407,8 +414,8 @@ def _get_frag_gray_stats(frag_freq,
             "pixel_conn": '-' if method == 'FAD' else f"{connect}-connected",
             "for_thresh": threshold,
             "window_size": window_size,
-            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["unit"]=='metres' else '--',
-            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["unit"]=='metres' else '--',
+            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.3f}" if tiff_info["unit"]=='metres' else '--',
+            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.3f}" if tiff_info["unit"]=='metres' else '--',
 
             "output_file": f"{out_name}.tif",
             "out_foreg_pxl": fgrnd,
@@ -420,11 +427,11 @@ def _get_frag_gray_stats(frag_freq,
             "trans_val": f"{trans:>11}",
             "domin_val": f"{domin:>11}",
             "inter_val": f"{inter:>11}",
-            "rare_pro": f"{rare_r:7.4f}",
-            "patch_pro": f"{patch_r:8.4f}",
-            "trans_pro": f"{trans_r:8.4f}",
-            "domin_pro": f"{domin_r:8.4f}",
-            "inter_pro": f"{inter_r:8.4f}",
+            "rare_pro": f"{rare_r:7.3f}",
+            "patch_pro": f"{patch_r:8.3f}",
+            "trans_pro": f"{trans_r:8.3f}",
+            "domin_pro": f"{domin_r:8.3f}",
+            "inter_pro": f"{inter_r:8.3f}",
             "fad_av_idx": fad_av,
             "avcon_idx": avcon,
         }

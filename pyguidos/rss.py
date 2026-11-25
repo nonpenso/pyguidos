@@ -34,7 +34,8 @@ def rss(
         0 = NoData, 1 = Background, 2 = Foreground.
         Optional: 3 = Background class 2, 4 = Background class 3.
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     stat_files : bool, optional
         If True (default), writes statistics to a .txt report file.
     verb : bool, optional
@@ -42,9 +43,13 @@ def rss(
 
     Returns
     -------
-    RssResult
-        A dataclass with:
-        - stats (dict): nested dictionary with output paths, input stats,
+    dict
+        Nested dictionary with three keys:
+        - 'output paths' (dict or None): paths to generated output file
+          ('path txt'), or None if stat_files=False.
+        - 'input stats' (dict): pixel counts for foreground, background,
+          and missing pixels.
+        - 'output stats' (dict): dictionary with the patch size statistics
           and connectivity indices (ECA, COH, CNOA, RPOT, RAC).
 
     Output Files
@@ -142,7 +147,7 @@ def rss(
                 "spec3_pxl": bgr3,
                 "spec4_pxl": bgr4,
     
-                "output_file": f'{out_name}.tif',
+                "output_file": f'{out_name}.txt',
     
                 "tot_pch": tot_pch,
                 "avg_pch": f"{avg_size:.1f}",
@@ -151,9 +156,9 @@ def rss(
     
                 "CNOA_val": int(round(CNOA)),
                 "ECA_val": int(round(ECA)),
-                "RAC_val": f"{RAC:.2f}",
-                "COH_val": f"{COH:.2f}",
-                "RPOT_val":  f"{RPOT:.2f}",
+                "RAC_val": f"{RAC:.3f}",
+                "COH_val": f"{COH:.3f}",
+                "RPOT_val":  f"{RPOT:.3f}",
     
                 "comp_time": f"{utils.running_time(start_time, time.time())}"
             }

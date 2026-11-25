@@ -15,6 +15,13 @@ and the `MSPA guide
     subset of the same idea implemented in pure Python, see :doc:`morph_spa`
     (Simplified Pattern Analysis, SPA).
 
+.. note::
+    On Linux and Windows the MSPA C engine runs its parallel steps (distance
+    transform, erosions/dilations) on all CPU cores; macOS builds are
+    single-threaded. To limit the cores, set ``OMP_NUM_THREADS`` before
+    importing pyGuidos (see *CPU cores and threads* on the main page).
+    Results are identical for any number of threads.
+
 
 Functions
 ---------
@@ -74,7 +81,7 @@ Functions
         >>> import pyguidos as pg
         >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"		
         >>> mspa_result = pg.mspa(in_tiff=forest_map, connectivity=8, edge_width=1,
-        ... transition=True, intext=True, outdir="output/", statists=True,
+        ... transition=True, intext=True, outdir="path/to/existing_folder/", statists=True,
         ... stat_files=True, verb=False)
         >>> mspa_result['output stats']['class freq aggr']
         {'Core': 200934,
@@ -84,8 +91,8 @@ Functions
          'Branch': 22054,
          'Loop': 1896,
          'Bridge': 3838}
-        >>> mspa_result['output paths']['path txt']
-        'output/CLC2018_corsica_FNF_8_1_1_1.tif'        
+        >>> mspa_result['output paths']['path tif']
+        'path/to/existing_folder/CLC2018_corsica_FNF_8_1_1_1.tif'        
 
 
 .. py:function:: pyguidos.mspa_stats(mspa_tiff, stat_files=True, outdir=None, source_tiff=None)
@@ -127,9 +134,9 @@ Functions
 
    .. code-block:: python
 
-        >>> mspa_tiff = 'output/CLC2018_corsica_FNF_8_1_1_1.tif'
+        >>> mspa_tiff = 'path/to/existing_folder/CLC2018_corsica_FNF_8_1_1_1.tif'
         >>> mspa_stats = pg.mspa_stats(mspa_tiff=mspa_tiff, stat_files=True,
-        ... outdir='output/', source_tiff=None)
+        ... outdir='path/to/existing_folder/', source_tiff=None)
         >>> mspa_stats['output stats']['porosity']
         4.893938440234152
 

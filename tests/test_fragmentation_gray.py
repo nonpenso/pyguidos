@@ -202,6 +202,19 @@ class TestFragGrayStats:
         assert "output paths" in stats
         assert "output stats" in stats
         assert stats["output stats"]["fad_av"] > 0
+        # "path tif" must point to the real GeoTIFF, not to outdir
+        assert Path(stats["output paths"]["path tif"]).exists()
+        assert Path(stats["output paths"]["path tif"]) == Path(tiff_path)
+
+    def test_standalone_stats_missing_outdir_raises(self, frag_gray_fad_result,
+                                                    tmp_path_factory):
+        """A non-existing outdir must stop the run (it is never created)."""
+        missing = tmp_path_factory.mktemp("frag_gray_base") / "does_not_exist"
+        tiff_path = frag_gray_fad_result["output paths"]["path tif"]
+
+        with pytest.raises(FileNotFoundError):
+            frag_gray_stats(tiff_path, stat_files=True, outdir=str(missing))
+        assert not missing.exists()
 
     def test_standalone_stats_with_source(self, frag_gray_fad_result,
                                           gray_input_tif, tmp_path_factory):

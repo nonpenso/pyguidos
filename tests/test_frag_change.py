@@ -78,9 +78,9 @@ def test_frag_change_pipeline_execution(
     mock_src_b = MagicMock()
     mock_dst = MagicMock()
     
-    # Configure mock window generator loop
-    mock_window = rasterio.windows.Window(0, 0, 10, 10)
-    mock_src_a.block_windows.return_value = [((0, 0), mock_window)]
+    # Configure the raster size: a 10 x 10 image is processed as one strip
+    mock_src_a.height = 10
+    mock_src_a.width = 10
     mock_src_a.read.return_value = np.ones((10, 10), dtype=np.uint8)
     mock_src_b.read.return_value = np.ones((10, 10), dtype=np.uint8)
     

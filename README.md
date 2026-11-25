@@ -37,7 +37,7 @@ If you browse the source files directly via either platform, the repository incl
 Available tools
 ===============
 
-The python module `pyGuidos` provides the following funtions.
+The python module `pyGuidos` provides the following functions.
 
 | Function | Description |
 |---|---|
@@ -60,7 +60,6 @@ Full API documentation is available at https://jrc-forest.pages.code.europa.eu/g
 
 ---
 
-
 Statement of Need
 =================
 
@@ -70,14 +69,13 @@ This technical evolution carries direct policy relevance, particularly in the co
 
 Consequently, the package is designed to support a broad audience of landscape ecologists, remote sensing analysts, and forest monitoring practitioners across national forest services, international organizations, and European Commission bodies who require building reproducible analysis chains applying GuidoToolbox metrics to regional or global datasets for environmental policy reporting and spatial assessment.
 
-
 ---
 
 Requirements
 ============
 
 - Python >= 3.10
-- numpy >2.0
+- numpy >=2.0
 - rasterio >=1.4
 - scipy >=1.15
 - scikit-image>=0.24
@@ -86,7 +84,7 @@ Requirements
 - geopandas >=1.1
 - shapely >=2.0
 - python-ternary >=1.0
-- numba >0.62
+- numba >=0.62
 - tbb >=2021.6.0; sys_platform == 'win32'
 - intel-openmp; sys_platform == 'linux'
 
@@ -218,11 +216,32 @@ pyGuidos loads each input raster fully into memory, so a tool's memory footprint
 |---|---|---|
 | `mspa` | ~25 × *R* | Multiple full-size morphological buffers in the C engine also depending on edge width |
 | `spa` | ~10–15 × *R* | Several full-size morphological masks and distance transforms  depending on edge width |
-| `frag`, `frag_gray`, `landmos` | ~3 × *R* | Input up-cast to int16 plus an output buffer |
-| `acc`, `rss` | ~4-5 × *R* | Adds a mask and a connected-component label array |
+| `acc`, `rss` | ~6 × *R* | Adds a mask and a connected-component label array |
+| `frag`, `frag_gray`, `landmos` | ~4 × *R* | Input up-cast to int16 plus an output buffer |
 | `frag_change` | ~2 × *R* | Processed block by block via windowed reading |
 
 Physical RAM is not a hard limit: the effective ceiling is RAM plus swap or page-file space. Depending on the OS in use, rasters exceeding physical RAM may be transparently paged to disk and still complete processing, though at the expense of a significant performance penalty due to disk I/O. macOS comes preconfigured with compressed RAM, which transparently expands usable memory. A similar compressed-memory approach is supported natively in Linux via the standard `zram` kernel module. Moreover, configuring disk partitions or external drives as swap space provides additional virtual memory. Raster size is therefore primarily a trade-off with processing time and I/O bandwidth rather than a strict capacity ceiling.
+
+---
+
+CPU Cores and Threads
+=====================
+
+By default pyGuidos uses all CPU cores. The number of threads can be limited, e.g. on shared servers, clusters, or when several maps are processed in parallel (e.g. 4 processes x 5 threads on 20 cores). Set the variables **before** importing pyGuidos:
+
+| Variable | Controls |
+|---|---|
+| `NUMBA_NUM_THREADS` | all tools except MSPA (Numba-compiled engine) |
+| `OMP_NUM_THREADS` | `mspa()` (OpenMP C engine; on Linux and Windows, macOS builds are single-threaded) |
+
+```python
+import os
+os.environ["NUMBA_NUM_THREADS"] = "8"
+os.environ["OMP_NUM_THREADS"] = "8"
+import pyguidos as pg
+```
+
+or from the shell: `set OMP_NUM_THREADS=8` (Windows) / `export OMP_NUM_THREADS=8` (Linux, macOS). Results are identical for any number of threads.
 
 ---
 

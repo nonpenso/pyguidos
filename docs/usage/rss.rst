@@ -70,14 +70,14 @@ Functions
 
         >>> import pyguidos as pg
         >>> forest_map = pg.DATA_DIR / "CLC2018_corsica_FNF.tif"
-        >>> rss_result = pg.rss(in_tiff=forest_map, outdir="output/",
+        >>> rss_result = pg.rss(in_tiff=forest_map, outdir="path/to/existing_folder/",
         ... stat_files=True, verb=False)
         >>> rss_result['output stats']['COH']
         8.123809429358433
         >>> rss_result['output stats']['median patch size']
 		726.4178743961353
         >>> rss_result['output paths']['path txt']
-        'output/CLC2018_corsica_FNF_rss.txt'
+        'path/to/existing_folder/CLC2018_corsica_FNF_rss.txt'
 
 
 Connectivity Indices

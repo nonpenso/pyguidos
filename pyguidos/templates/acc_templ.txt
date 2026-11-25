@@ -17,7 +17,7 @@ Special background [pixel=3]: {spec3_pxl}
 Special background [pixel=4]: {spec4_pxl}
 
 ================================================================================
-PARAMETRES
+PARAMETERS
 ================================================================================
 Thresholds = {threshold_list}
 
@@ -26,7 +26,10 @@ RESULTS
 ================================================================================
 Output image: {output_file}
 
-Patch classification table
+Foreground patches grouped by size class (PXL SIZE CLASS = patch size range
+in pixels, set by the Thresholds). N.PXL / FG% = pixels in patches of the class
+and their share of the Foreground; N.PATCH / PATCH% = number of patches and
+their share of all patches ("-" when patches are not available).
 ---------------------------------------------------------------------------------
 CLASS  PXL VAL  COLOR   PXL SIZE CLASS         N.PXL     FG%    N.PATCH   PATCH% 
 {table_rows}

@@ -24,7 +24,7 @@ def spa(in_tiff,
          verb=False):
     """
     Performs the Simplified Pattern Analysis (SPA) on a binary raster, a
-    streammargd version of the MSPA approach. SPA classifies foreground pixels
+    streamlined version of the MSPA approach. SPA classifies foreground pixels
     into structural categories based on their spatial context, offering
     four different classification levels (2, 3, 5, or 6 classes).
 
@@ -33,17 +33,18 @@ def spa(in_tiff,
     in_tiff : str or Path
         Path to the input GeoTIFF. Must be uint8 with values:
         0 = NoData, 1 = Background, 2 = Foreground.
-    edge_width : int= 6 (default)
+    edge_width : int
         Width of the edge zone in pixels. Must be >= 1.
-    classes : int
-        Define the number of morphological classes in the output.
+    classes : int, optional
+        Number of morphological classes in the output. Default 6.
         2 = Contiguous (17) and Margin (1)
         3 = Core (17), Margin (1), Core Opening (100)
         5 = Core (17), Edge (3), Perforation (5), Margin (1), Core Opening (100)
         6 = Core (17), Edge (3), Perforation (5), Margin (1), Islet (9)
             Core Opening (100)
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     statists : bool, optional
         If True (default), computes and returns statistics.
     stat_files : bool, optional
@@ -56,22 +57,22 @@ def spa(in_tiff,
     dict
         Nested dictionary with three keys:
         - 'output paths' (dict or None): paths to generated output files
-          ('path tif', 'path txt'), or None if outfile=False.
+          ('path tif', 'path txt'), or None if stat_files=False.
         - 'input stats' (dict): pixel counts for foreground, background
           and missing pixels.
-        - 'output stats' (dict): per-class pixel counts for the MSPA classes.
+        - 'output stats' (dict): per-class pixel counts for the SPA classes.
 
     Output Files
     ------------
-    - <in_name>_spa_<connectivity>_<edge_width>_<trans>_<i_e>.tif : SPA result
-    - <in_name>_spa_<connectivity>_<edge_width>_<trans>_<i_e>.txt : statistics report
+    - <in_name>_spa_<edge_width>_<classes>.tif : SPA result
+    - <in_name>_spa_<edge_width>_<classes>.txt : statistics report
     """
     start_time = time.time()
 
     # Log
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
-    # Validate parametres
+    # Validate parameters
     checks.validate_spa_params(edge_width, classes)
 
     # Initialize Paths and Metadata
@@ -162,9 +163,10 @@ def spa_stats(spa_tiff, stat_files = True, outdir = None, source_tiff=None):
     stat_files : bool, optional
         If True (default), writes statistics to a .txt report file.
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     source_tiff : str or Path, optional
-        Path to the original input GeoTIFF used to generate the MSPA result.
+        Path to the original input GeoTIFF used to generate the SPA result.
         Used only to report the source filename in the statistics report.
         Default None.
 
@@ -173,13 +175,13 @@ def spa_stats(spa_tiff, stat_files = True, outdir = None, source_tiff=None):
     dict
         Nested dictionary with three keys:
         - 'output paths' (dict or None): paths to generated output files
-          ('path tif', 'path txt'), or None if outfile=False.
+          ('path tif', 'path txt'), or None if stat_files=False.
         - 'input stats' (dict): pixel counts for foreground, background
           and missing pixels.
         - 'output stats' (dict): per-class pixel counts for the SPA classes.
 
-        Note: 'output paths' is None when outfile=False. All other keys
-        are always populated regardless of outfile.
+        Note: 'output paths' is None when stat_files=False. All other keys
+        are always populated regardless of stat_files.
 
     Output Files
     ------------
@@ -206,10 +208,11 @@ def spa_stats(spa_tiff, stat_files = True, outdir = None, source_tiff=None):
 
     # Define input and output file names
     out_name = Path(spa_tiff).stem
-    outdir = Path(outdir) if outdir else spa_tiff.parent
+    # Stop early (before any computation) if outdir does not exist
+    outdir = Path(outdir).resolve(strict=True) if outdir else spa_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
 
-    # MSPA pixel counting
+    # SPA pixel counting
     with rasterio.open(spa_tiff) as src:
         spa_data = src.read(1)
     spa_pxl_freq = utils.get_pxl_freq(spa_data)
@@ -227,6 +230,8 @@ def spa_stats(spa_tiff, stat_files = True, outdir = None, source_tiff=None):
     if stat_files:
         txt_file = outdir / f'{out_name}.txt'
         utils.update_time_line(txt_file, time_str)
+        # Report the real GeoTIFF location (it may differ from outdir)
+        stats_dict["output paths"]["path tif"] = str(spa_tiff)
 
     return stats_dict
 
@@ -261,7 +266,7 @@ def _get_spa_stats(spa_freq,
     cor_opn = spa_freq[100]
 
     ndata = spa_freq[129]
-    fgrnd = (tiff_info["rows"] * tiff_info["cols"]) - bgrnd - ndata
+    fgrnd = core + isle + edge + perf + marg
     
     core_r = core/fgrnd*100 if fgrnd >0 else 0
     isle_r = isle/fgrnd*100 if fgrnd >0 else 0
@@ -302,25 +307,25 @@ def _get_spa_stats(spa_freq,
         ### TXT Template Reporting ###
 
         if classes == '2':
-            r1 = f"Contiguous    17         {core:>11}     {core_r:8.4f}"
-            r2 = f"Margin        1          {marg:>11}     {marg_r:8.4f}"
+            r1 = f"Contiguous    17         {core:>11}     {core_r:8.3f}"
+            r2 = f"Margin        1          {marg:>11}     {marg_r:8.3f}"
             table_body = "\n".join([r1,r2])
         elif classes == '3':
-            r1 = f"Core          17         {core:>11}     {core_r:8.4f}"
-            r2 = f"Margin        1          {marg:>11}     {marg_r:8.4f}"
+            r1 = f"Core          17         {core:>11}     {core_r:8.3f}"
+            r2 = f"Margin        1          {marg:>11}     {marg_r:8.3f}"
             table_body = "\n".join([r1,r2])
         elif classes == '5':
-            r1 = f"Core          17         {core:>11}     {core_r:8.4f}"
-            r2 = f"Edge          3          {edge:>11}     {edge_r:8.4f}"
-            r3 = f"Perforation   5          {perf:>11}     {perf_r:8.4f}"
-            r4 = f"Margin        1          {marg:>11}     {marg_r:8.4f}"
+            r1 = f"Core          17         {core:>11}     {core_r:8.3f}"
+            r2 = f"Edge          3          {edge:>11}     {edge_r:8.3f}"
+            r3 = f"Perforation   5          {perf:>11}     {perf_r:8.3f}"
+            r4 = f"Margin        1          {marg:>11}     {marg_r:8.3f}"
             table_body = "\n".join([r1,r2,r3,r4])
         elif classes == '6':
-            r1 = f"Core          17         {core:>11}     {core_r:8.4f}"
-            r2 = f"Edge          3          {edge:>11}     {edge_r:8.4f}"
-            r3 = f"Perforation   5          {perf:>11}     {perf_r:8.4f}"
-            r4 = f"Islet         9          {isle:>11}     {isle_r:8.4f}"
-            r5 = f"Margin        1          {marg:>11}     {marg_r:8.4f}"
+            r1 = f"Core          17         {core:>11}     {core_r:8.3f}"
+            r2 = f"Edge          3          {edge:>11}     {edge_r:8.3f}"
+            r3 = f"Perforation   5          {perf:>11}     {perf_r:8.3f}"
+            r4 = f"Islet         9          {isle:>11}     {isle_r:8.3f}"
+            r5 = f"Margin        1          {marg:>11}     {marg_r:8.3f}"
             table_body = "\n".join([r1,r2,r3,r4,r5])
 
         content = {

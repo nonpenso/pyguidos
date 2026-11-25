@@ -22,6 +22,13 @@ from . import TEMPL_DIR
 # Ignore if input raster has no georeference
 warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 
+# 19-class Landscape Mosaic labels
+LM19_LABELS = {
+    0: "NoData", 1: "A", 2: "D", 3: "N", 4: "Ad", 5: "An", 6: "Dn",
+    7: "Da", 8: "Na", 9: "Nd", 10: "Adn", 11: "Dan", 12: "Nad",
+    13: "ad", 14: "an", 15: "dn", 16: "adn", 17: "NN", 18: "AA", 19: "DD",
+}
+
 def landmos(in_tiff,
             window_size,
             outdir=None,
@@ -45,7 +52,8 @@ def landmos(in_tiff,
     window_size : int
         Size of the moving window in pixels. Must be an odd integer >= 3.
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     statists : bool, optional
         If True (default), computes and returns statistics.
     stat_files : bool, optional
@@ -62,11 +70,13 @@ def landmos(in_tiff,
         Nested dictionary with three keys:
         - 'output paths' (dict or None): paths to generated output files
           ('path tif', 'path txt', 'path csv', 'path csv hm', 'path png'),
-          or None if outfile=False.
+          or None if stat_files=False.
         - 'input stats' (dict): pixel counts for the three input classes,
           foreground and missing pixels.
-        - 'output stats' (dict): pixel counts for both the 103-class and
-          19-class aggregated outputs.
+        - 'output stats' (dict): pixel counts for both the 103-class
+          ('pxl numb 103cl', integer keys) and 19-class aggregated outputs
+          ('pxl numb 19cl', all 20 classes keyed '<value>-<label>',
+          e.g. '0-NoData', '1-A', ..., '19-DD').
 
     Output Files
     ------------
@@ -82,7 +92,7 @@ def landmos(in_tiff,
     # Log
     utils.log_msg(verb, "[   START   ]  Verifying input raster...")
 
-    # Validate parametres
+    # Validate parameters
     checks.validate_wsize(window_size)
 
     # Initialize Paths and Metadata
@@ -162,8 +172,9 @@ def landmos(in_tiff,
                                        out_dir = outdir,
                                        source_tiff = in_tiff)
             # Add output paths
-            stats_dict["output paths"]["path tif 103cl"] = str(out_tiff103c)
-            stats_dict["output paths"]["path tif 19cl"] = str(out_tiff19c)
+            if stat_files:
+                stats_dict["output paths"]["path tif 103cl"] = str(out_tiff103c)
+                stats_dict["output paths"]["path tif 19cl"] = str(out_tiff19c)
 
         # Computational time
         time_str = utils.running_time(start_time, time.time())
@@ -199,7 +210,8 @@ def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
     stat_files : bool, optional
         If True (default), writes statistics to .txt, .csv and .png files.
     outdir : str or Path, optional
-        Directory for output files. Defaults to the input file's directory.
+        Directory for output files. Must already exist (it is not created).
+        Defaults to the input file's directory.
     source_tiff : str or Path, optional
         Path to the original three-class input GeoTIFF used to generate
         the landscape mosaic result. Used to report per-class pixel counts
@@ -211,14 +223,16 @@ def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
         Nested dictionary with three keys:
         - 'output paths' (dict or None): paths to generated output files
           ('path tif', 'path txt', 'path csv', 'path csv hm', 'path png'),
-          or None if outfile=False.
+          or None if stat_files=False.
         - 'input stats' (dict): pixel counts for the three input classes,
           foreground and missing pixels.
-        - 'output stats' (dict): pixel counts for both the 103-class and
-          19-class aggregated outputs.
+        - 'output stats' (dict): pixel counts for both the 103-class
+          ('pxl numb 103cl', integer keys) and 19-class aggregated outputs
+          ('pxl numb 19cl', all 20 classes keyed '<value>-<label>',
+          e.g. '0-NoData', '1-A', ..., '19-DD').
 
-        Note: 'output paths' is None when outfile=False. All other keys
-        are always populated regardless of outfile.
+        Note: 'output paths' is None when stat_files=False. All other keys
+        are always populated regardless of stat_files.
 
     Output Files
     ------------
@@ -250,7 +264,8 @@ def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
 
     # Define input and output file names
     out_name = Path(lm_tiff).stem
-    outdir = Path(outdir) if outdir else lm_tiff.parent
+    # Stop early (before any computation) if outdir does not exist
+    outdir = Path(outdir).resolve(strict=True) if outdir else lm_tiff.parent
     source_tiff = Path(source_tiff) if source_tiff else None
 
     # LM pixel counting
@@ -274,14 +289,13 @@ def landmos_stats(lm_tiff, stat_files = True, outdir = None, source_tiff=None):
                                out_dir = outdir,
                                source_tiff = source_tiff)
 
-    # Add output paths
-    stats_dict["output paths"]["path tif 103cl"] = str(lm_tiff)
-
     # Computational time
     time_str = utils.running_time(start_time_stat, time.time())
     if stat_files:
         txt_file = outdir / f'{out_name}.txt'
         utils.update_time_line(txt_file, time_str)
+        
+        stats_dict["output paths"]["path tif 103cl"] = str(lm_tiff)
 
     return stats_dict
 
@@ -491,7 +505,7 @@ def _get_lm_stats(lm_freq,
                                         ec='none', alpha=0.9, zorder=14)
                 ax.add_patch(circle)
 
-                # Add freqeuncy value
+                # Add frequency value
                 ax.text(center[0], center[1], frq_str(prop),
                                    color=txt_col,
                                    fontsize=9, ha='center', va='center', zorder=15)
@@ -611,6 +625,12 @@ def _get_lm_stats(lm_freq,
 
         ### TXT Template Reporting ###
 
+        lm_base = out_name.removesuffix(f"_103class_{cmap_type}")
+        lm_files = [f"{lm_base}_103class_{cmap_type}.tif"]
+        if (out_dir / f"{lm_base}_19class.tif").exists():
+            lm_files.append(f"{lm_base}_19class.tif")
+        lm_files_txt = ", ".join(lm_files)
+
         content = {
             "input_file": source_tiff.name if source_tiff else "n/a",
             "epsg_code": tiff_info["epsg"],
@@ -628,31 +648,31 @@ def _get_lm_stats(lm_freq,
 
             "w_size": window_size,
             "out_cmap": cmap_type,
-            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.4f}" if tiff_info["unit"]=='metres' else '--',
-            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.4f}" if tiff_info["unit"]=='metres' else '--',
+            "window_areaHA": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']/10000:.3f}" if tiff_info["unit"]=='metres' else '--',
+            "window_areaAC": f"{(window_size**2)*tiff_info['resX']*tiff_info['resY']*0.000247105:.3f}" if tiff_info["unit"]=='metres' else '--',
 
-            "output_file": f'{out_name}.tif',
+            "output_file": lm_files_txt,
 
-            "A_val": f'{A_rel:6.3f}',
-            "D_val": f'{D_rel:6.3f}',
-            "N_val": f'{N_rel:6.3f}',
-            "Ad_val": f'{Ad_rel:6.3f}',
-            "An_val": f'{An_rel:6.3f}',
-            "Dn_val": f'{Dn_rel:6.3f}',
-            "Da_val": f'{Da_rel:6.3f}',
-            "Na_val": f'{Na_rel:6.3f}',
-            "Nd_val": f'{Nd_rel:6.3f}',
-            "Adn_val": f'{Adn_rel:6.3f}',
-            "Dan_val": f'{Dan_rel:6.3f}',
-            "Nad_val": f'{Nad_rel:6.3f}',
-            "ad_val": f'{ad_rel:6.3f}',
-            "an_val": f'{an_rel:6.3f}',
-            "dn_val": f'{dn_rel:6.3f}',
-            "adn_val": f'{adn_rel:6.3f}',
-            "NN_val": f'{NN_rel:6.3f}',
-            "AA_val": f'{AA_rel:6.3f}',
-            "DD_val": f'{DD_rel:6.3f}',
-            "NoD_val": f'{NoD_rel:6.3f}',
+            "A_val": f'{lm_pixel_freq_19[1]:>12}',    "A_rel": f'{A_rel:8.3f}',
+            "D_val": f'{lm_pixel_freq_19[2]:>12}',    "D_rel": f'{D_rel:8.3f}',
+            "N_val": f'{lm_pixel_freq_19[3]:>12}',    "N_rel": f'{N_rel:8.3f}',
+            "Ad_val": f'{lm_pixel_freq_19[4]:>12}',   "Ad_rel": f'{Ad_rel:8.3f}',
+            "An_val": f'{lm_pixel_freq_19[5]:>12}',   "An_rel": f'{An_rel:8.3f}',
+            "Dn_val": f'{lm_pixel_freq_19[6]:>12}',   "Dn_rel": f'{Dn_rel:8.3f}',
+            "Da_val": f'{lm_pixel_freq_19[7]:>12}',   "Da_rel": f'{Da_rel:8.3f}',
+            "Na_val": f'{lm_pixel_freq_19[8]:>12}',   "Na_rel": f'{Na_rel:8.3f}',
+            "Nd_val": f'{lm_pixel_freq_19[9]:>12}',   "Nd_rel": f'{Nd_rel:8.3f}',
+            "Adn_val": f'{lm_pixel_freq_19[10]:>12}', "Adn_rel": f'{Adn_rel:8.3f}',
+            "Dan_val": f'{lm_pixel_freq_19[11]:>12}', "Dan_rel": f'{Dan_rel:8.3f}',
+            "Nad_val": f'{lm_pixel_freq_19[12]:>12}', "Nad_rel": f'{Nad_rel:8.3f}',
+            "ad_val": f'{lm_pixel_freq_19[13]:>12}',  "ad_rel": f'{ad_rel:8.3f}',
+            "an_val": f'{lm_pixel_freq_19[14]:>12}',  "an_rel": f'{an_rel:8.3f}',
+            "dn_val": f'{lm_pixel_freq_19[15]:>12}',  "dn_rel": f'{dn_rel:8.3f}',
+            "adn_val": f'{lm_pixel_freq_19[16]:>12}', "adn_rel": f'{adn_rel:8.3f}',
+            "NN_val": f'{lm_pixel_freq_19[17]:>12}',  "NN_rel": f'{NN_rel:8.3f}',
+            "AA_val": f'{lm_pixel_freq_19[18]:>12}',  "AA_rel": f'{AA_rel:8.3f}',
+            "DD_val": f'{lm_pixel_freq_19[19]:>12}',  "DD_rel": f'{DD_rel:8.3f}',
+            "NoD_val": f'{lm_pixel_freq_19[0]:>12}',  "NoD_rel": f'{NoD_rel:8.3f}',
         }
         txt_file = out_dir / f'{out_name}.txt'
         utils.generate_text_report(TEMPL_DIR / 'lm_templ.txt', txt_file, content)
@@ -679,7 +699,8 @@ def _get_lm_stats(lm_freq,
         }
     output_stats_dict = {
         "pxl numb 103cl": {int(k):int(v) for k,v in lm_pixel_freq.items()},
-        "pxl numb 19cl": {int(k):int(v) for k,v in lm_pixel_freq_19.items()},
+        "pxl numb 19cl": {f"{k}-{lab}": int(lm_pixel_freq_19.get(k, 0))
+                          for k, lab in LM19_LABELS.items()},
         }
     stats_dict = {
         "output paths" : path_stats_dict,
@@ -690,7 +711,7 @@ def _get_lm_stats(lm_freq,
     return stats_dict
 
 
-# Frequency visialization
+# Frequency visualization:
 def frq_str(frq):
     if frq is None or frq == 0:
         return '-'

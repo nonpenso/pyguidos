@@ -5,12 +5,16 @@ import matplotlib.pyplot as plt
 
 import rasterio
 from rasterio.enums import ColorInterp
+from rasterio.windows import Window
 import numpy as np
 
 from . import engine
 from . import utils
 from . import checks
 from . import TEMPL_DIR
+
+# Rows per processing strip (multiple of the 256-pixel GeoTIFF tiles)
+STRIP_ROWS = 1024
 
 
 def frag_change(
@@ -101,7 +105,10 @@ def frag_change(
         
         # Compute Frag Change
         change_matrix = np.zeros((107, 107), dtype=np.int64)
-        with rasterio.open(in_tiff1) as src_a, rasterio.open(in_tiff2) as src_b:
+        # NUM_THREADS lets GDAL decompress (inputs) and compress (output) the
+        # tiles of each strip on all CPU cores.
+        with rasterio.open(in_tiff1, NUM_THREADS="ALL_CPUS") as src_a, \
+             rasterio.open(in_tiff2, NUM_THREADS="ALL_CPUS") as src_b:
             out_profile = info1["profile"]
             out_profile.update(
                 tiled=True,
@@ -120,15 +127,20 @@ def frag_change(
                 out_tiff.unlink()
             
             # Open the output GeoTIFF
-            with rasterio.open(out_tiff, "w", **out_profile) as dst:
-                for ij, window in src_a.block_windows():
+            with rasterio.open(out_tiff, "w", **out_profile, NUM_THREADS="ALL_CPUS") as dst:
+                # Process strips of STRIP_ROWS complete rows (a multiple of the
+                # 256-pixel tiles): few large reads/writes keep memory low
+                # (~3 strips) while GDAL and the kernel work in parallel.
+                for row0 in range(0, src_a.height, STRIP_ROWS):
+                    window = Window(0, row0, src_a.width,
+                                    min(STRIP_ROWS, src_a.height - row0))
                     chunk_a = src_a.read(1, window=window)
                     chunk_b = src_b.read(1, window=window)
-        
+
                     # Computes raster AND statistics
-                    chunk_out = engine.compute_fos_change(chunk_a, 
-                                                          chunk_b, 
-                                                          change_matrix, 
+                    chunk_out = engine.compute_fos_change(chunk_a,
+                                                          chunk_b,
+                                                          change_matrix,
                                                           statists)
                     # Write the chunk output
                     dst.write(chunk_out, 1, window=window)
@@ -266,6 +278,11 @@ def _get_frag_change_stats(frag_chan_tiff,
     M_incr = sum(fragch_pxl_freq[i] for i in range(111,121))
     H_incr = sum(fragch_pxl_freq[i] for i in range(121,201))
 
+    FG_gain = fragch_pxl_freq[250]
+    FG_loss = fragch_pxl_freq[251]
+    BG_stab = fragch_pxl_freq[252]
+    Missing = fragch_pxl_freq[254]
+
     if out_file:
 
         ### CSV Export ###
@@ -338,8 +355,8 @@ def _get_frag_change_stats(frag_chan_tiff,
 
             "used_method": method,
             "window_size": window_size,
-            "window_areaHA": f"{(window_size**2)*minfo['resX']*minfo['resY']/10000:.4f}" if minfo["unit"]=='metres' else '--',
-            "window_areaAC": f"{(window_size**2)*minfo['resX']*minfo['resY']*0.000247105:.4f}" if minfo["unit"]=='metres' else '--',
+            "window_areaHA": f"{(window_size**2)*minfo['resX']*minfo['resY']/10000:.3f}" if minfo["unit"]=='metres' else '--',
+            "window_areaAC": f"{(window_size**2)*minfo['resX']*minfo['resY']*0.000247105:.3f}" if minfo["unit"]=='metres' else '--',
 
             "output_file": f"{out_name}.tif",
 
@@ -364,8 +381,6 @@ def _get_frag_change_stats(frag_chan_tiff,
 			"LM_22": f"{ch_matrix_land[2,2]:>11}",
             "FG_com" : ch_matrix_land[0,0],
             "UA_com": Uarea_AB,
-            "FG_gain": ch_matrix_land[1,0],
-            "FG_loss": ch_matrix_land[0,1],
 			
 			"R_valA": f"{rare_A:>11}",
 			"P_valA": f"{patchy_A:>11}",
@@ -388,14 +403,14 @@ def _get_frag_change_stats(frag_chan_tiff,
 			"up_val": increase,
 			"dw_val": decrease,
 			
-			"AV_valA": f"{avcon_A:7.4f}",
-			"FD_valA": f"{fad_av_A:7.4f}",
-			"AV_valB": f"{avcon_B:7.4f}",
-			"FD_valB": f"{fad_av_B:7.4f}",
-			"AV_abs": f"{avcon_B - avcon_A:7.4f}",
-			"FD_abs": f"{fad_av_B - fad_av_A:7.4f}",
-			"AV_rel": f"{(avcon_B - avcon_A)/avcon_A if avcon_A>0 else 0:7.4f}",
-			"FD_rel": f"{(fad_av_B - fad_av_A)/fad_av_A if fad_av_A>0 else 0:7.4f}",
+			"AV_valA": f"{avcon_A:7.3f}",
+			"FD_valA": f"{fad_av_A:7.3f}",
+			"AV_valB": f"{avcon_B:7.3f}",
+			"FD_valB": f"{fad_av_B:7.3f}",
+			"AV_abs": f"{avcon_B - avcon_A:7.3f}",
+			"FD_abs": f"{fad_av_B - fad_av_A:7.3f}",
+			"AV_rel": f"{(avcon_B - avcon_A)/avcon_A*100 if avcon_A>0 else 0:7.3f}",
+			"FD_rel": f"{(fad_av_B - fad_av_A)/fad_av_A*100 if fad_av_A>0 else 0:7.3f}",
 			
 			"HD_val": f"{H_decr:>11}",
 			"MD_val": f"{M_decr:>11}",
@@ -404,13 +419,18 @@ def _get_frag_change_stats(frag_chan_tiff,
 			"LI_val": f"{L_incr:>11}",
 			"MI_val": f"{M_incr:>11}",
 			"HI_val": f"{H_incr:>11}",
-			"HD_rel": f"{(H_decr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
-			"MD_rel": f"{(M_decr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
-			"LD_rel": f"{(L_decr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
-			"IN_rel": f"{(Insign/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
-			"LI_rel": f"{(L_incr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
-			"MI_rel": f"{(M_incr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
-			"HI_rel": f"{(H_incr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.4f}",
+			"HD_rel": f"{(H_decr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.3f}",
+			"MD_rel": f"{(M_decr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.3f}",
+			"LD_rel": f"{(L_decr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.3f}",
+			"IN_rel": f"{(Insign/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.3f}",
+			"LI_rel": f"{(L_incr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.3f}",
+			"MI_rel": f"{(M_incr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.3f}",
+			"HI_rel": f"{(H_incr/fgrnd_AB)*100 if fgrnd_AB>0 else 0:7.3f}",
+            
+            "FG_gain": FG_gain,
+            "FG_loss": FG_loss,
+            "BG_stable": BG_stab,
+            "Missing": Missing,
         }
 
         matrix_dict = {f"CM_{c}{r}": f"{ch_matrix_clas[c, r]:>11}" for r in range(6) for c in range(6)}

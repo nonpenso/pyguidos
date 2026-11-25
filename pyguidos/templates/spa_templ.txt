@@ -15,7 +15,7 @@ Background [pixel=1]: {backg_pxl}
 Missing/Nodata [pixel=0]: {miss_pxl}
 
 =========================================================
-PARAMETRES
+PARAMETERS
 =========================================================
 Edge width: {edge_w}
 Number of classes: {clas_n}
@@ -25,8 +25,12 @@ RESULTS
 =========================================================
 Output image: {output_file}
 
+SPA classes of the Foreground pixels: PXL NUMBER = pixels
+per class; FOREGR.% = share of the Foreground.
+Below: non-Foreground classes (pixel number only);
+Core-Opening = Background holes enclosed by Core.
 ---------------------------------------------------------
-MSPA CLASS    PXL VALUE   PXL NUMBER    FOREGR. %
+SPA CLASS     PXL VALUE   PXL NUMBER    FOREGR. %
 {table_rows}
 
 Core-Opening  100        {cor_opn_val:>11}

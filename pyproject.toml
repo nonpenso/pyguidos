@@ -2,11 +2,11 @@
 
 [project]
 name = "pyguidos" 
-version = "2.6.4"
+version = "2.6.5"
 authors = [
   { name="Giovanni Caudullo", email="giovanni.caudullo@ext.ec.europa.eu" },
   { name="Peter Vogt", email="peter.vogt@ec.europa.eu" },
-  { name="Perre Soille", email="pierre.soille@ec.europa.eu" },
+  { name="Pierre Soille", email="pierre.soille@ec.europa.eu" },
 ]
 description = "pyGuidos: A Python implementation of Guidos spatial pattern analysis"
 readme = "README.md" 
@@ -61,7 +61,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://code.europa.eu/jrc-forest/guidos/pyguidos"
 Documentation = "https://jrc-forest.pages.code.europa.eu/guidos/pyguidos/"
-"Bug Tracker" = "https://code.europa.eu/jrc-forest/guidos/pyguidos/-/issues"
+"Bug Tracker" = "https://github.com/nonpenso/pyguidos/issues"
 
 [project.optional-dependencies]
 notebooks = [
@@ -79,7 +79,6 @@ include = ["pyguidos*"]
 
 [tool.setuptools.package-data]
 pyguidos = [
-    "progs/*",
     "templates/*",
     "data/*",
 ]
@@ -89,6 +88,7 @@ pyguidos = [
     "bridge.c",
     "miallib/*.c",
     "miallib/*.h",
+    "omp/*.c",
 ]
 
 [build-system]
@@ -110,7 +110,7 @@ enable = ["cpython-freethreading"]
 skip = "*-musllinux_*"
 build-frontend = "build"
 test-requires = "numpy>=2.0"
-test-command = "python -c \"from pyguidos._mspa import _mspa; assert hasattr(_mspa, 'mspa')\""
+test-command = "python {project}/tests/ci_smoke.py"
 
 [tool.cibuildwheel.macos]
 archs = ["arm64"]
@@ -121,3 +121,7 @@ archs = ["native"]
 
 [tool.cibuildwheel.windows]
 archs = ["AMD64"]
+# Bundle the OpenMP runtime (vcomp140.dll) used by the MSPA extension,
+# which is not installed with Python.
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"

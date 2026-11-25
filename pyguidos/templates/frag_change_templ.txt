@@ -30,7 +30,7 @@ Missing/Nodata [pixel=0]: {miss_pxl_B}
 
 
 ================================================================================
-PARAMETRES
+PARAMETERS
 ================================================================================
 Method: {used_method}
 Window size [pixels]: {window_size} x {window_size}
@@ -45,15 +45,18 @@ RESULTS
 Output image: {output_file}
 
 
-Land cover status:
+Land cover status: pixels per land cover in A and B (PXL CHANGE = B - A).
 ---------------------------------------------------------------------------------
    LAND COVER  FOS VALUE          A - PXL        B - PXL      PXL CHANGE
    Foreground  [0-100]        {fg_valA}    {fg_valB}     {fg_ch}
    Background  [101,105,106]  {bg_valA}    {bg_valB}     {bg_ch}
-   Missing     [102]          {ms_valA}    {ms_valA}     {ms_ch}
+   Missing     [102]          {ms_valA}    {ms_valB}     {ms_ch}
 
 
-Land cover change matrix:
+Land cover change matrix: pixels moving from the A land cover (rows) to the
+B land cover (columns); the diagonal is unchanged.
+FORCOM = Foreground in both A and B; AREACOM = Foreground or Background in
+both A and B (common reported unit).
 ---------------------------------------------------------------------------------
     A -> B        B-Foregr.      B-Backgr.      B-Missing
     A-Foregr.   {LM_00}    {LM_01}    {LM_02}
@@ -62,11 +65,10 @@ Land cover change matrix:
 
 Common unchanged foreground FORCOM: {FG_com}
 Common unchanged unit area AREACOM: {UA_com}
-Foreground gain: {FG_gain}
-Foreground loss: {FG_loss}
 
 
-FOS Classes status:
+FOS Classes status: Foreground pixels per fragmentation class in A and B
+(PXL CHANGE = B - A).
 ---------------------------------------------------------------------------------
    CLASS         PXL VALUES       A - PXL        B - PXL      PXL CHANGE
    Rare          [0-9]        {R_valA}    {R_valB}     {R_ch} 
@@ -76,7 +78,9 @@ FOS Classes status:
    Interior      [90-100]     {I_valA}    {I_valB}     {I_ch}
 
 
-FOS Classes change matrix (constrained to AREACOM)
+FOS Classes change matrix (constrained to AREACOM): pixels moving from the
+A class (rows) to the B class (columns). Diagonal = unchanged; above it =
+higher class in B (less fragmented); below it = lower class (more fragmented).
 ---------------------------------------------------------------------------------
    A -> B      B-Bkgr      B-Rare      B-Patc      B-Tran      B-Domi      B-Inte
    A-Bkgr {CM_00} {CM_01} {CM_02} {CM_03} {CM_04} {CM_05}
@@ -92,14 +96,17 @@ Decreased Fragmentation [pxl]: {up_val}
 Increased Fragmentation [pxl]: {dw_val}
 
 
-Connectivity indices:
+Connectivity indices in A and B (see the Fragmentation report);
+ABS DIFF = B - A, REL DIFF = (B - A) / A * 100.
 ---------------------------------------------------------------------------------
    INDEX             A           B       ABS DIFF[PXL]   REL DIFF[%]
    AVCON  (%)     {AV_valA}     {AV_valB}       {AV_abs}       {AV_rel}
    FAD_AV (%)     {FD_valA}     {FD_valB}       {FD_abs}       {FD_rel}
 
 
-Fragmentation/Connectivity change: total pexels and FORCOM proportion
+Fragmentation/Connectivity change of FORCOM pixels: DELTA FOS = FOS(B) -
+FOS(A), stored as PXL VALUE = 100 - DELTA FOS. PXL = pixel number;
+FORCOM % = share of FORCOM.
 ---------------------------------------------------------------------------------
   FRAGMENT.     CONNECT.     PXL VALUE  DELTA FOS           PXL      FORCOM %
   High decr.    High incr.   [0-79]     [+21 +100]  {HI_val}       {HI_rel}
@@ -110,6 +117,10 @@ Fragmentation/Connectivity change: total pexels and FORCOM proportion
   Medium incr.  Medium decr. [111-120]  [-20 -11]   {MD_val}       {MD_rel}
   High incr.    High decr.   [121-200]  [-100 -21]  {HD_val}       {HD_rel}
 
+Foreground gain BG->FG   [pxl=250]: {FG_gain}
+Foreground loss FG->BG   [pxl=251]: {FG_loss}
+Background stable BG->BG [pxl=252]: {BG_stable}
+Missing one/both time(s) [pxl=254]: {Missing}
 
 Computational time: 
 

@@ -49,7 +49,7 @@ single-band integer GeoTIFF (typically uint8).
   SP4 pixels as if they were not there. Use for features that should not
   influence connectivity metrics (e.g., rocks, transitional woodland).
 
-**Fragmentation (FAD, FAC, FED)** — accepts all values 0–4:
+**Fragmentation (FAD, FAC, FED), Accounting and RSS** — accepts all values 0–4:
 
 .. list-table::
    :header-rows: 1
@@ -79,7 +79,7 @@ single-band integer GeoTIFF (typically uint8).
      - Optional
      - Does NOT fragment foreground (excluded like NoData)
 
-**Accounting, RSS, and SPA** — accept only values 0–2:
+**MSPA and SPA** — accept only values 0–2:
 
 .. list-table::
    :header-rows: 1
@@ -102,7 +102,7 @@ single-band integer GeoTIFF (typically uint8).
      - The feature being analysed
 
 .. note::
-    SPA, Accounting, and RSS do not accept values 3 and 4. If your input
+    MSPA and SPA do not accept values 3 and 4. If your input
     contains these values, reclassify them to 0 (NoData) or 1 (Background)
     before running these tools.
 

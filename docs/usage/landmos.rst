@@ -52,7 +52,7 @@ Functions
            * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
        * ``"output stats"`` (*dict*):
            * ``"pxl numb 103cl"`` (*dict*) -- Pixel counts for the detailed 103-class classification.
-           * ``"pxl numb 19cl"`` (*dict*) -- Pixel counts for the aggregated 19-class classification.
+           * ``"pxl numb 19cl"`` (*dict*) -- Pixel counts for the aggregated 19-class classification, keyed ``"<value>-<label>"`` (``"0-NoData"``, ``"1-A"``, ... ``"19-DD"``); all 20 classes are always listed.
 
    :outputs: The function writes the following output files with ``stat_files=True``:
 
@@ -72,10 +72,9 @@ Functions
         >>> import pyguidos as pg
         >>> land_mosaic = pg.DATA_DIR / "CLC2018_corsica_LandMos.tif"
         >>> lm_result = pg.landmos(in_tiff=land_mosaic, window_size=31,
-        ... outdir="output/", statists=True, stat_files=True,
+        ... outdir="path/to/existing_folder/", statists=True, stat_files=True,
         ... out_colors='bgr', verb=False)
-        >>> lm_result
-        >>> lm_result['output paths']['path tif 19cl']
+        >>> lm_result['output stats']['pxl numb 19cl']
         {'0-NoData': 932069,
          '1-A': 6529,
          '2-D': 67,
@@ -128,7 +127,7 @@ Functions
            * ``"missing pxl"`` (*int*) -- Count of NoData pixels.
        * ``"output stats"`` (*dict*):
            * ``"pxl numb 103cl"`` (*dict*) -- Pixel counts for the detailed 103-class classification.
-           * ``"pxl numb 19cl"`` (*dict*) -- Pixel counts for the aggregated 19-class classification.
+           * ``"pxl numb 19cl"`` (*dict*) -- Pixel counts for the aggregated 19-class classification, keyed ``"<value>-<label>"`` (``"0-NoData"``, ``"1-A"``, ... ``"19-DD"``); all 20 classes are always listed.
 
    :outputs: The function writes the following output files with ``stat_files=True``:
 
@@ -144,9 +143,9 @@ Functions
 
    .. code-block:: python
 
-        >>> lm_tiff = 'output/my_landcover_lm_31_103class_bgr.tif'
+        >>> lm_tiff = 'path/to/existing_folder/my_landcover_lm_31_103class_bgr.tif'
         >>> lm_stats = pg.landmos_stats(lm_tiff=lm_tiff, stat_files=True,
-        ... outdir='output/', source_tiff="my_landcover.tif")
+        ... outdir='path/to/existing_folder/', source_tiff="my_landcover.tif")
         >>> lm_stats['input stats']
         {'class1 pxl': 98525,
          'class2 pxl': 751504,

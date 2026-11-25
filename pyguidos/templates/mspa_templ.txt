@@ -15,7 +15,7 @@ Background [pixel=1]: {backg_pxl}
 Missing/Nodata [pixel=0]: {miss_pxl}
 
 ================================================================================
-PARAMETRES
+PARAMETERS
 ================================================================================
 Foreground connectivity: {connect}
 Edge width: {edge_w}
@@ -27,6 +27,9 @@ RESULTS
 ================================================================================
 Output image: {output_file}
 
+Pixel number of every MSPA class (PXL VALUE = value in the output image).
+With IntExt=True, Internal classes (value + 100) lie inside Core-Openings
+(holes), External classes elsewhere. Background group: non-Foreground pixels.
 ---------------------------------------------------------------------------------
 MSPA CLASS      PXL VALUE   PXL NUMBER 
    External
@@ -78,8 +81,8 @@ are counted with the class they cross:
     Loop           {loo_Fnum}    {loo_Frel}
     Bridge         {brg_Fnum}    {brg_Frel}
 
-Integral Foreground: {int_frgr}
-Porosity [%]: {poros_val}
+Integral Foreground (Foreground + Core- and Border-Opening): {int_frgr}
+Porosity [%] (Core-Opening share of Core+Edge+Perforation+Core-Opening): {poros_val}
 
 Computational time: {comp_time}
 
