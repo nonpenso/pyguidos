@@ -66,6 +66,13 @@ def test_numba_caching_mechanism():
     if config.CACHE_DIR != '':
         assert os.path.isdir(config.CACHE_DIR)
 
+@pytest.mark.parametrize("os_name", ["Linux", "Darwin", "Windows"])
+def test_threading_priority_is_valid_for_every_os(os_name):
+    """Numba requires a permutation of all three layers (macOS wheel bug)."""
+    layers = pg._threading_priority(os_name).split()
+    assert sorted(layers) == ["omp", "tbb", "workqueue"]
+
+
 def test_threading_layer_set():
     """Verify the threading-layer setting reached Numba's config."""
     from numba import config

@@ -19,6 +19,19 @@ __version__ = "2.6.5"
 __author__ = "Caudullo G., Vogt P., Soille P., European Commission, Joint Research Centre"
 
 # Global Numba Setup
+def _threading_priority(os_name):
+    """
+    Numba threading-layer priority for an OS (platform.system() value).
+    Numba requires a permutation of ALL three layers; the first available
+    one is used, so unavailable layers are skipped automatically.
+    """
+    if os_name == "Linux":
+        return "omp tbb workqueue"
+    if os_name == "Darwin":
+        return "workqueue omp tbb"      # macOS: built-in workqueue first
+    return "tbb omp workqueue"          # Windows: prefer TBB if available
+
+
 def _setup_numba():
     curr_os = platform.system()
 
@@ -44,13 +57,8 @@ def _setup_numba():
     # A priority list falls back gracefully if a layer is unavailable; user-set
     # values are respected.
     if "NUMBA_THREADING_LAYER" not in os.environ:
-        if curr_os == "Linux":
-            prio = "omp tbb workqueue"
-        elif curr_os == "Darwin":
-            prio = "workqueue"
-        else:
-            prio = "tbb omp workqueue"  # Windows: prefer TBB if available
-        os.environ.setdefault("NUMBA_THREADING_LAYER_PRIORITY", prio)
+        os.environ.setdefault("NUMBA_THREADING_LAYER_PRIORITY",
+                              _threading_priority(curr_os))
 
     # --- 3. GLOBAL CONFIGS ---
     warnings.filterwarnings("ignore", message=".*TBB threading layer.*")
