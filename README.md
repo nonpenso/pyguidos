@@ -114,7 +114,7 @@ cd pyguidos
 ```
 2. Create and activate a virtual environment using Python.
   - Windows
-  ```bash
+  ```console
   py -m venv myvenv
   myvenv\Scripts\activate
   ```
